@@ -23,7 +23,7 @@ create_prediction_grid <- function(area, spatial_cell_size = 100000, time_layers
   pred_grid <- pred_points_space %>%
     tidyr::crossing(time_layers) %>%
     dplyr::mutate(
-      point_id = 1:nrow(.),
+      point_id = 1:nrow(.)
     )
 
   return(pred_grid)
