@@ -4,7 +4,12 @@
 \alias{create_model_grid}
 \title{create_model_grid}
 \usage{
-create_model_grid(independent_tables, dependent_vars, kernel_settings)
+create_model_grid(
+  independent_tables,
+  dependent_vars,
+  kernel_settings,
+  pred_grids
+)
 }
 \arguments{
 \item{independent_tables}{test}
@@ -12,6 +17,8 @@ create_model_grid(independent_tables, dependent_vars, kernel_settings)
 \item{dependent_vars}{test}
 
 \item{kernel_settings}{test}
+
+\item{pred_grids}{test}
 }
 \value{
 test
