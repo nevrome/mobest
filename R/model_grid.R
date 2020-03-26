@@ -72,3 +72,17 @@ run_model_grid <- function(model_grid, pred_grid) {
   return(model_grid_simplified)
 
 }
+
+#' unnest_model_grid
+#'
+#' @param model_grid test
+#'
+#' @return test
+#'
+#' @export
+unnest_model_grid <- function(model_grid) {
+
+  model_grid %>%
+    tidyr::unnest(cols = "prediction_sample")
+
+}
