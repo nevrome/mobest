@@ -33,19 +33,18 @@ create_model_grid <- function(independent_tables, dependent_vars, kernel_setting
 #' run_model_grid
 #'
 #' @param model_grid test
-#' @param pred_grid test
 #'
 #' @return test
 #'
 #' @export
-run_model_grid <- function(model_grid, pred_grid) {
+run_model_grid <- function(model_grid) {
 
   # run interpolation for each entry in the model_grid
   prediction <- lapply(1:nrow(model_grid), function(i) {
     interpolate_laGP(
       independent = model_grid[["independent_table"]][[i]],
       dependent = model_grid[["dependent_var"]][[i]],
-      pred_grid = pred_grid,
+      pred_grid = model_grid[["pred_grid"]][[i]],
       auto = model_grid[["kernel_setting"]][[i]][["auto"]],
       d = model_grid[["kernel_setting"]][[i]][["d"]],
       g = model_grid[["kernel_setting"]][[i]][["g"]]
@@ -58,7 +57,7 @@ run_model_grid <- function(model_grid, pred_grid) {
     dplyr::select(-kernel_setting, -independent_table, -dependent_var)
 
   # add prediction results for each run as a data.frame in a list column to model_grid
-  model_grid_simplified$prediction_sample <- lapply(prediction, function(x) {
+  model_grid_simplified$prediction_sample <- purrr::map2(prediction, model_grid[["pred_grid"]], function(x, y) {
     pred <- data.frame(
       point_id = 1:length(x$mean),
       mean = x$mean,
@@ -67,8 +66,7 @@ run_model_grid <- function(model_grid, pred_grid) {
     )
     # merge with pred_grid to add relevant spatial information
     dplyr::left_join(
-      pred,
-      pred_grid,
+      pred, y,
       by = "point_id"
     )
   })

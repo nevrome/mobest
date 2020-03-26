@@ -4,12 +4,10 @@
 \alias{run_model_grid}
 \title{run_model_grid}
 \usage{
-run_model_grid(model_grid, pred_grid)
+run_model_grid(model_grid)
 }
 \arguments{
 \item{model_grid}{test}
-
-\item{pred_grid}{test}
 }
 \value{
 test
