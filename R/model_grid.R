@@ -54,7 +54,7 @@ run_model_grid <- function(model_grid) {
   # simplified model_grid
   model_grid_simplified <- model_grid %>%
     dplyr::mutate(independent_table_type = ifelse(independent_table_id == "age_center", "age_center", "age_sampled")) %>%
-    dplyr::select(-kernel_setting, -independent_table, -dependent_var)
+    dplyr::select(-kernel_setting, -independent_table, -dependent_var, -pred_grid)
 
   # add prediction results for each run as a data.frame in a list column to model_grid
   model_grid_simplified$prediction_sample <- purrr::map2(prediction, model_grid[["pred_grid"]], function(x, y) {
@@ -72,5 +72,4 @@ run_model_grid <- function(model_grid) {
   })
 
   return(model_grid_simplified)
-
 }

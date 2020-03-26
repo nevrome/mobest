@@ -22,7 +22,7 @@ unnest_model_grid <- function(model_grid) {
 condense_interpol_grid <- function(interpol_grid) {
 
   interpol_grid %>%
-    dplyr::group_by(x, y, z, point_id, independent_table_type, kernel_setting_id, dependent_var_id) %>%
+    dplyr::group_by(x, y, z, point_id, independent_table_type, dependent_var_id, kernel_setting_id, pred_grid_id) %>%
     dplyr::summarize(
       sd = age_center_catering_sd(independent_table_type, mean, sd),
       mean = mean(mean)
