@@ -28,13 +28,25 @@ estimate_mobility <- function(interpol_grid_origin, mobility_regions) {
     ) %>%
     dplyr::summarise(
       mean_km_per_decade = mean(spatial_distance)/1000/10,
-      mean_angle = mean(circular::circular(
-        angle_degree, type = "angles", units = "degrees", modulo = "2pi", template = 'geographics'),
-        na.rm = T
-      )
+      mean_x_to_origin = mean(x_to_origin),
+      mean_y_to_origin = mean(y_to_origin),
+      angle_deg = angle_between_along_360(c(mean_x_to_origin, mean_y_to_origin))
     ) %>%
     dplyr::ungroup()
 
   return(speed)
 
+}
+
+angle_between_along_360 <- function(x) {
+  a <- c(0,1)
+  b <- x
+
+  theta <- acos( sum(a*b) / ( sqrt(sum(a * a)) * sqrt(sum(b * b)) ) ) * 180 / pi
+
+  if (b[1] < 0) {
+    360 - theta
+  } else{
+    theta
+  }
 }
