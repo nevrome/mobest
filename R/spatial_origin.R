@@ -83,51 +83,39 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
+  pri_ready <- pri_ready %>% add_origin_vector_coordinates()
+
   return(pri_ready)
 }
 
-#' angle_point_origin
-#'
-#' @param interpol_grid_origin test
-#'
-#' @return test
-#'
-#' @export
-angle_point_origin <- function(interpol_grid_origin) {
+add_origin_vector_coordinates <- function(x) {
 
-  # get spatial position of entangled points
-  A <- as.matrix(interpol_grid_origin[c("x", "y")])
-  B <- as.matrix(interpol_grid_origin[c("x_origin", "y_origin")])
+    x <- x %>%
+    dplyr::mutate(
+      x_to_origin = x_origin - x,
+      y_to_origin = y_origin - y
+    )
 
-  # calculate angle between points in radians starting from the east (AC)
-  AB <- B - A
-  AC <- c(1, 0)
-
-  interpol_grid_origin$normalized_origin_vector <- lapply(
-    1:nrow(AB), function(i) {
-      unname(scalar1(AB[i,]))
+    normalized_vector <- purrr::map2(
+    x$x_to_origin, x$y_to_origin, function(l, r) {
+      scalar1(c(l, r))
     }
-  )
+  ) %>% do.call(rbind, .)
 
-  interpol_grid_origin$angle_rad <- sapply(
-    1:nrow(interpol_grid_origin), function(i) {
-      if (interpol_grid_origin$y_origin[i] < interpol_grid_origin$y[i]) {
-        2*pi - matlib::angle(AB[i,], AC, degree = FALSE)
-      } else {
-        matlib::angle(AB[i,], AC, degree = FALSE)
-      }
-    }
-  )
+  x <- x %>%
+    dplyr::mutate(
+      x_to_origin_norm = normalized_vector[,1],
+      y_to_origin_norm = normalized_vector[,2]
+    )
 
-  a_rad <- units::as_units(interpol_grid_origin$angle_rad, "radians")
-  a_deg <- units::set_units(a_rad, "degrees")
-  interpol_grid_origin$angle_degree <- as.numeric(a_deg)
-
-  return(interpol_grid_origin)
+  return(x)
 }
 
 scalar1 <- function(x) {
-  x / sqrt(sum(x^2))
+  if (all(x == 0)) {
+    x
+  } else {
+    x / sqrt(sum(x^2))
+  }
 }
-
 
