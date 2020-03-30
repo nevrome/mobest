@@ -6,9 +6,9 @@
 #' @return test
 #'
 #' @export
-estimate_mobility <- function(spatial_origin, mobility_regions) {
+estimate_mobility <- function(interpol_grid_origin, mobility_regions) {
 
-  points_regions <- spatial_origin %>%
+  points_regions <- interpol_grid_origin %>%
     dplyr::select(x, y, point_id) %>%
     unique() %>%
     sf::st_as_sf(
@@ -19,10 +19,10 @@ estimate_mobility <- function(spatial_origin, mobility_regions) {
     tibble::as_tibble() %>%
     dplyr::select(-geometry)
 
-  pri <- spatial_origin %>%
+  ori <- interpol_grid_origin %>%
     dplyr::left_join(points_regions, by = "point_id")
 
-  pri_mean <- pri %>%
+  speed <- ori %>%
     dplyr::group_by(
       independent_table_id, kernel_setting_id, z, region_id
     ) %>%
@@ -35,6 +35,6 @@ estimate_mobility <- function(spatial_origin, mobility_regions) {
     ) %>%
     dplyr::ungroup()
 
-  return(pri_mean)
+  return(speed)
 
 }

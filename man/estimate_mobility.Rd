@@ -4,12 +4,12 @@
 \alias{estimate_mobility}
 \title{estimate_mobility}
 \usage{
-estimate_mobility(spatial_origin, mobility_regions)
+estimate_mobility(interpol_grid_origin, mobility_regions)
 }
 \arguments{
-\item{spatial_origin}{test}
-
 \item{mobility_regions}{test}
+
+\item{spatial_origin}{test}
 }
 \value{
 test

@@ -72,27 +72,6 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
         function(i, j) { genetic_distance[i, j] }
       )
 
-      # get spatial position of entangled points
-      A <- as.matrix(time_pris[[p1]][c("x", "y")])
-      B <- as.matrix(time_pris[[p1]][c("x_origin", "y_origin")])
-
-      # calculate angle between points in radians and degrees
-      AB <- B - A
-      AC <- c(1, 0)
-      time_pris[[p1]]$angle_rad <- sapply(
-        1:nrow(time_pris[[p1]]), function(i) {
-          if (time_pris[[p1]]$y_origin[i] < time_pris[[p1]]$y[i]) {
-            2*pi - matlib::angle(AB[i,], AC, degree = FALSE)
-          } else {
-            matlib::angle(AB[i,], AC, degree = FALSE)
-          }
-        }
-      )
-
-      a_rad <- units::as_units(time_pris[[p1]]$angle_rad, "radians")
-      a_deg <- units::set_units(a_rad, "degrees")
-      time_pris[[p1]]$angle_degree <- as.numeric(a_deg)
-
     }
 
     # rowbind distance table
@@ -106,3 +85,49 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
   return(pri_ready)
 }
+
+#' angle_point_origin
+#'
+#' @param interpol_grid_origin test
+#'
+#' @return test
+#'
+#' @export
+angle_point_origin <- function(interpol_grid_origin) {
+
+  # get spatial position of entangled points
+  A <- as.matrix(interpol_grid_origin[c("x", "y")])
+  B <- as.matrix(interpol_grid_origin[c("x_origin", "y_origin")])
+
+  # calculate angle between points in radians starting from the east (AC)
+  AB <- B - A
+  AC <- c(1, 0)
+
+  interpol_grid_origin$normalized_origin_vector <- lapply(
+    1:nrow(AB), function(i) {
+      unname(scalar1(AB[i,]))
+    }
+  )
+
+  interpol_grid_origin$angle_rad <- sapply(
+    1:nrow(interpol_grid_origin), function(i) {
+      if (interpol_grid_origin$y_origin[i] < interpol_grid_origin$y[i]) {
+        2*pi - matlib::angle(AB[i,], AC, degree = FALSE)
+      } else {
+        matlib::angle(AB[i,], AC, degree = FALSE)
+      }
+    }
+  )
+
+  a_rad <- units::as_units(interpol_grid_origin$angle_rad, "radians")
+  a_deg <- units::set_units(a_rad, "degrees")
+  interpol_grid_origin$angle_degree <- as.numeric(a_deg)
+
+  return(interpol_grid_origin)
+}
+
+scalar1 <- function(x) {
+  x / sqrt(sum(x^2))
+}
+
+
