@@ -28,7 +28,7 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
       y_origin = NA,
     )
 
-  age_sample_run_pris <- pri %>% split(list(pri$independent_table_id, pri$kernel_setting_id))
+  age_sample_run_pris <- split(pri, list(pri$independent_table_id, pri$kernel_setting_id))
 
   pri_ready_large <- pbapply::pblapply(age_sample_run_pris, function(age_sample_run_pri) {
 
@@ -64,11 +64,11 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
         y_origin = time_pris[[p1 - 1]]$y[closest_point_indezes]
       )
       time_pris[[p1]]$spatial_distance <- purrr::map2_dbl(
-        1:817, closest_point_indezes,
+        1:length(closest_point_indezes), closest_point_indezes,
         function(i, j) { spatial_distance[i, j] }
       )
       time_pris[[p1]]$genetic_distance <- purrr::map2_dbl(
-        1:817, closest_point_indezes,
+        1:length(closest_point_indezes), closest_point_indezes,
         function(i, j) { genetic_distance[i, j] }
       )
 
