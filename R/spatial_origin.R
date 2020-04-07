@@ -28,12 +28,12 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
       y_origin = NA,
     )
 
-  age_sample_run_pris <- split(pri, list(pri$independent_table_id, pri$kernel_setting_id))
+  age_sample_run_pris <- split(pri, list(pri[["independent_table_id"]], pri[["kernel_setting_id"]], pri[["pred_grid_id"]]))
 
   pri_ready_large <- pbapply::pblapply(age_sample_run_pris, function(age_sample_run_pri) {
 
     # split dataset by age slice
-    time_pris <- age_sample_run_pri %>% split(age_sample_run_pri$z)
+    time_pris <- age_sample_run_pri %>% split(age_sample_run_pri[["z"]])
 
     for (p1 in 2:length(time_pris)) {
 
@@ -79,7 +79,7 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
     return(pri_ready)
 
-  }, cl = 8)
+  }, cl = parallel::detectCores())
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
