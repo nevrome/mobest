@@ -11,16 +11,16 @@
 create_model_grid <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
 
   expand.grid(
-    independent_table_id = independent_tables$independent_table_id,
-    dependent_var_id = c("PC1", "PC2", "PC3", "PC4"),
-    kernel_setting_id = kernel_settings$kernel_setting_id,
-    pred_grid_id = pred_grids$pred_grid_id,
+    independent_table_id = independent_tables[["independent_table_id"]],
+    dependent_var_id = dependent_vars[["dependent_var_id"]],
+    kernel_setting_id = kernel_settings[["kernel_setting_id"]],
+    pred_grid_id = pred_grids[["pred_grid_id"]],
     stringsAsFactors = F
   ) %>%
     dplyr::left_join(
       independent_tables, by = "independent_table_id"
-    ) %>% dplyr::mutate(
-      dependent_var = lapply(dependent_var_id, function(x) { anno[[x]] })
+    ) %>% dplyr::left_join(
+      dependent_vars, by = "dependent_var_id"
     ) %>% dplyr::left_join(
       kernel_settings, by = "kernel_setting_id"
     ) %>% dplyr::left_join(
