@@ -14,7 +14,7 @@ create_prediction_grid <- function(area, spatial_cell_size = 100000, time_layers
     sf::st_intersection(area) %>%
     sf::st_coordinates() %>%
     tibble::as_tibble() %>%
-    dplyr::rename(x = X, y = Y)
+    dplyr::rename(x = .data[["X"]], y = .data[["Y"]])
 
   time_layers <- tibble::tibble(
     z = time_layers

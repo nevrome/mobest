@@ -16,9 +16,11 @@ Imports:
     laGP,
     dplyr (>= 0.8.5),
     fields (>= 10.3),
+    magrittr,
     parallel,
     pbapply (>= 1.4-2),
     purrr (>= 0.3.3),
+    rlang,
     sf (>= 0.8-1),
     tibble (>= 3.0.0),
     tidyr (>= 1.0.2)

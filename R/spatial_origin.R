@@ -1,6 +1,7 @@
 #' search_spatial_origin
 #'
 #' @param interpol_grid test
+#' @param spatial_search_radius test
 #'
 #' @return test
 #'
@@ -92,12 +93,12 @@ add_origin_vector_coordinates <- function(x) {
 
   x <- x %>%
     dplyr::mutate(
-      x_to_origin = x_origin - x,
-      y_to_origin = y_origin - y
+      x_to_origin = .data[["x_origin"]] - .data[["x"]],
+      y_to_origin = .data[["y_origin"]] - .data[["y"]]
     )
 
   normalized_vector <- purrr::map2(
-    x$x_to_origin, x$y_to_origin, function(l, r) {
+    x[["x_to_origin"]], x[["y_to_origin"]], function(l, r) {
       scalar1(c(l, r))
     }
   ) %>% do.call(rbind, .)

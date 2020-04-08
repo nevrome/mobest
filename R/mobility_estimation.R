@@ -1,6 +1,6 @@
 #' estimate_mobility
 #'
-#' @param spatial_origin test
+#' @param interpol_grid_origin test
 #' @param mobility_regions test
 #'
 #' @return test

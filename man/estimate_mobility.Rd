@@ -7,9 +7,9 @@
 estimate_mobility(interpol_grid_origin, mobility_regions)
 }
 \arguments{
-\item{mobility_regions}{test}
+\item{interpol_grid_origin}{test}
 
-\item{spatial_origin}{test}
+\item{mobility_regions}{test}
 }
 \value{
 test

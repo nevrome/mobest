@@ -8,6 +8,8 @@ search_spatial_origin(interpol_grid, spatial_search_radius = 5e+05)
 }
 \arguments{
 \item{interpol_grid}{test}
+
+\item{spatial_search_radius}{test}
 }
 \value{
 test
