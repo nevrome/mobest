@@ -28,7 +28,7 @@
 #'
 #' pred_grid <- tibble::as_tibble(expand.grid(x = 0:10, y = 0:10, z = 0:10))
 #'
-#' pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 3), g = 0.01, on_residuals = T)
+#' pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 3)^2, g = 0.01, on_residuals = T)
 #'
 #' pred_grid$pred_mean <- pred$mean
 #'
@@ -41,7 +41,7 @@
 #' }
 #'
 #' @export
-interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g, on_residuals = F) {
+interpolate_laGP <- function(independent, dependent, pred_grid, auto = F, d, g, on_residuals = T) {
 
   if (on_residuals) {
     # linear fit
@@ -50,43 +50,16 @@ interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g, 
     dependent <- model[["residuals"]]
   }
 
-  minx <- min(independent[["x"]])
-  maxx <- max(independent[["x"]])
-  miny <- min(independent[["y"]])
-  maxy <- max(independent[["y"]])
-  minz <- min(independent[["z"]])
-  maxz <- max(independent[["z"]])
-
-  # rescale
-  independent_rescaled <- independent %>%
-    dplyr::mutate(
-      x = range_01(.data[["x"]], minx, maxx),
-      y = range_01(.data[["y"]], miny, maxy),
-      z = range_01(.data[["z"]], minz, maxz)
-    )
-
-  pred_grid_rescaled <- pred_grid %>%
-    dplyr::mutate(
-      x = range_01(.data[["x"]], minx, maxx),
-      y = range_01(.data[["y"]], miny, maxy),
-      z = range_01(.data[["z"]], minz, maxz)
-    )
-
-  d_rescaled <- d
-  d_rescaled[1] <- dist_scale_01(d[1], minx, maxx)
-  d_rescaled[2] <- dist_scale_01(d[2], miny, maxy)
-  d_rescaled[3] <- dist_scale_01(d[3], minz, maxz)
-
   # priors for the global GP
   if (auto) {
-    da <- laGP::darg(list(mle = TRUE, max = 10), independent_rescaled)
+    da <- laGP::darg(list(mle = TRUE, max = 10), independent)
     ga <- laGP::garg(list(mle = TRUE, max = 10), dependent)
-    d_rescaled <- da$start
+    d <- da$start
     g <- ga$start
   }
 
   # fit the global GP
-  gp <- laGP::newGPsep(X = independent_rescaled, Z = dependent, d = d_rescaled, g = g, dK = auto)
+  gp <- laGP::newGPsep(X = independent, Z = dependent, d = d, g = g)
 
   # optimise fit automatically
   if (auto) {
@@ -99,7 +72,7 @@ interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g, 
   }
 
   # predictions from the global GP on the prediction
-  pred <- laGP::predGPsep(gp, XX = pred_grid_rescaled[, c("x", "y", "z")], lite = T)
+  pred <- laGP::predGPsep(gp, XX = pred_grid[, c("x", "y", "z")], lite = T)
 
   # delete GP object
   laGP::deleteGPsep(gp)
@@ -112,7 +85,3 @@ interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g, 
   # return result
   return(pred)
 }
-
-# rescaling helpers
-range_01 <- function(x, min, max) { (x - min) / (max - min) }
-dist_scale_01 <- function(x, min, max) { x / abs(min - max) }

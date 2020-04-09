@@ -8,10 +8,10 @@ interpolate_laGP(
   independent,
   dependent,
   pred_grid,
-  auto = T,
+  auto = F,
   d,
   g,
-  on_residuals = F
+  on_residuals = T
 )
 }
 \arguments{
@@ -39,24 +39,29 @@ interpolate_laGP
 \donttest{
 independent <- tibble::tribble(
   ~x, ~y, ~z,
-  1,1,2,
-  3,2,1,
-  2,3,3,
-  7,7,7,
-  8,7,9,
-  9,7,8
+  0,0,0,
+  1,0,0,
+  0,1,0,
+  0,0,1,
+  10,10,10,
+  9,10,10,
+  10,9,10,
+  10,10,9
 )
 
-dependent <- c(1,2,1,5,5,6)
+dependent <- c(1,1,1,1,10,10,10,10)
 
-pred_grid <- tibble::as_tibble(expand.grid(x = 1:10, y = 1:10, z = 1:10))
+pred_grid <- tibble::as_tibble(expand.grid(x = 0:10, y = 0:10, z = 0:10))
 
-pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 4), g = 0.1, on_residuals = F)
+pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 3)^2, g = 0.01, on_residuals = T)
 
 pred_grid$pred_mean <- pred$mean
 
-ggplot(data = pred_grid[pred_grid$z == 4, ]) +
-  geom_raster(aes(x, y, fill = pred_mean))
+library(ggplot2)
+ggplot(data = pred_grid) +
+  geom_raster(aes(x, y, fill = pred_mean)) +
+  facet_wrap(~z) +
+  scale_fill_viridis_c()
 
 }
 
