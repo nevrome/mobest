@@ -8,9 +8,9 @@ interpolate_laGP(
   independent,
   dependent,
   pred_grid,
-  auto = F,
   d,
   g,
+  auto = F,
   on_residuals = T
 )
 }
@@ -21,11 +21,11 @@ interpolate_laGP(
 
 \item{pred_grid}{test}
 
-\item{auto}{test}
-
 \item{d}{test}
 
 \item{g}{test}
+
+\item{auto}{test}
 
 \item{on_residuals}{test}
 }

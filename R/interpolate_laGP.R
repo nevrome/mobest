@@ -3,9 +3,9 @@
 #' @param independent test
 #' @param dependent test
 #' @param pred_grid test
-#' @param auto test
 #' @param d test
 #' @param g test
+#' @param auto test
 #' @param on_residuals test
 #'
 #' @return test
@@ -41,7 +41,7 @@
 #' }
 #'
 #' @export
-interpolate_laGP <- function(independent, dependent, pred_grid, auto = F, d, g, on_residuals = T) {
+interpolate_laGP <- function(independent, dependent, pred_grid, d, g, auto = F, on_residuals = T) {
 
   if (on_residuals) {
     # linear fit

@@ -51,9 +51,10 @@ run_model_grid <- function(model_grid) {
       independent = model_grid[["independent_table"]][[i]],
       dependent = model_grid[["dependent_var"]][[i]],
       pred_grid = model_grid[["pred_grid"]][[i]],
-      auto = model_grid[["kernel_setting"]][[i]][["auto"]],
       d = model_grid[["kernel_setting"]][[i]][["d"]],
-      g = model_grid[["kernel_setting"]][[i]][["g"]]
+      g = model_grid[["kernel_setting"]][[i]][["g"]],
+      auto = model_grid[["kernel_setting"]][[i]][["auto"]],
+      on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
     )
   })
 
