@@ -9,6 +9,30 @@
 #'
 #' @return test
 #'
+#' @examples
+#' \donttest{
+#' independent <- tibble::tribble(
+#'   ~x, ~y, ~z,
+#'   1,1,2,
+#'   3,2,1,
+#'   2,3,3,
+#'   7,7,7,
+#'   8,7,9,
+#'   9,7,8
+#' )
+#'
+#' dependent <- c(1,2,1,5,5,6)
+#'
+#' pred_grid <- tibble::as_tibble(expand.grid(x = 1:10, y = 1:10, z = 1:10))
+#'
+#' pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 4), g = 0.1)
+#'
+#' pred_grid$pred_mean <- pred$mean
+#'
+#' ggplot(data = pred_grid[pred_grid$z == 4, ]) +
+#'   geom_raster(aes(x, y, fill = pred_mean))
+#' }
+#'
 #' @export
 interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g) {
 
