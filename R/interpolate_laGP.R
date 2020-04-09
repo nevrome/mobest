@@ -32,6 +32,7 @@
 #'
 #' pred_grid$pred_mean <- pred$mean
 #'
+#' library(ggplot2)
 #' ggplot(data = pred_grid) +
 #'   geom_raster(aes(x, y, fill = pred_mean)) +
 #'   facet_wrap(~z) +
@@ -44,7 +45,8 @@ interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g, 
 
   if (on_residuals) {
     # linear fit
-    model <- stats::lm(dependent ~ x + y + z, data = independent)
+    combined <- independent %>% dplyr::mutate(d = dependent)
+    model <- stats::lm(d ~ x + y + z, data = combined)
     dependent <- model[["residuals"]]
   }
 
