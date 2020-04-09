@@ -6,6 +6,7 @@
 #' @param auto test
 #' @param d test
 #' @param g test
+#' @param on_residuals test
 #'
 #' @return test
 #'
@@ -25,16 +26,23 @@
 #'
 #' pred_grid <- tibble::as_tibble(expand.grid(x = 1:10, y = 1:10, z = 1:10))
 #'
-#' pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 4), g = 0.1)
+#' pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 4), g = 0.1, on_residuals = F)
 #'
 #' pred_grid$pred_mean <- pred$mean
 #'
 #' ggplot(data = pred_grid[pred_grid$z == 4, ]) +
 #'   geom_raster(aes(x, y, fill = pred_mean))
+#'
 #' }
 #'
 #' @export
-interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g) {
+interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g, on_residuals = F) {
+
+  if (on_residuals) {
+    # linear fit
+    model <- stats::lm(dependent ~ x + y + z, data = independent)
+    dependent <- model[["residuals"]]
+  }
 
   minx <- min(independent[["x"]])
   maxx <- max(independent[["x"]])
@@ -89,6 +97,11 @@ interpolate_laGP <- function(independent, dependent, pred_grid, auto = T, d, g) 
 
   # delete GP object
   laGP::deleteGPsep(gp)
+
+  if (on_residuals) {
+    # linear fit
+    pred$mean <- pred$mean + stats::predict(model, pred_grid[c("x", "y", "z")])
+  }
 
   # return result
   return(pred)
