@@ -4,10 +4,12 @@
 \alias{run_model_grid}
 \title{run_model_grid}
 \usage{
-run_model_grid(model_grid)
+run_model_grid(model_grid, quiet = F)
 }
 \arguments{
 \item{model_grid}{test}
+
+\item{quiet}{test}
 }
 \value{
 test

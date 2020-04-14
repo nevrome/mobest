@@ -39,14 +39,18 @@ create_model_grid <- function(independent_tables, dependent_vars, kernel_setting
 #' run_model_grid
 #'
 #' @param model_grid test
+#' @param quiet test
 #'
 #' @return test
 #'
 #' @export
-run_model_grid <- function(model_grid) {
+run_model_grid <- function(model_grid, quiet = F) {
 
   # run interpolation for each entry in the model_grid
   prediction <- lapply(1:nrow(model_grid), function(i) {
+    if (!quiet) {
+      message("running model ", i, " of ", nrow(model_grid))
+    }
     interpolate_laGP(
       independent = model_grid[["independent_table"]][[i]],
       dependent = model_grid[["dependent_var"]][[i]],
