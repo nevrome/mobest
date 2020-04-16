@@ -55,7 +55,8 @@ run_model_grid <- function(model_grid, quiet = F) {
       independent = model_grid[["independent_table"]][[i]],
       dependent = model_grid[["dependent_var"]][[i]],
       pred_grid = model_grid[["pred_grid"]][[i]],
-      d = model_grid[["kernel_setting"]][[i]][["d"]],
+      # d has to be squared because of the configuration of the default laGP kernel
+      d = model_grid[["kernel_setting"]][[i]][["d"]],#^2,
       g = model_grid[["kernel_setting"]][[i]][["g"]],
       auto = model_grid[["kernel_setting"]][[i]][["auto"]],
       on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
