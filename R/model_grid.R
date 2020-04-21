@@ -1,5 +1,110 @@
 #' create_model_grid
 #'
+#' @param data test
+#' @param independent test
+#' @param dependent test
+#' @param kernel test
+#' @param prediction_grid test
+#'
+#' @export
+create_model_grid <- function(
+  data,
+  independent,
+  dependent,
+  kernel,
+  prediction_grid
+) {
+
+  independent_tables <- tibble::tibble(
+    independent_table = independent,
+    independent_table_id = names(independent)
+  )
+
+  return(independent_tables)
+
+  # # prep dependent vars
+  # dependent_vars <- tibble::tibble(
+  #   dependent_var_id = c("PC1", "PC2", "PC3", "PC4")
+  # ) %>%
+  #   dplyr::mutate(
+  #     dependent_var = lapply(dependent_var_id, function(x) { anno[[x]] })
+  #   )
+  #
+  # # create kernel parameters
+  # kernel_settings <- tibble::tibble(
+  #   kernel_setting = list(
+  #     #ds50_dt100_g01 = list(auto = F, d = c(dist_scale_01_x_km(50), dist_scale_01_x_km(50), dist_scale_01_z_years(100)), g = 0.1),
+  #     #ds100_dt200_g01 = list(auto = F, d = c(dist_scale_01_x_km(100), dist_scale_01_x_km(100), dist_scale_01_z_years(200)), g = 0.1),
+  #     #ds500_dt500_g01 = list(d = c(500000, 500000, 500), g = 0.1, on_residuals = T, auto = F),
+  #     ds1000_dt1000_g01 = list(d = c(1000000, 1000000, 1000), g = 0.1, on_residuals = T, auto = F)
+  #   ),
+  #   kernel_setting_id = names(kernel_setting)
+  # )
+  #
+  # # individual point
+  # sf::st_as_sf(
+  #   tibble::tibble(lon = 9.05, lat = 48.52),
+  #   coords = c("lon", "lat"),
+  #   crs = 4326,
+  #   remove = FALSE
+  # ) %>%
+  #   sf::st_transform(
+  #     crs = "+proj=aea +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m +no_defs",
+  #   ) %>% sf::st_coordinates()
+  #
+  # # create spatiotemporal prediction grid
+  # pred_grids <- tibble::tibble(
+  #   pred_grid = list(
+  #     #scs100_tl100 = mobest::create_prediction_grid(area, spatial_cell_size = 100000, time_layers = seq(-7500, -500, 100)),
+  #     #scs200_tl200 = mobest::create_prediction_grid(area, spatial_cell_size = 200000, time_layers = seq(-7500, -500, 200))
+  #     tuebingen = tibble::tibble(x = -69459.46, y = 2031623, z = seq(-7500, -500, 100), point_id = 1:71)
+  #   ),
+  #   pred_grid_id = names(pred_grid)
+  # )
+  #
+  # # merge info in prepare model grid
+  # model_grid_pca <- mobest::create_model_grid(
+  #   independent_tables = independent_tables,
+  #   dependent_vars = dependent_vars,
+  #   kernel_settings = kernel_settings,
+  #   pred_grids = pred_grids
+  # )
+  #
+  # #### prepare mds model grid ####
+  #
+  # anno_mds <- anno %>% dplyr::filter(
+  #   !is.na(C1)
+  # )
+  #
+  # # prep independent variables with temporal sampling
+  # independent_tables <- tibble::tibble(
+  #   independent_table = c(
+  #     list(dplyr::transmute(.data = anno_mds, x = x, y = y, z = calage_center))
+  #   ),
+  #   independent_table_id = c("age_center")
+  # )
+  #
+  # # prep dependent vars
+  # dependent_vars <- tibble::tibble(
+  #   dependent_var_id = c("C1", "C2", "C3", "C4")
+  # ) %>%
+  #   dplyr::mutate(
+  #     dependent_var = lapply(dependent_var_id, function(x) { anno_mds[[x]] })
+  #   )
+  #
+  # # merge info in prepare model grid
+  # model_grid_mds <- mobest::create_model_grid(
+  #   independent_tables = independent_tables,
+  #   dependent_vars = dependent_vars,
+  #   kernel_settings = kernel_settings,
+  #   pred_grids = pred_grids
+  # )
+
+}
+
+
+#' create_model_grid_raw
+#'
 #' @param independent_tables test
 #' @param dependent_vars test
 #' @param kernel_settings test
@@ -7,8 +112,7 @@
 #'
 #' @return test
 #'
-#' @export
-create_model_grid <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
+create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
 
   expand.grid(
     independent_table_id = independent_tables[["independent_table_id"]],
