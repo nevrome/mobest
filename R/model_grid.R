@@ -34,7 +34,7 @@ create_model_grid <- function(
     pred_grid_id = names(prediction_grid)
   )
 
-  model_grid <- mobest::create_model_grid_raw(
+  model_grid <- create_model_grid_raw(
     independent_tables = independent_tables,
     dependent_vars = dependent_vars,
     kernel_settings = kernel_settings,
