@@ -4,11 +4,9 @@
 \alias{create_model_grid}
 \title{create_model_grid}
 \usage{
-create_model_grid(data, independent, dependent, kernel, prediction_grid)
+create_model_grid(independent, dependent, kernel, prediction_grid)
 }
 \arguments{
-\item{data}{test}
-
 \item{independent}{test}
 
 \item{dependent}{test}
@@ -16,6 +14,8 @@ create_model_grid(data, independent, dependent, kernel, prediction_grid)
 \item{kernel}{test}
 
 \item{prediction_grid}{test}
+
+\item{data}{test}
 }
 \description{
 create_model_grid
