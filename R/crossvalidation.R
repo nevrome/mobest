@@ -106,8 +106,23 @@ crossvalidate <- function(
 
   }) %>% dplyr::bind_rows() -> interpol_grid_merged_all
 
+  for (dep in names(dependent)) {
+    interpol_grid_merged_all[[paste0(dep, "_dist")]] <- interpol_grid_merged_all[[dep]] -
+      interpol_grid_merged_all[[paste0("mean_", dep)]]
+  }
+
+  interpol_comparison <- interpol_grid_merged_all %>%
+    dplyr::select(
+      kernel_setting_id, tidyselect::contains("_dist")
+    ) %>%
+    tidyr::pivot_longer(
+      cols = tidyselect::contains("_dist"),
+      names_to = "dependent_var",
+      values_to = "difference"
+    )
+
   # turn kernel parameters into distinct columns again
-  interpol_grid <- interpol_grid_merged_all %>%
+  interpol_comparison <- interpol_comparison %>%
     tidyr::separate(
       kernel_setting_id,
       c("ds", "dt", "g"),
@@ -116,7 +131,7 @@ crossvalidate <- function(
       remove = F
     )
 
-  return(interpol_grid)
+  return(interpol_comparison)
 
 }
 
