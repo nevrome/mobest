@@ -3,19 +3,22 @@
 #' @param independent test
 #' @param dependent test
 #' @param kernel test
+#' @param number_of_reorderings test
 #'
 #' @export
 crossvalidate <- function(
   independent,
   dependent,
-  kernel
+  kernel,
+  number_of_reorderings = 1,
+  number_of_splits = 10
 ) {
 
   crossval <- cbind(independent, dependent %>% dplyr::bind_cols())
 
   #### compile randomly reordered versions of crossval ####
 
-  crossval_mixed_list <- lapply(1:1, function(i) { crossval[sample(1:nrow(crossval), replace = F), ] })
+  crossval_mixed_list <- lapply(1:number_of_reorderings, function(i) { crossval[sample(1:nrow(crossval), replace = F), ] })
 
   #### run prediction test for each of this versions ####
 
@@ -23,7 +26,7 @@ crossvalidate <- function(
 
     #### split crossval into 10 sections ####
 
-    n <- 10
+    n <- number_of_splits
     nr <- nrow(crossval_mixed)
     crossval_10 <- split(crossval_mixed, rep(1:n, times = diff(floor(seq(0, nr, length.out = n + 1)))))
 
@@ -41,14 +44,16 @@ crossvalidate <- function(
       }
     )
 
-    #### prepare model grid for current 9:1 comparison with different kernels ####
+    #### prepare model grid for current (n-1):1 comparison with different kernels ####
 
     model_grid <- lapply(
       1:n, function(i) {
 
         # create model grid
         model_grid <- mobest::create_model_grid(
-          list(training = crossval_9_training[[i]] %>% dplyr::select(x, y, z)),
+          independent = list(
+            training = crossval_9_training[[i]] %>% dplyr::select(x, y, z)
+          ),
           dependent = lapply(
             names(dependent), function(depvar) {
               crossval_9_training[[i]][[depvar]]
