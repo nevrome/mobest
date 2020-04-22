@@ -91,10 +91,10 @@ crossvalidate <- function(
     interpol_grid_wide_split <- interpol_grid_wide %>% split(interpol_grid_wide$pred_grid_id)
 
     interpol_grid_merged <- lapply(
-      as.numeric(unique(interpol_grid_wide$pred_grid_id)), function(i) {
+      unique(interpol_grid_wide$pred_grid_id), function(i) {
         interpol_grid_wide_split[[i]] %>%
           dplyr::left_join(
-            crossval_9_test[[i]] %>%
+            crossval_9_test[[as.numeric(i)]] %>%
               dplyr::select(names(dependent)) %>%
               dplyr::mutate(point_id = 1:nrow(.)),
             by = "point_id"
