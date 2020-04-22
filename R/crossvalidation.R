@@ -106,7 +106,17 @@ crossvalidate <- function(
 
   }) %>% dplyr::bind_rows() -> interpol_grid_merged_all
 
-  return(interpol_grid_merged_all)
+  # turn kernel parameters into distinct columns again
+  interpol_grid <- interpol_grid_merged_all %>%
+    tidyr::separate(
+      kernel_setting_id,
+      c("ds", "dt", "g"),
+      sep = "_",
+      convert = T,
+      remove = F
+    )
+
+  return(interpol_grid)
 
 }
 
