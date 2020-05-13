@@ -33,25 +33,10 @@ estimate_mobility <- function(interpol_grid_origin, mobility_regions) {
       mean_km_per_decade = mean(.data[["spatial_distance"]])/1000/10,
       mean_x_to_origin = mean(.data[["x_to_origin"]]),
       mean_y_to_origin = mean(.data[["y_to_origin"]]),
-      angle_deg = angle_between_along_360(c(.data[["mean_x_to_origin"]], .data[["mean_y_to_origin"]]))
+      angle_deg = vec2deg(c(.data[["mean_x_to_origin"]], .data[["mean_y_to_origin"]]))
     ) %>%
     dplyr::ungroup()
 
   return(speed)
-
-}
-
-angle_between_along_360 <- function(x) {
-
-  a <- c(0,1)
-  b <- x
-
-  theta <- acos( sum(a*b) / ( sqrt(sum(a * a)) * sqrt(sum(b * b)) ) ) * 180 / pi
-
-  if (b[1] < 0) {
-    360 - theta
-  } else{
-    theta
-  }
 
 }
