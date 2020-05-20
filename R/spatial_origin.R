@@ -50,9 +50,20 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
       # get points with least genetic distance in the past
       closest_point_indezes <- sapply(1:nrow(current_pri_genetics), function(x) {
+        # all genetic distances to current point
         gendists <- genetic_distance[x,]
+        # reduce selection of genetic distances to only include distances within the spatial distance radius
         gendists[spatial_distance[x,] > spatial_search_radius] <- NA
-        which.min(gendists)
+        # find all points with min genetic distances
+        min_gen_distance_points <- which(gendists == min(gendists, na.rm = TRUE))
+        # when multiple: return the spatially closest. If there are multiple equally close
+        # in space then this will return the first of these points, as which.min always
+        # just returns the first element in case of multiple solutions
+        if (length(min_gen_distance_points) > 1) {
+          min_gen_distance_points[which.min(spatial_distance[x, ][min_gen_distance_points])]
+        } else {
+          min_gen_distance_points
+        }
       })
 
       # add closest points info to current age slice points
