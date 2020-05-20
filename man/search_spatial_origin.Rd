@@ -4,18 +4,12 @@
 \alias{search_spatial_origin}
 \title{search_spatial_origin}
 \usage{
-search_spatial_origin(
-  interpol_grid,
-  spatial_search_radius = 5e+05,
-  min_spatial_distance_for_angle = 1e+05
-)
+search_spatial_origin(interpol_grid, spatial_search_radius = 5e+05)
 }
 \arguments{
 \item{interpol_grid}{test}
 
 \item{spatial_search_radius}{test}
-
-\item{min_spatial_distance_for_angle}{test}
 }
 \value{
 test
