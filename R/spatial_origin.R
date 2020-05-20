@@ -18,7 +18,7 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
   # add new columns for output dataset
   pri <- dplyr::mutate(
       pri,
-      angle = NA,
+      angle_deg = NA,
       genetic_distance = NA,
       spatial_distance = NA,
       mean_PC1_origin = NA,
@@ -84,7 +84,14 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
+  # add add_origin_vector_coordinates
   pri_ready <- pri_ready %>% add_origin_vector_coordinates()
+
+  # add angle
+  pri_ready$angle_deg[pri_ready$spatial_distance != 0] <- sapply(
+    1:nrow(pri_ready[pri_ready$spatial_distance != 0, ]), function(i) {
+    vec2deg(c(pri_ready$x_to_origin[i], pri_ready$y_to_origin[i]))
+  })
 
   return(pri_ready)
 }
