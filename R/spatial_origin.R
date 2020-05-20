@@ -2,11 +2,12 @@
 #'
 #' @param interpol_grid test
 #' @param spatial_search_radius test
+#' @param min_spatial_distance_for_angle test
 #'
 #' @return test
 #'
 #' @export
-search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000) {
+search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000, min_spatial_distance_for_angle = 100000) {
 
   # transform runs for different PCs to columns
   pri <- tidyr::pivot_wider(
@@ -98,9 +99,9 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
   # add add_origin_vector_coordinates
   pri_ready <- pri_ready %>% add_origin_vector_coordinates()
 
-  # add angle
-  pri_ready$angle_deg[pri_ready$spatial_distance != 0] <- sapply(
-    1:nrow(pri_ready[pri_ready$spatial_distance != 0, ]), function(i) {
+  # add angle, but only if the distance is bigger than
+  pri_ready$angle_deg[pri_ready$spatial_distance > min_spatial_distance_for_angle] <- sapply(
+    1:nrow(pri_ready[pri_ready$spatial_distance > min_spatial_distance_for_angle, ]), function(i) {
     vec2deg(c(pri_ready$x_to_origin[i], pri_ready$y_to_origin[i]))
   })
 
