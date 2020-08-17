@@ -8,31 +8,55 @@
 #' @export
 search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000) {
 
+  dependent_vars <- unique(interpol_grid$dependent_var_id)
+
+  # remove prediction points with too high standard deviation
+  interpol_grid_sd_filtered <- interpol_grid %>%
+    dplyr::group_by(dependent_var_id) %>%
+    dplyr::filter(
+      sd < 0.2 * diff(range(mean))
+    ) %>%
+    dplyr::ungroup()
+
   # transform runs for different ancestry components to columns
   pri <- tidyr::pivot_wider(
-    interpol_grid,
+    interpol_grid_sd_filtered,
     names_from = "dependent_var_id",
     values_from = c("mean", "sd")
   )
 
-  # add new columns for output dataset
-  pri <- dplyr::mutate(
-      pri,
-      angle_deg = NA,
-      genetic_distance = NA,
-      spatial_distance = NA,
-      mean_C1_origin = NA,
-      mean_C2_origin = NA,
-      x_origin = NA,
-      y_origin = NA,
+  # filter prediction points that were only half removed by the sd filter
+  pri <- pri %>%
+    dplyr::filter(
+      dplyr::across(tidyr::starts_with("mean_"), ~!is.na(.x))
     )
 
-  age_sample_run_pris <- split(pri, list(pri[["independent_table_id"]], pri[["kernel_setting_id"]], pri[["pred_grid_id"]]))
+
+  # add new columns for output dataset
+  pri <- pri %>% dplyr::mutate(
+      angle_deg = NA_real_,
+      genetic_distance = NA_real_,
+      spatial_distance = NA_real_,
+      x_origin = NA_real_,
+      y_origin = NA_real_,
+    )
+
+  for (i in dependent_vars) {
+    pri[[paste0("mean_", i, "_origin")]] <- NA_real_
+  }
+
+  age_sample_run_pris <- split(
+    pri,
+    list(pri[["independent_table_id"]], pri[["kernel_setting_id"]], pri[["pred_grid_id"]])
+  )
 
   pri_ready_large <- pbapply::pblapply(age_sample_run_pris, function(age_sample_run_pri) {
 
     # split dataset by age slice
-    time_pris <- age_sample_run_pri %>% split(age_sample_run_pri[["z"]])
+    time_pris <- split(
+      age_sample_run_pri,
+      age_sample_run_pri[["z"]]
+    )
 
     for (p1 in 2:length(time_pris)) {
 
@@ -50,18 +74,9 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
       closest_point_indezes <- sapply(1:nrow(current_pri_genetics), function(x) {
         # all genetic distances to current point
         gendists <- genetic_distance[x,]
-        # reduce selection of genetic distances to only include distances within the spatial distance radius
-        gendists[spatial_distance[x,] > spatial_search_radius] <- NA
-        # find all points with min genetic distances
-        min_gen_distance_points <- which(gendists == min(gendists, na.rm = TRUE))
-        # when multiple: return the spatially closest. If there are multiple equally close
-        # in space then this will return the first of these points, as which.min always
-        # just returns the first element in case of multiple solutions
-        if (length(min_gen_distance_points) > 1) {
-          min_gen_distance_points[which.min(spatial_distance[x, ][min_gen_distance_points])]
-        } else {
-          min_gen_distance_points
-        }
+        # find ten points with min genetic distances
+        min_gen_distance_points <- which(gendists %in% head(sort(gendists, na.last = NA), 10))
+        return(min_gen_distance_points)
       })
 
       # add closest points info to current age slice points
