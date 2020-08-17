@@ -8,7 +8,7 @@
 #' @export
 search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000) {
 
-  # transform runs for different PCs to columns
+  # transform runs for different ancestry components to columns
   pri <- tidyr::pivot_wider(
     interpol_grid,
     names_from = "dependent_var_id",
@@ -21,10 +21,8 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
       angle_deg = NA,
       genetic_distance = NA,
       spatial_distance = NA,
-      mean_PC1_origin = NA,
-      mean_PC2_origin = NA,
-      mean_PC3_origin = NA,
-      mean_PC4_origin = NA,
+      mean_C1_origin = NA,
+      mean_C2_origin = NA,
       x_origin = NA,
       y_origin = NA,
     )
@@ -43,9 +41,9 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
       past_pri_spatial <- as.matrix(time_pris[[p1 - 1]][c("x", "y")])
       spatial_distance <- fields::rdist(current_pri_spatial, past_pri_spatial)
 
-      # calculate PCA distance matrix between past and current points
-      current_pri_genetics <- as.matrix(time_pris[[p1]][c("mean_PC1", "mean_PC2", "mean_PC3", "mean_PC4")])
-      past_pri_genetics <- as.matrix(time_pris[[p1 - 1]][c("mean_PC1", "mean_PC2", "mean_PC3", "mean_PC4")])
+      # calculate genetic distance matrix between past and current points
+      current_pri_genetics <- as.matrix(time_pris[[p1]][c("mean_C1", "mean_C2")])
+      past_pri_genetics <- as.matrix(time_pris[[p1 - 1]][c("mean_C1", "mean_C2")])
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
@@ -68,10 +66,8 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
       # add closest points info to current age slice points
       time_pris[[p1]] <- time_pris[[p1]] %>% dplyr::mutate(
-        mean_PC1_origin = time_pris[[p1 - 1]]$mean_PC1[closest_point_indezes],
-        mean_PC2_origin = time_pris[[p1 - 1]]$mean_PC2[closest_point_indezes],
-        mean_PC3_origin = time_pris[[p1 - 1]]$mean_PC3[closest_point_indezes],
-        mean_PC4_origin = time_pris[[p1 - 1]]$mean_PC4[closest_point_indezes],
+        mean_C1_origin = time_pris[[p1 - 1]]$mean_C1[closest_point_indezes],
+        mean_C2_origin = time_pris[[p1 - 1]]$mean_C2[closest_point_indezes],
         x_origin = time_pris[[p1 - 1]]$x[closest_point_indezes],
         y_origin = time_pris[[p1 - 1]]$y[closest_point_indezes]
       )
