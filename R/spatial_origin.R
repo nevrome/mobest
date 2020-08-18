@@ -68,16 +68,6 @@ search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
       past_pri_genetics_sd <- as.matrix(time_pris[[p1 - 1]][sd_cols])
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
-      # library(ggplot2)
-      # past_pri_spatial %>%
-      #   tibble::as_tibble() %>%
-      #   dplyr::mutate(
-      #     gen = gendists_to_A
-      #   ) %>%
-      #   ggplot(aes(x, y, fill = gen)) +
-      #   geom_raster()
-
-
       # get points with least genetic distance in the past
       centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
         # all genetic distances to current point A
@@ -86,6 +76,23 @@ search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
         index_of_B <- which.min(gendists_to_A)
 
         past_pri_spatial[index_of_B,]
+
+        # library(ggplot2)
+        # past_pri_spatial %>%
+        #   tibble::as_tibble() %>%
+        #   dplyr::mutate(
+        #     gen = gendists_to_A
+        #   ) %>%
+        #   ggplot(aes(x, y, fill = gen)) +
+        #   geom_raster() +
+        #   geom_point(
+        #     aes(x = current_pri_spatial[index_of_A,][1] , y = current_pri_spatial[index_of_A,][2]),
+        #     color = "red"
+        #   ) +
+        #   geom_point(
+        #     aes(x = past_pri_spatial[index_of_B,][1] , y = past_pri_spatial[index_of_B,][2]),
+        #     color = "green", pch = 4
+        #   )
 
         # # find points with similar genetic makeup like B
         # B_mean <- past_pri_genetics[index_of_B,]
