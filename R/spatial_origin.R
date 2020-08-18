@@ -1,11 +1,12 @@
 #' search_spatial_origin
 #'
 #' @param interpol_grid test
+#' @param nugget test
 #'
 #' @return test
 #'
 #' @export
-search_spatial_origin <- function(interpol_grid) {
+search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
 
   dependent_vars <- unique(interpol_grid$dependent_var_id)
   mean_cols <- paste0("mean_", dependent_vars)
@@ -77,8 +78,8 @@ search_spatial_origin <- function(interpol_grid) {
         B_mean <- past_pri_genetics[index_of_B,]
         B_sd <- past_pri_genetics_sd[index_of_B,]
         B_spatial_points <- past_pri_spatial[
-          past_pri_genetics[,1] < B_mean[1] + B_sd[1] & past_pri_genetics[,1] > B_mean[1] - B_sd[1] &
-          past_pri_genetics[,2] < B_mean[2] + B_sd[2] & past_pri_genetics[,2] > B_mean[2] - B_sd[2],
+          past_pri_genetics[,1] < B_mean[1] + nugget & past_pri_genetics[,1] > B_mean[1] - nugget &
+          past_pri_genetics[,2] < B_mean[2] + nugget & past_pri_genetics[,2] > B_mean[2] - nugget,
         ]
         # find centroid point C
         if (is.vector(B_spatial_points)) {
