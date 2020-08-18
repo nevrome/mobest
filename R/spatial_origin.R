@@ -13,7 +13,7 @@ search_spatial_origin <- function(interpol_grid) {
 
   # remove prediction points with too high standard deviation
   interpol_grid_sd_filtered <- interpol_grid %>%
-    dplyr::group_by(dependent_var_id) %>%
+    dplyr::group_by(independent_table_id, dependent_var_id, kernel_setting_id, pred_grid_id) %>%
     dplyr::filter(
       sd < 0.2 * diff(range(mean))
     ) %>%
@@ -40,15 +40,12 @@ search_spatial_origin <- function(interpol_grid) {
       angle_deg = NA_real_,
     )
 
-  # for (i in dependent_vars) {
-  #   pri[[paste0(i, "_origin")]] <- NA_real_
-  # }
-
-  age_sample_run_pris <- split(
-    pri,
-    list(pri[["independent_table_id"]], pri[["kernel_setting_id"]], pri[["pred_grid_id"]])
+  # split by
+  age_sample_run_pris <- pri %>% dplyr::group_split(
+    independent_table_id, kernel_setting_id, pred_grid_id
   )
 
+  # loop by
   pri_ready_large <- pbapply::pblapply(age_sample_run_pris, function(age_sample_run_pri) {
 
     # split dataset by age slice
@@ -71,7 +68,7 @@ search_spatial_origin <- function(interpol_grid) {
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
-      centroid_points <- lapply(1:nrow(current_pri_genetics), function(index_of_A) {
+      centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
         # all genetic distances to current point A
         gendists_to_A <- genetic_distance[index_of_A,]
         # find closest point in the past B
@@ -91,13 +88,11 @@ search_spatial_origin <- function(interpol_grid) {
         }
         # return centroid point
         return(C)
-      }) %>% do.call(rbind, .)
+      }))
 
       # add closest points info to current age slice points
-      time_pris[[p1]] <- time_pris[[p1]] %>% dplyr::mutate(
-        x_origin = centroid_points[,1],
-        y_origin = centroid_points[,2]
-      )
+      time_pris[[p1]]$x_origin <- centroid_points[,1]
+      time_pris[[p1]]$y_origin <- centroid_points[,2]
     }
 
     # rowbind distance table
