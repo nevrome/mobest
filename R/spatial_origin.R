@@ -1,14 +1,15 @@
 #' search_spatial_origin
 #'
 #' @param interpol_grid test
-#' @param spatial_search_radius test
 #'
 #' @return test
 #'
 #' @export
-search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000) {
+search_spatial_origin <- function(interpol_grid) {
 
   dependent_vars <- unique(interpol_grid$dependent_var_id)
+  mean_cols <- paste0("mean_", dependent_vars)
+  sd_cols <- paste0("sd_", dependent_vars)
 
   # remove prediction points with too high standard deviation
   interpol_grid_sd_filtered <- interpol_grid %>%
@@ -28,22 +29,20 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
   # filter prediction points that were only half removed by the sd filter
   pri <- pri %>%
     dplyr::filter(
-      dplyr::across(tidyr::starts_with("mean_"), ~!is.na(.x))
+      dplyr::across(tidyselect::one_of(mean_cols), ~!is.na(.x))
     )
-
 
   # add new columns for output dataset
   pri <- pri %>% dplyr::mutate(
-      angle_deg = NA_real_,
-      genetic_distance = NA_real_,
       spatial_distance = NA_real_,
       x_origin = NA_real_,
       y_origin = NA_real_,
+      angle_deg = NA_real_,
     )
 
-  for (i in dependent_vars) {
-    pri[[paste0("mean_", i, "_origin")]] <- NA_real_
-  }
+  # for (i in dependent_vars) {
+  #   pri[[paste0(i, "_origin")]] <- NA_real_
+  # }
 
   age_sample_run_pris <- split(
     pri,
@@ -66,35 +65,39 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
       spatial_distance <- fields::rdist(current_pri_spatial, past_pri_spatial)
 
       # calculate genetic distance matrix between past and current points
-      current_pri_genetics <- as.matrix(time_pris[[p1]][c("mean_C1", "mean_C2")])
-      past_pri_genetics <- as.matrix(time_pris[[p1 - 1]][c("mean_C1", "mean_C2")])
+      current_pri_genetics <- as.matrix(time_pris[[p1]][mean_cols])
+      past_pri_genetics <- as.matrix(time_pris[[p1 - 1]][mean_cols])
+      past_pri_genetics_sd <- as.matrix(time_pris[[p1 - 1]][sd_cols])
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
-      closest_point_indezes <- sapply(1:nrow(current_pri_genetics), function(x) {
-        # all genetic distances to current point
-        gendists <- genetic_distance[x,]
-        # find ten points with min genetic distances
-        min_gen_distance_points <- which(gendists %in% head(sort(gendists, na.last = NA), 10))
-        return(min_gen_distance_points)
-      })
+      centroid_points <- lapply(1:nrow(current_pri_genetics), function(index_of_A) {
+        # all genetic distances to current point A
+        gendists_to_A <- genetic_distance[index_of_A,]
+        # find closest point in the past B
+        index_of_B <- which.min(gendists_to_A)
+        # find points with similar genetic makeup like B
+        B_mean <- past_pri_genetics[index_of_B,]
+        B_sd <- past_pri_genetics_sd[index_of_B,]
+        B_spatial_points <- past_pri_spatial[
+          past_pri_genetics[,1] < B_mean[1] + B_sd[1] & past_pri_genetics[,1] > B_mean[1] - B_sd[1] &
+          past_pri_genetics[,2] < B_mean[2] + B_sd[2] & past_pri_genetics[,2] > B_mean[2] - B_sd[2],
+        ]
+        # find centroid point C
+        if (is.vector(B_spatial_points)) {
+          C <- c(B_spatial_points[1], B_spatial_points[2])
+        } else {
+          C <- c(mean(B_spatial_points[,1]), mean(B_spatial_points[,2]))
+        }
+        # return centroid point
+        return(C)
+      }) %>% do.call(rbind, .)
 
       # add closest points info to current age slice points
       time_pris[[p1]] <- time_pris[[p1]] %>% dplyr::mutate(
-        mean_C1_origin = time_pris[[p1 - 1]]$mean_C1[closest_point_indezes],
-        mean_C2_origin = time_pris[[p1 - 1]]$mean_C2[closest_point_indezes],
-        x_origin = time_pris[[p1 - 1]]$x[closest_point_indezes],
-        y_origin = time_pris[[p1 - 1]]$y[closest_point_indezes]
+        x_origin = centroid_points[,1],
+        y_origin = centroid_points[,2]
       )
-      time_pris[[p1]]$spatial_distance <- purrr::map2_dbl(
-        1:length(closest_point_indezes), closest_point_indezes,
-        function(i, j) { spatial_distance[i, j] }
-      )
-      time_pris[[p1]]$genetic_distance <- purrr::map2_dbl(
-        1:length(closest_point_indezes), closest_point_indezes,
-        function(i, j) { genetic_distance[i, j] }
-      )
-
     }
 
     # rowbind distance table
@@ -108,6 +111,9 @@ search_spatial_origin <- function(interpol_grid, spatial_search_radius = 500000)
 
   # add add_origin_vector_coordinates
   pri_ready <- pri_ready %>% add_origin_vector_coordinates()
+
+  # add distance
+  pri_ready$spatial_distance <- sqrt(pri_ready$x_to_origin^2 + pri_ready$y_to_origin^2)
 
   # add angle
   pri_ready$angle_deg[pri_ready$spatial_distance != 0] <- sapply(
