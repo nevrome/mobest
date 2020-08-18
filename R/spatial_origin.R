@@ -68,27 +68,40 @@ search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
       past_pri_genetics_sd <- as.matrix(time_pris[[p1 - 1]][sd_cols])
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
+      # library(ggplot2)
+      # past_pri_spatial %>%
+      #   tibble::as_tibble() %>%
+      #   dplyr::mutate(
+      #     gen = gendists_to_A
+      #   ) %>%
+      #   ggplot(aes(x, y, fill = gen)) +
+      #   geom_raster()
+
+
       # get points with least genetic distance in the past
       centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
         # all genetic distances to current point A
         gendists_to_A <- genetic_distance[index_of_A,]
         # find closest point in the past B
         index_of_B <- which.min(gendists_to_A)
-        # find points with similar genetic makeup like B
-        B_mean <- past_pri_genetics[index_of_B,]
-        B_sd <- past_pri_genetics_sd[index_of_B,]
-        B_spatial_points <- past_pri_spatial[
-          past_pri_genetics[,1] < B_mean[1] + nugget & past_pri_genetics[,1] > B_mean[1] - nugget &
-          past_pri_genetics[,2] < B_mean[2] + nugget & past_pri_genetics[,2] > B_mean[2] - nugget,
-        ]
-        # find centroid point C
-        if (is.vector(B_spatial_points)) {
-          C <- c(B_spatial_points[1], B_spatial_points[2])
-        } else {
-          C <- c(mean(B_spatial_points[,1]), mean(B_spatial_points[,2]))
-        }
-        # return centroid point
-        return(C)
+
+        past_pri_spatial[index_of_B,]
+
+        # # find points with similar genetic makeup like B
+        # B_mean <- past_pri_genetics[index_of_B,]
+        # B_sd <- past_pri_genetics_sd[index_of_B,]
+        # B_spatial_points <- past_pri_spatial[
+        #   past_pri_genetics[,1] < B_mean[1] + nugget & past_pri_genetics[,1] > B_mean[1] - nugget &
+        #   past_pri_genetics[,2] < B_mean[2] + nugget & past_pri_genetics[,2] > B_mean[2] - nugget,
+        # ]
+        # # find centroid point C
+        # if (is.vector(B_spatial_points)) {
+        #   C <- c(B_spatial_points[1], B_spatial_points[2])
+        # } else {
+        #   C <- c(mean(B_spatial_points[,1]), mean(B_spatial_points[,2]))
+        # }
+        # # return centroid point
+        # return(C)
       }))
 
       # add closest points info to current age slice points
