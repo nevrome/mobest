@@ -16,8 +16,7 @@ estimate_mobility <- function(interpol_grid_origin, mobility_regions) {
       crs = "+proj=aea +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m +no_defs"
     ) %>%
     sf::st_intersection(mobility_regions) %>%
-    tibble::as_tibble() %>%
-    dplyr::select(-.data[["geometry"]])
+    sf::st_drop_geometry()
 
   ori <- interpol_grid_origin %>%
     dplyr::left_join(points_regions, by = "point_id")
@@ -30,7 +29,7 @@ estimate_mobility <- function(interpol_grid_origin, mobility_regions) {
       .data[["region_id"]]
     ) %>%
     dplyr::summarise(
-      mean_km_per_decade = mean(.data[["spatial_distance"]])/1000/10,
+      mean_km_per_decade = mean(.data[["spatial_distance"]])/1000/unique(abs(z-z_origin))*10,
       mean_x_to_origin = mean(.data[["x_to_origin"]]),
       mean_y_to_origin = mean(.data[["y_to_origin"]]),
       angle_deg = vec2deg(c(.data[["mean_x_to_origin"]], .data[["mean_y_to_origin"]]))

@@ -39,6 +39,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       spatial_distance = NA_real_,
       x_origin = NA_real_,
       y_origin = NA_real_,
+      z_origin = NA_real_,
       angle_deg = NA_real_,
     )
 
@@ -115,6 +116,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       # add closest points info to current age slice points
       time_pris[[p1]]$x_origin <- centroid_points[,1]
       time_pris[[p1]]$y_origin <- centroid_points[,2]
+      time_pris[[p1]]$z_origin <- unique(time_pris[[p1 - steps]][["z"]])
     }
 
     # rowbind distance table
