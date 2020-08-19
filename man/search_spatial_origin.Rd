@@ -4,10 +4,12 @@
 \alias{search_spatial_origin}
 \title{search_spatial_origin}
 \usage{
-search_spatial_origin(interpol_grid, nugget = 0.01)
+search_spatial_origin(interpol_grid, steps = 3, nugget = 0.01)
 }
 \arguments{
 \item{interpol_grid}{test}
+
+\item{steps}{test}
 
 \item{nugget}{test}
 }

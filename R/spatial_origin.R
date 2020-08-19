@@ -2,11 +2,12 @@
 #'
 #' @param interpol_grid test
 #' @param nugget test
+#' @param steps test
 #'
 #' @return test
 #'
 #' @export
-search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
+search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
 
   dependent_vars <- unique(interpol_grid$dependent_var_id)
   mean_cols <- paste0("mean_", dependent_vars)
@@ -55,17 +56,17 @@ search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
       age_sample_run_pri[["z"]]
     )
 
-    for (p1 in 2:length(time_pris)) {
+    for (p1 in (1 + steps):length(time_pris)) {
 
       # calculate spatial distance matrix between past and current points
       current_pri_spatial <- as.matrix(time_pris[[p1]][c("x", "y")])
-      past_pri_spatial <- as.matrix(time_pris[[p1 - 1]][c("x", "y")])
+      past_pri_spatial <- as.matrix(time_pris[[p1 - steps]][c("x", "y")])
       spatial_distance <- fields::rdist(current_pri_spatial, past_pri_spatial)
 
       # calculate genetic distance matrix between past and current points
       current_pri_genetics <- as.matrix(time_pris[[p1]][mean_cols])
-      past_pri_genetics <- as.matrix(time_pris[[p1 - 1]][mean_cols])
-      past_pri_genetics_sd <- as.matrix(time_pris[[p1 - 1]][sd_cols])
+      past_pri_genetics <- as.matrix(time_pris[[p1 - steps]][mean_cols])
+      past_pri_genetics_sd <- as.matrix(time_pris[[p1 - steps]][sd_cols])
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
@@ -124,6 +125,9 @@ search_spatial_origin <- function(interpol_grid, nugget = 0.01) {
   }, cl = parallel::detectCores())
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
+
+  # remove points with unknown/empty origin
+  pri_ready <- pri_ready %>% dplyr::filter(!is.na(x_origin) & !is.na(y_origin))
 
   # add add_origin_vector_coordinates
   pri_ready <- pri_ready %>% add_origin_vector_coordinates()
