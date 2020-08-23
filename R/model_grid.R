@@ -16,22 +16,22 @@ create_model_grid <- function(
 
   independent_tables <- tibble::tibble(
     independent_table = independent,
-    independent_table_id = names(independent)
+    independent_table_id = factor(names(independent), levels = names(independent))
   )
 
   dependent_vars <- tibble::tibble(
     dependent_var = dependent,
-    dependent_var_id = names(dependent)
+    dependent_var_id = factor(names(dependent), levels = names(dependent))
   )
 
   kernel_settings <- tibble::tibble(
     kernel_setting = kernel,
-    kernel_setting_id = names(kernel)
+    kernel_setting_id = factor(names(kernel), levels = names(kernel))
   )
 
   pred_grids <- tibble::tibble(
     pred_grid = prediction_grid,
-    pred_grid_id = names(prediction_grid)
+    pred_grid_id = factor(names(prediction_grid), levels = names(prediction_grid))
   )
 
   model_grid <- create_model_grid_raw(
