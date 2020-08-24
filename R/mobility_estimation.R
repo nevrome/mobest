@@ -13,7 +13,7 @@ estimate_mobility <- function(interpol_grid_origin, mobility_regions) {
     unique() %>%
     sf::st_as_sf(
       coords = c("x", "y"),
-      crs = "+proj=aea +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0 +y_0=0 +ellps=intl +units=m +no_defs"
+      crs = sf::st_crs(mobility_regions)
     ) %>%
     sf::st_intersection(mobility_regions) %>%
     sf::st_drop_geometry()
