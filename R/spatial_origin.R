@@ -14,16 +14,16 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
   sd_cols <- paste0("sd_", dependent_vars)
 
   # remove prediction points with too high standard deviation
-  interpol_grid_sd_filtered <- interpol_grid %>%
-    dplyr::group_by(independent_table_id, dependent_var_id, kernel_setting_id, pred_grid_id) %>%
-    dplyr::filter(
-      sd < 0.2 * diff(range(mean))
-    ) %>%
-    dplyr::ungroup()
+  # interpol_grid_sd_filtered <- interpol_grid %>%
+  #   dplyr::group_by(independent_table_id, dependent_var_id, kernel_setting_id, pred_grid_id) %>%
+  #   dplyr::filter(
+  #     sd < 0.2 * diff(range(mean))
+  #   ) %>%
+  #   dplyr::ungroup()
 
   # transform runs for different ancestry components to columns
   pri <- tidyr::pivot_wider(
-    interpol_grid_sd_filtered,
+    interpol_grid,
     names_from = "dependent_var_id",
     values_from = c("mean", "sd")
   )
