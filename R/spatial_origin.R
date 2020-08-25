@@ -74,6 +74,8 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
         # all genetic distances to current point A
         gendists_to_A <- genetic_distance[index_of_A,]
+        # spatial search area limitation
+        # gendists_to_A[spatial_distance[index_of_A,] > 1000000] <- NA
         # find closest point in the past B
         index_of_B <- which.min(gendists_to_A)
 
