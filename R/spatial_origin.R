@@ -29,10 +29,10 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
   )
 
   # filter prediction points that were only half removed by the sd filter
-  pri <- pri %>%
-    dplyr::filter(
-      dplyr::across(tidyselect::one_of(mean_cols), ~!is.na(.x))
-    )
+  # pri <- pri %>%
+  #   dplyr::filter(
+  #     dplyr::across(tidyselect::one_of(mean_cols), ~!is.na(.x))
+  #   )
 
   # add new columns for output dataset
   pri <- pri %>% dplyr::mutate(
@@ -75,7 +75,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
         # all genetic distances to current point A
         gendists_to_A <- genetic_distance[index_of_A,]
         # spatial search area limitation
-        # gendists_to_A[spatial_distance[index_of_A,] > 1000000] <- NA
+        gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
         # find closest point in the past B
         index_of_B <- which.min(gendists_to_A)
 
