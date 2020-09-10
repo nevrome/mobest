@@ -79,16 +79,39 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
 
         # find closest point in the past B
 
-        # # conservative bias?
+        # # simple min approach
+        #index_of_B <- which.min(gendists_to_A)
+        #past_pri_spatial[index_of_B,]
+
+        # # conservative bias approach
         # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.01, na.rm = T)) {
         #   index_of_B <- index_of_A
         # } else {
         #   index_of_B <- which.min(gendists_to_A)
         # }
 
-        index_of_B <- which.min(gendists_to_A)
+        # weighted mean approach
+        # c(
+        #   weighted.mean(past_pri_spatial[,1], (1/gendists_to_A)^2),
+        #   weighted.mean(past_pri_spatial[,2], (1/gendists_to_A)^2)
+        # )
 
-        past_pri_spatial[index_of_B,]
+        # weighted mean in reach approach
+        in_reach <- spatial_distance[index_of_A,] <= 1000000
+        c(
+          weighted.mean(past_pri_spatial[in_reach,1], (1/gendists_to_A[in_reach])^2),
+          weighted.mean(past_pri_spatial[in_reach,2], (1/gendists_to_A[in_reach])^2)
+        )
+
+        # weighted mean + conservative bias
+        # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.1, na.rm = T)) {
+        #   past_pri_spatial[index_of_A,]
+        # } else {
+        #   c(
+        #     weighted.mean(past_pri_spatial[,1], 1/gendists_to_A),
+        #     weighted.mean(past_pri_spatial[,2], 1/gendists_to_A)
+        #   )
+        # }
 
         # library(ggplot2)
         # past_pri_spatial %>%
