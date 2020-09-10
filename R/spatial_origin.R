@@ -75,13 +75,13 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
         # all genetic distances to current point A
         gendists_to_A <- genetic_distance[index_of_A,]
         # spatial search area limitation
-        #gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
+        gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
 
         # find closest point in the past B
 
         # # simple min approach
-        #index_of_B <- which.min(gendists_to_A)
-        #past_pri_spatial[index_of_B,]
+        index_of_B <- which.min(gendists_to_A)
+        past_pri_spatial[index_of_B,]
 
         # # conservative bias approach
         # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.01, na.rm = T)) {
@@ -97,11 +97,11 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
         # )
 
         # weighted mean in reach approach
-        in_reach <- spatial_distance[index_of_A,] <= 1000000
-        c(
-          weighted.mean(past_pri_spatial[in_reach,1], (1/gendists_to_A[in_reach])^2),
-          weighted.mean(past_pri_spatial[in_reach,2], (1/gendists_to_A[in_reach])^2)
-        )
+        # in_reach <- spatial_distance[index_of_A,] <= 1000000
+        # c(
+        #   weighted.mean(past_pri_spatial[in_reach,1], (1/gendists_to_A[in_reach])^2),
+        #   weighted.mean(past_pri_spatial[in_reach,2], (1/gendists_to_A[in_reach])^2)
+        # )
 
         # weighted mean + conservative bias
         # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.1, na.rm = T)) {
