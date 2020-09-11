@@ -57,24 +57,30 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       age_sample_run_pri[["z"]]
     )
 
-    for (p1 in (1 + steps):length(time_pris)) {
+    time_pris_current_list <- time_pris[(1 + steps):length(time_pris)]
+    time_pris_past_list <- time_pris[1:(length(time_pris) - steps)]
+
+    origin_points_list <- pbapply::pblapply(seq_along(time_pris_current_list), function(ind) {
+
+      time_pris_current <- time_pris_current_list[[ind]]
+      time_pris_past <- time_pris_past_list[[ind]]
 
       # calculate spatial distance matrix between past and current points
-      current_pri_spatial <- as.matrix(time_pris[[p1]][c("x", "y")])
-      past_pri_spatial <- as.matrix(time_pris[[p1 - steps]][c("x", "y")])
+      current_pri_spatial <- as.matrix(time_pris_current[c("x", "y")])
+      past_pri_spatial <- as.matrix(time_pris_past[c("x", "y")])
       spatial_distance <- fields::rdist(current_pri_spatial, past_pri_spatial)
 
       # calculate genetic distance matrix between past and current points
-      current_pri_genetics <- as.matrix(time_pris[[p1]][mean_cols])
-      current_pri_genetics_sd <- as.matrix(time_pris[[p1]][sd_cols])
-      past_pri_genetics <- as.matrix(time_pris[[p1 - steps]][mean_cols])
-      past_pri_genetics_sd <- as.matrix(time_pris[[p1 - steps]][sd_cols])
+      current_pri_genetics <- as.matrix(time_pris_current[mean_cols])
+      current_pri_genetics_sd <- as.matrix(time_pris_current[sd_cols])
+      past_pri_genetics <- as.matrix(time_pris_past[mean_cols])
+      past_pri_genetics_sd <- as.matrix(time_pris_past[sd_cols])
 
       # calculate multivariate normal density distributions
       # define grid
       along_each_dim <- lapply(mean_cols, function(mean_col) {
-        min_val <- min(c(time_pris[[p1]][[mean_col]], time_pris[[p1 - steps]][[mean_col]]))
-        max_val <- max(c(time_pris[[p1]][[mean_col]], time_pris[[p1 - steps]][[mean_col]]))
+        min_val <- min(c(time_pris_current[[mean_col]], time_pris_past[[mean_col]]))
+        max_val <- max(c(time_pris_current[[mean_col]], time_pris_past[[mean_col]]))
         seq(min_val, max_val, length.out = 100)
       })
       exploration_grid_long <- expand.grid(along_each_dim)
@@ -105,8 +111,8 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       # get points with least genetic distance in the past
       centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
 
-        search_area <- 1:nrow(past_pri_genetics)
-        #search_area <- which(spatial_distance[index_of_A,] <= 500000)
+        #search_area <- 1:nrow(past_pri_genetics)
+        search_area <- which(spatial_distance[index_of_A,] <= 1000000)
 
         sums_of_joint_prob_distributions <- sapply(
           search_area,
@@ -197,17 +203,21 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       }))
 
       # add closest points info to current age slice points
-      time_pris[[p1]]$x_origin <- centroid_points[,1]
-      time_pris[[p1]]$y_origin <- centroid_points[,2]
-      time_pris[[p1]]$z_origin <- unique(time_pris[[p1 - steps]][["z"]])
-    }
+      list(centroid_points[,1], centroid_points[,2], unique(time_pris_past[["z"]]))
 
-    # rowbind distance table
-    pri_ready <- time_pris[2:length(time_pris)] %>% do.call(rbind, .)
+    }, cl = parallel::detectCores() )
+
+    pri_ready <- Map(function(time_pris_current, origin_points) {
+      time_pris_current$x_origin <- origin_points[[1]]
+      time_pris_current$y_origin <- origin_points[[2]]
+      time_pris_current$z_origin <- origin_points[[3]]
+      return(time_pris_current)
+    }, time_pris_current_list, origin_points_list) %>%
+      do.call(rbind, .)
 
     return(pri_ready)
 
-  }, cl = parallel::detectCores() )
+  })
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
