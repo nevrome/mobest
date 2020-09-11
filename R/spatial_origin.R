@@ -103,13 +103,19 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
       #genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
-      centroid_points <- do.call(rbind, pbapply::pblapply(1:nrow(current_pri_genetics), function(index_of_A) {
+      centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
 
-        sums_of_joint_prob_distributions <- sapply(1:nrow(past_pri_genetics), function(index_of_B) {
-          sum(densities_for_As[[index_of_A]] * densities_for_Bs[[index_of_B]])
-        })
+        search_area <- 1:nrow(past_pri_genetics)
+        #search_area <- which(spatial_distance[index_of_A,] <= 500000)
 
-        index_of_B <- which.max(sums_of_joint_prob_distributions)
+        sums_of_joint_prob_distributions <- sapply(
+          search_area,
+          function(index_of_B) {
+            sum(densities_for_As[[index_of_A]] * densities_for_Bs[[index_of_B]])
+          }
+        )
+
+        index_of_B <- search_area[which.max(sums_of_joint_prob_distributions)]
         past_pri_spatial[index_of_B,]
 
         # # all genetic distances to current point A
@@ -188,7 +194,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
         # }
         # # return centroid point
         # return(C)
-      }, cl = parallel::detectCores() ))
+      }))
 
       # add closest points info to current age slice points
       time_pris[[p1]]$x_origin <- centroid_points[,1]
@@ -201,7 +207,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
 
     return(pri_ready)
 
-  })
+  }, cl = parallel::detectCores() )
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
