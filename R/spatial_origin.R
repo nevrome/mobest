@@ -66,22 +66,65 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
 
       # calculate genetic distance matrix between past and current points
       current_pri_genetics <- as.matrix(time_pris[[p1]][mean_cols])
+      current_pri_genetics_sd <- as.matrix(time_pris[[p1]][sd_cols])
       past_pri_genetics <- as.matrix(time_pris[[p1 - steps]][mean_cols])
       past_pri_genetics_sd <- as.matrix(time_pris[[p1 - steps]][sd_cols])
-      genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
+
+      # calculate multivariate normal density distributions
+      # define grid
+      along_each_dim <- lapply(mean_cols, function(mean_col) {
+        min_val <- min(c(time_pris[[p1]][[mean_col]], time_pris[[p1 - steps]][[mean_col]]))
+        max_val <- max(c(time_pris[[p1]][[mean_col]], time_pris[[p1 - steps]][[mean_col]]))
+        seq(min_val, max_val, length.out = 100)
+      })
+      exploration_grid_long <- expand.grid(along_each_dim)
+      # calculate densities for all As
+      densities_for_As <- lapply(1:nrow(current_pri_genetics), function(index_of_A) {
+        mvtnorm::dmvnorm(
+          exploration_grid_long,
+          mean = current_pri_genetics[index_of_A,],
+          sigma = diag(current_pri_genetics_sd[index_of_A,])
+        )
+      })
+      # calculate densities for all Bs
+      densities_for_Bs <- lapply(1:nrow(past_pri_genetics), function(index_of_B) {
+        mvtnorm::dmvnorm(
+          exploration_grid_long,
+          mean = past_pri_genetics[index_of_B,],
+          sigma = diag(past_pri_genetics_sd[index_of_B,])
+        )
+      })
+
+      # schu <- exploration_grid_long %>% dplyr::mutate(
+      #   hu = densities_for_As[[1]] * densities_for_Bs[[800]]
+      # )
+
+
+      #genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
-      centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
-        # all genetic distances to current point A
-        gendists_to_A <- genetic_distance[index_of_A,]
-        # spatial search area limitation
-        gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
+      centroid_points <- do.call(rbind, pbapply::pblapply(1:nrow(current_pri_genetics), function(index_of_A) {
 
-        # find closest point in the past B
+        sums_of_joint_prob_distributions <- sapply(1:nrow(past_pri_genetics), function(index_of_B) {
+          sum(densities_for_As[[index_of_A]] * densities_for_Bs[[index_of_B]])
+        })
 
-        # # simple min approach
-        index_of_B <- which.min(gendists_to_A)
+        index_of_B <- which.max(sums_of_joint_prob_distributions)
         past_pri_spatial[index_of_B,]
+
+        # # all genetic distances to current point A
+        # gendists_to_A <- genetic_distance[index_of_A,]
+        # # spatial search area limitation
+        # gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
+        #
+        # # find closest point in the past B
+        #
+        # # # simple min approach
+        # index_of_B <- which.min(gendists_to_A)
+        # past_pri_spatial[index_of_B,]
+
+        # sd considering approach
+
 
         # # conservative bias approach
         # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.01, na.rm = T)) {
@@ -145,7 +188,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
         # }
         # # return centroid point
         # return(C)
-      }))
+      }, cl = parallel::detectCores() ))
 
       # add closest points info to current age slice points
       time_pris[[p1]]$x_origin <- centroid_points[,1]
@@ -158,7 +201,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3, nugget = 0.01) {
 
     return(pri_ready)
 
-  }, cl = parallel::detectCores())
+  })
 
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
