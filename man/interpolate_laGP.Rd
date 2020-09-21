@@ -2,7 +2,7 @@
 % Please edit documentation in R/interpolate_laGP.R
 \name{interpolate_laGP}
 \alias{interpolate_laGP}
-\title{interpolate_laGP}
+\title{3D interpolation with laGP}
 \usage{
 interpolate_laGP(
   independent,
@@ -15,25 +15,28 @@ interpolate_laGP(
 )
 }
 \arguments{
-\item{independent}{test}
+\item{independent}{Dataframe with input point position coordinates x, y and z}
 
-\item{dependent}{test}
+\item{dependent}{Vector with input point values}
 
-\item{pred_grid}{test}
+\item{pred_grid}{Dataframe with output point position coordinates x, y and z}
 
-\item{d}{test}
+\item{d}{Numeric vector. Lengthscale parameter. See \code{?laGP::newGP} for more info}
 
-\item{g}{test}
+\item{g}{Numeric. Nugget parameter}
 
-\item{auto}{test}
+\item{auto}{Should the lengthscale and nugget values be automatically determined
+by laGPs maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info}
 
-\item{on_residuals}{test}
+\item{on_residuals}{Should a linear model take out the main trends before the kriging interpolation?}
 }
 \value{
-test
+Output of \code{?laGP::predGPsep}
 }
 \description{
-interpolate_laGP
+Performs kriging with laGPs gaussian process prediction. See
+\code{?laGP::predGPsep} for more information. If \code{on_residuals = T} a linear model
+is wrapped around the kriging model to handle the main trends independently.
 }
 \examples{
 \donttest{

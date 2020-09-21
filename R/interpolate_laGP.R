@@ -1,14 +1,19 @@
-#' interpolate_laGP
+#' 3D interpolation with laGP
 #'
-#' @param independent test
-#' @param dependent test
-#' @param pred_grid test
-#' @param d test
-#' @param g test
-#' @param auto test
-#' @param on_residuals test
+#' Performs kriging with laGPs gaussian process prediction. See
+#' \code{?laGP::predGPsep} for more information. If \code{on_residuals = T} a linear model
+#' is wrapped around the kriging model to handle the main trends independently.
 #'
-#' @return test
+#' @param independent Dataframe with input point position coordinates x, y and z
+#' @param dependent Vector with input point values
+#' @param pred_grid Dataframe with output point position coordinates x, y and z
+#' @param d Numeric vector. Lengthscale parameter. See \code{?laGP::newGP} for more info
+#' @param g Numeric. Nugget parameter
+#' @param auto Should the lengthscale and nugget values be automatically determined
+#' by laGPs maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
+#' @param on_residuals Should a linear model take out the main trends before the kriging interpolation?
+#'
+#' @return Output of \code{?laGP::predGPsep}
 #'
 #' @examples
 #' \donttest{
