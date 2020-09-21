@@ -16,7 +16,7 @@ search_spatial_origin <- function(interpol_grid, steps = 3) {
 #' @rdname search_spatial_origin
 #' @export
 search_spatial_origin.default <- function(interpol_grid, steps = 3) {
-  stop("x is not an object of class mobest_model_grid")
+  stop("x is not an object of class mobest_interpol_grid")
 }
 
 #' @rdname search_spatial_origin

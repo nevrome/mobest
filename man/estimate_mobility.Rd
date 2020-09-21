@@ -2,12 +2,21 @@
 % Please edit documentation in R/mobility_estimation.R
 \name{estimate_mobility}
 \alias{estimate_mobility}
+\alias{estimate_mobility.default}
+\alias{estimate_mobility.mobest_origin_grid}
 \title{estimate_mobility}
 \usage{
-estimate_mobility(interpol_grid_origin, mobility_regions)
+estimate_mobility(origin_grid, mobility_regions)
+
+\method{estimate_mobility}{default}(origin_grid, mobility_regions)
+
+\method{estimate_mobility}{mobest_origin_grid}(origin_grid, mobility_regions)
 }
 \arguments{
-\item{interpol_grid_origin}{test}
+\item{origin_grid}{Either an object of class \code{mobest_origin_grid} as
+produced by \link{search_spatial_origin} or just an object of class
+\code{mobest_interpol_grid}. Depending on the input a different mobility
+estimation algorithm is applied}
 
 \item{mobility_regions}{test}
 }
