@@ -2,12 +2,12 @@
 % Please edit documentation in R/model_grid.R
 \name{create_model_grid}
 \alias{create_model_grid}
-\title{create_model_grid}
+\title{Create a kriging model grid}
 \usage{
 create_model_grid(independent, dependent, kernel, prediction_grid)
 }
 \arguments{
-\item{independent}{Spatiotemporal input point positions. Named list of dataframes.
+\item{independent}{Named list of dataframes. Spatiotemporal input point positions.
 Each dataframe should have three numeric columns x, y and z:
 
 \itemize{
@@ -16,12 +16,11 @@ Each dataframe should have three numeric columns x, y and z:
  \item{z: }{Temporal position (age)}
 }}
 
-\item{dependent}{Dependent variables that should be interpolated.
-Named list of numeric vectors. Each vector should have one
+\item{dependent}{Named list of numeric vectors.
+Dependent variables that should be interpolated. Each vector should have one
 entry for each row in the \code{independent} list dataframes}
 
-\item{kernel}{Kernel parameter settings. Named list of lists with the following
-attributes:
+\item{kernel}{Named list of lists. Kernel parameter settings:
 
 \itemize{
  \item{: }{Numeric vector with lengthscale values}
@@ -32,9 +31,9 @@ attributes:
 
 See \code{?interpolate_laGP} for more information}
 
-\item{prediction_grid}{Prediction grid positions for the interpolation. Named
-list of dataframes. Each dataframe should have three numeric columns x, y and z and
-a point id column:
+\item{prediction_grid}{Named list of dataframes.
+Prediction grid positions for the interpolation.
+Each dataframe should have three numeric columns x, y and z and a point id column:
 
 \itemize{
  \item{point_id: }{Unique point id}

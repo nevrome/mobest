@@ -1,9 +1,9 @@
-#' create_model_grid
+#' Create a kriging model grid
 #'
 #' Constructs a model grid with all combinations of the different input parameter
 #' configurations for the kriging model.
 #'
-#' @param independent Spatiotemporal input point positions. Named list of dataframes.
+#' @param independent Named list of dataframes. Spatiotemporal input point positions.
 #' Each dataframe should have three numeric columns x, y and z:
 #'
 #' \itemize{
@@ -12,11 +12,10 @@
 #'  \item{z: }{Temporal position (age)}
 #' }
 #'
-#' @param dependent Dependent variables that should be interpolated.
-#' Named list of numeric vectors. Each vector should have one
+#' @param dependent Named list of numeric vectors.
+#' Dependent variables that should be interpolated. Each vector should have one
 #' entry for each row in the \code{independent} list dataframes
-#' @param kernel Kernel parameter settings. Named list of lists with the following
-#' attributes:
+#' @param kernel Named list of lists. Kernel parameter settings:
 #'
 #' \itemize{
 #'  \item{: }{Numeric vector with lengthscale values}
@@ -27,9 +26,9 @@
 #'
 #' See \code{?interpolate_laGP} for more information
 #'
-#' @param prediction_grid Prediction grid positions for the interpolation. Named
-#' list of dataframes. Each dataframe should have three numeric columns x, y and z and
-#' a point id column:
+#' @param prediction_grid Named list of dataframes.
+#' Prediction grid positions for the interpolation.
+#' Each dataframe should have three numeric columns x, y and z and a point id column:
 #'
 #' \itemize{
 #'  \item{point_id: }{Unique point id}
@@ -107,32 +106,55 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
 
 }
 
-#' run_model_grid
+#' Run kriging interpolation on model grid
 #'
-#' @param model_grid test
-#' @param quiet test
+#' Calculate kriging interpolation for all entries in a model grid.
 #'
-#' @return test
+#' @param model_grid An object of class \code{mobest_model_grid} as created by
+#' \link{create_model_grid}
+#' @param unnest Boolean. Should the kriging result be unnested to return a
+#' prediction point-wise table of class \code{interpol_grid}?
+#' @param quiet Boolean. Should a progress indication be printed?
 #'
+#' @return If \code{unnest = T } then an object of class \code{interpol_grid},
+#' otherwise a tibble with a list column \code{prediction} that contains the
+#' kriging results for each model grid row
+#'
+#' @rdname run_model_grid
 #' @export
-run_model_grid <- function(model_grid, quiet = F) {
+run_model_grid <- function(model_grid, unnest = T, quiet = F) {
+  UseMethod("run_model_grid")
+}
+
+#' @rdname run_model_grid
+#' @export
+run_model_grid.default <- function(model_grid, unnest = T, quiet = F) {
+  stop("x is not an object of class mobest_model_grid")
+}
+
+#' @rdname run_model_grid
+#' @export
+run_model_grid.mobest_model_grid <- function(model_grid, unnest = T, quiet = F) {
 
   # run interpolation for each entry in the model_grid
-  prediction <- lapply(1:nrow(model_grid), function(i) {
-    if (!quiet) {
-      message("running model ", i, " of ", nrow(model_grid))
+  prediction <- lapply(
+    1:nrow(model_grid),
+    function(i) {
+      if (!quiet) {
+        message("running model ", i, " of ", nrow(model_grid))
+      }
+      interpolate_laGP(
+        independent = model_grid[["independent_table"]][[i]],
+        dependent = model_grid[["dependent_var"]][[i]],
+        pred_grid = model_grid[["pred_grid"]][[i]],
+        # d has to be squared because of the configuration of the default laGP kernel
+        d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
+        g = model_grid[["kernel_setting"]][[i]][["g"]],
+        auto = model_grid[["kernel_setting"]][[i]][["auto"]],
+        on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
+      )
     }
-    interpolate_laGP(
-      independent = model_grid[["independent_table"]][[i]],
-      dependent = model_grid[["dependent_var"]][[i]],
-      pred_grid = model_grid[["pred_grid"]][[i]],
-      # d has to be squared because of the configuration of the default laGP kernel
-      d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
-      g = model_grid[["kernel_setting"]][[i]][["g"]],
-      auto = model_grid[["kernel_setting"]][[i]][["auto"]],
-      on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
-    )
-  })
+  )
 
   # simplify model_grid
   model_grid_simplified <- model_grid %>%
@@ -144,19 +166,30 @@ run_model_grid <- function(model_grid, quiet = F) {
     )
 
   # add prediction results for each run as a data.frame in a list column to model_grid
-  model_grid_simplified$prediction_sample <- purrr::map2(prediction, model_grid[["pred_grid"]], function(x, y) {
-    pred <- data.frame(
-      point_id = 1:length(x$mean),
-      mean = x$mean,
-      sd = sqrt(x$s2),
-      stringsAsFactors = F
-    )
-    # merge with pred_grid to add relevant spatial information
-    dplyr::left_join(
-      pred, y,
-      by = "point_id"
-    )
-  })
+  model_grid_simplified$prediction <- purrr::map2(
+    prediction, model_grid[["pred_grid"]],
+    function(x, y) {
+      pred <- data.frame(
+        point_id = 1:length(x$mean),
+        mean = x$mean,
+        sd = sqrt(x$s2),
+        stringsAsFactors = F
+      )
+      # merge with pred_grid to add relevant spatial information
+      dplyr::left_join(
+        pred, y,
+        by = "point_id"
+      )
+    }
+  )
 
-  return(model_grid_simplified)
+  if (unnest) {
+    model_grid_simplified %>%
+      tidyr::unnest(cols = "prediction") %>%
+      # make subclass of tibble
+      tibble::new_tibble(., nrow = nrow(.), class = "mobest_interpol_grid") %>%
+      return()
+  } else {
+    return(model_grid_simplified)
+  }
 }

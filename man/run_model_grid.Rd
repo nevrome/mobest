@@ -2,18 +2,30 @@
 % Please edit documentation in R/model_grid.R
 \name{run_model_grid}
 \alias{run_model_grid}
-\title{run_model_grid}
+\alias{run_model_grid.default}
+\alias{run_model_grid.mobest_model_grid}
+\title{Run kriging interpolation on model grid}
 \usage{
-run_model_grid(model_grid, quiet = F)
+run_model_grid(model_grid, unnest = T, quiet = F)
+
+\method{run_model_grid}{default}(model_grid, unnest = T, quiet = F)
+
+\method{run_model_grid}{mobest_model_grid}(model_grid, unnest = T, quiet = F)
 }
 \arguments{
-\item{model_grid}{test}
+\item{model_grid}{An object of class \code{mobest_model_grid} as created by
+\link{create_model_grid}}
 
-\item{quiet}{test}
+\item{unnest}{Boolean. Should the kriging result be unnested to return a
+prediction point-wise table of class \code{interpol_grid}?}
+
+\item{quiet}{Boolean. Should a progress indication be printed?}
 }
 \value{
-test
+If \code{unnest = T } then an object of class \code{interpol_grid},
+otherwise a tibble with a list column \code{prediction} that contains the
+kriging results for each model grid row
 }
 \description{
-run_model_grid
+Calculate kriging interpolation for all entries in a model grid.
 }
