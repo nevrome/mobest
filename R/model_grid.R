@@ -113,10 +113,10 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
 #' @param model_grid An object of class \code{mobest_model_grid} as created by
 #' \link{create_model_grid}
 #' @param unnest Boolean. Should the kriging result be unnested to return a
-#' prediction point-wise table of class \code{interpol_grid}?
+#' prediction point-wise table of class \code{mobest_interpol_grid}?
 #' @param quiet Boolean. Should a progress indication be printed?
 #'
-#' @return If \code{unnest = T } then an object of class \code{interpol_grid},
+#' @return If \code{unnest = T } then an object of class \code{mobest_interpol_grid},
 #' otherwise a tibble with a list column \code{prediction} that contains the
 #' kriging results for each model grid row
 #'
