@@ -1,10 +1,47 @@
 #' create_model_grid
 #'
-#' @param data test
-#' @param independent test
-#' @param dependent test
-#' @param kernel test
-#' @param prediction_grid test
+#' Constructs a model grid with all combinations of the different input parameter
+#' configurations for the kriging model.
+#'
+#' @param independent Spatiotemporal input point positions. Named list of dataframes.
+#' Each dataframe should have three numeric columns x, y and z:
+#'
+#' \itemize{
+#'  \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
+#'  \item{y: }{Spatial coordinate in y-axis direction}
+#'  \item{z: }{Temporal position (age)}
+#' }
+#'
+#' @param dependent Dependent variables that should be interpolated.
+#' Named list of numeric vectors. Each vector should have one
+#' entry for each row in the \code{independent} list dataframes
+#' @param kernel Kernel parameter settings. Named list of lists with the following
+#' attributes:
+#'
+#' \itemize{
+#'  \item{: }{Numeric vector with lengthscale values}
+#'  \item{g: }{Nugget value}
+#'  \item{on_residuals: }{Should a linear model take out the main trends before the kriging interpolation?}
+#'  \item{auto: }{Should the lengthscale and nugget values be automatically determined by laGPs maximum likelihood algorithm?}
+#' }
+#'
+#' See \code{?interpolate_laGP} for more information
+#'
+#' @param prediction_grid Prediction grid positions for the interpolation. Named
+#' list of dataframes. Each dataframe should have three numeric columns x, y and z and
+#' a point id column:
+#'
+#' \itemize{
+#'  \item{point_id: }{Unique point id}
+#'  \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
+#'  \item{y: }{Spatial coordinate in y-axis direction}
+#'  \item{z: }{Temporal position (age)}
+#' }
+#'
+#' See \code{?create_prediction_grid} for a function to create grid for a certain
+#' spatial region
+#'
+#' @return An object of class \code{mobest_model_grid} which inherits from tibble
 #'
 #' @export
 create_model_grid <- function(
@@ -14,47 +51,38 @@ create_model_grid <- function(
   prediction_grid
 ) {
 
+  # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
     independent_table_id = factor(names(independent), levels = names(independent))
   )
-
   dependent_vars <- tibble::tibble(
     dependent_var = dependent,
     dependent_var_id = factor(names(dependent), levels = names(dependent))
   )
-
   kernel_settings <- tibble::tibble(
     kernel_setting = kernel,
     kernel_setting_id = factor(names(kernel), levels = names(kernel))
   )
-
   pred_grids <- tibble::tibble(
     pred_grid = prediction_grid,
     pred_grid_id = factor(names(prediction_grid), levels = names(prediction_grid))
   )
 
+  # expand grid and create model grid
   model_grid <- create_model_grid_raw(
     independent_tables = independent_tables,
     dependent_vars = dependent_vars,
     kernel_settings = kernel_settings,
     pred_grids = pred_grids
-  )
+  ) %>%
+  # make subclass of tibble
+  tibble::new_tibble(., nrow = nrow(.), class = "mobest_model_grid")
 
   return(model_grid)
 
 }
 
-
-#' create_model_grid_raw
-#'
-#' @param independent_tables test
-#' @param dependent_vars test
-#' @param kernel_settings test
-#' @param pred_grids test
-#'
-#' @return test
-#'
 create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
 
   expand.grid(
@@ -75,11 +103,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
     ) %>%
     dplyr::left_join(
       pred_grids, by = "pred_grid_id"
-    ) %>%
-    dplyr::mutate(
-      independent_table_type = ifelse(.data[["independent_table_id"]] == "age_center", "age_center", "age_sampled")
-    ) %>%
-    tibble::as_tibble()
+    )
 
 }
 

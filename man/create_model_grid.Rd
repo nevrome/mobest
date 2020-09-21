@@ -7,16 +7,49 @@
 create_model_grid(independent, dependent, kernel, prediction_grid)
 }
 \arguments{
-\item{independent}{test}
+\item{independent}{Spatiotemporal input point positions. Named list of dataframes.
+Each dataframe should have three numeric columns x, y and z:
 
-\item{dependent}{test}
+\itemize{
+ \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
+ \item{y: }{Spatial coordinate in y-axis direction}
+ \item{z: }{Temporal position (age)}
+}}
 
-\item{kernel}{test}
+\item{dependent}{Dependent variables that should be interpolated.
+Named list of numeric vectors. Each vector should have one
+entry for each row in the \code{independent} list dataframes}
 
-\item{prediction_grid}{test}
+\item{kernel}{Kernel parameter settings. Named list of lists with the following
+attributes:
 
-\item{data}{test}
+\itemize{
+ \item{: }{Numeric vector with lengthscale values}
+ \item{g: }{Nugget value}
+ \item{on_residuals: }{Should a linear model take out the main trends before the kriging interpolation?}
+ \item{auto: }{Should the lengthscale and nugget values be automatically determined by laGPs maximum likelihood algorithm?}
+}
+
+See \code{?interpolate_laGP} for more information}
+
+\item{prediction_grid}{Prediction grid positions for the interpolation. Named
+list of dataframes. Each dataframe should have three numeric columns x, y and z and
+a point id column:
+
+\itemize{
+ \item{point_id: }{Unique point id}
+ \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
+ \item{y: }{Spatial coordinate in y-axis direction}
+ \item{z: }{Temporal position (age)}
+}
+
+See \code{?create_prediction_grid} for a function to create grid for a certain
+spatial region}
+}
+\value{
+An object of class \code{mobest_model_grid} which inherits from tibble
 }
 \description{
-create_model_grid
+Constructs a model grid with all combinations of the different input parameter
+configurations for the kriging model.
 }
