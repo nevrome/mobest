@@ -2,7 +2,7 @@
 % Please edit documentation in R/pred_grid.R
 \name{create_prediction_grid}
 \alias{create_prediction_grid}
-\title{create_prediction_grid}
+\title{Create a spatiotemporal point grid}
 \usage{
 create_prediction_grid(
   area,
@@ -11,15 +11,20 @@ create_prediction_grid(
 )
 }
 \arguments{
-\item{area}{test}
+\item{area}{An object of class \code{sf}. Polygons where the spatial grid should
+be constructed}
 
-\item{spatial_cell_size}{test}
+\item{spatial_cell_size}{Numeric. Size of the spatial grid cells in the unit of
+\code{area}. See \code{?sf::st_make_grid} for more info}
 
-\item{time_layers}{test}
+\item{time_layers}{Numeric vector. Temporal layers of the requested spatiotemporal
+grid}
 }
 \value{
-test
+Dataframe with columns x, y and z (spatiotemporal coordinates) and a
+point identifier column point_id
 }
 \description{
-create_prediction_grid
+Creates a prediction grid that can be used in the \link{create_model_grid} +
+\link{run_model_grid} interpolation workflow#'
 }

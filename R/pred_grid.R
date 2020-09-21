@@ -1,10 +1,17 @@
-#' create_prediction_grid
+#' Create a spatiotemporal point grid
 #'
-#' @param area test
-#' @param spatial_cell_size test
-#' @param time_layers test
+#' Creates a prediction grid that can be used in the \link{create_model_grid} +
+#' \link{run_model_grid} interpolation workflow#'
 #'
-#' @return test
+#' @param area An object of class \code{sf}. Polygons where the spatial grid should
+#' be constructed
+#' @param spatial_cell_size Numeric. Size of the spatial grid cells in the unit of
+#' \code{area}. See \code{?sf::st_make_grid} for more info
+#' @param time_layers Numeric vector. Temporal layers of the requested spatiotemporal
+#' grid
+#'
+#' @return Dataframe with columns x, y and z (spatiotemporal coordinates) and a
+#' point identifier column point_id
 #'
 #' @export
 create_prediction_grid <- function(area, spatial_cell_size = 100000, time_layers = seq(-7500, -500, 100)) {
