@@ -50,6 +50,13 @@ function(input, output, session) {
     interpol_grid
   })
 
+  # Spatial origin
+  mobility_clemens <- reactive({
+    withProgress(message = "Spatial origin search", {
+      origin_grid <- mobest::search_spatial_origin(interpol_grid(), steps = 1)
+    })
+    mobest::estimate_mobility(origin_grid)
+  })
 
 
   # dynamic inputs
@@ -97,6 +104,24 @@ function(input, output, session) {
         geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
         facet_wrap(~z) +
         scale_fill_viridis_c(option = "plasma") +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "mobility_clemens_comic") {
+
+      mobility_clemens() %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = speed_km_per_decade)) +#, alpha = sd)) +
+        facet_wrap(~z) +
+        scale_fill_viridis_c(option = "cividis") +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "mobility_clemens") {
+
+      mobility_clemens() %>% dplyr::filter(z == input$plot_z) %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = speed_km_per_decade)) +#, alpha = sd)) +
+        facet_wrap(~z) +
+        scale_fill_viridis_c(option = "cividis") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
     }
