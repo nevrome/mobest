@@ -9,7 +9,6 @@ load("../../coest.interpol.2020/data/spatial/mobility_regions.RData")
 
 function(input, output, session) {
 
-  # Combine the selected variables into a new data frame
   interpol_grid <- reactive({
 
     model_grid <- mobest::create_model_grid(
@@ -25,19 +24,25 @@ function(input, output, session) {
         C2 = janno_final$C2
       ),
       kernel = list(
-        ds600_dt300_g01 = list(d = c(500000, 500000, 1000), g = 0.1, on_residuals = T, auto = F)
+        shiny_kernel = list(d = c(
+            input$kernel_spatial_size,
+            input$kernel_spatial_size,
+            input$kernel_temporal_size
+          ), g = input$kernel_nugget,
+          on_residuals = T, auto = F
+        )
       ),
       prediction_grid = list(
         scs100_tl100 = mobest::create_prediction_grid(
           area,
           mobility_regions,
-          spatial_cell_size = 200000,
-          time_layers = seq(-7500, 1500, 500)
+          spatial_cell_size = input$pred_grid_spatial_cell_size,
+          time_layers = seq(-7500, 1500, input$pred_grid_temporal_distance)
         )
       )
     )
 
-    interpol_grid <- mobest::run_model_grid(model_grid)
+    interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 
     interpol_grid
   })
