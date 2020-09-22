@@ -9,6 +9,7 @@ load("../../coest.interpol.2020/data/spatial/mobility_regions.RData")
 
 function(input, output, session) {
 
+  # GPR
   interpol_grid <- reactive({
 
     model_grid <- mobest::create_model_grid(
@@ -49,6 +50,9 @@ function(input, output, session) {
     interpol_grid
   })
 
+
+
+  # dynamic inputs
   output$time_slider_input <- renderUI({
     sliderInput(
       "plot_z", "Plot: time to show in [a calBC/AD]", -7500, 1500, -3000,
@@ -56,21 +60,46 @@ function(input, output, session) {
     )
   })
 
+  # plots
   output$plot1 <- renderPlot({
 
-    interpol_grid() %>%
-      dplyr::filter(
-        #kernel_setting_id == "ds400_dt700_g001",
-        dependent_var_id == "C1",
-        z == input$plot_z
-        #z %in% seq(-7000, -2000, 500)
-        #z %% 500 == 0
-      ) %>%
-      ggplot() +
-      geom_raster(aes(x, y, fill = mean))+#, alpha = sd)) +
-      facet_wrap(~z) +
-      scale_fill_viridis_c() +
-      scale_alpha_continuous(range = c(1, 0), na.value = 0)
+    if (input$plot_type == "C1_comic") {
+
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C1") %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        facet_wrap(~z) +
+        scale_fill_viridis_c() +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "C2_comic") {
+
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C2") %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        facet_wrap(~z) +
+        scale_fill_viridis_c(option = "plasma") +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "C1") {
+
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", z == input$plot_z) %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        facet_wrap(~z) +
+        scale_fill_viridis_c() +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "C2") {
+
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", z == input$plot_z) %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        facet_wrap(~z) +
+        scale_fill_viridis_c(option = "plasma") +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    }
 
   })
 
