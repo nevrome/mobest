@@ -45,6 +45,8 @@ function(input, output, session) {
   # GPR
   interpol_grid <- reactive({
 
+    req(pred_grids())
+
     model_grid <- mobest::create_model_grid(
       independent = list(
         tibble::tibble(
@@ -78,9 +80,15 @@ function(input, output, session) {
 
   # mobility calculation
   mobility_clemens <- reactive({
-    updateSelectInput(session, "mobility_algorithm", selected = "clemens")
+    # hacky trick to reduce calculcation time
+    if (input$mobility_algorithm == "stephan") {
+      interpol_grid <- interpol_grid() %>% dplyr::filter(pred_grid_id == "main")
+    } else {
+      interpol_grid <- interpol_grid()
+    }
+    # updateSelectInput(session, "mobility_algorithm", selected = "clemens")
     withProgress(message = "Mobility estimation (Clemens)", {
-      origin_grid <- mobest::search_spatial_origin(interpol_grid(), steps = 1)
+      origin_grid <- mobest::search_spatial_origin(interpol_grid, steps = 1)
       mobility <- mobest::estimate_mobility(origin_grid)
     })
     mobility
