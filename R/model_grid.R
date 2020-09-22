@@ -35,6 +35,7 @@
 #'  \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
 #'  \item{y: }{Spatial coordinate in y-axis direction}
 #'  \item{z: }{Temporal position (age)}
+#'  \item{region_id: }{Name of the region this point belongs to}
 #' }
 #'
 #' See \code{?create_prediction_grid} for a function to create grid for a certain
