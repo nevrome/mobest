@@ -3,18 +3,21 @@
 \name{estimate_mobility}
 \alias{estimate_mobility}
 \alias{estimate_mobility.default}
+\alias{estimate_mobility.mobest_interpol_grid}
 \alias{estimate_mobility.mobest_origin_grid}
 \title{estimate_mobility}
 \usage{
-estimate_mobility(origin_grid, mobility_regions)
+estimate_mobility(input_grid, mobility_regions)
 
-\method{estimate_mobility}{default}(origin_grid, mobility_regions)
+\method{estimate_mobility}{default}(input_grid, mobility_regions)
 
-\method{estimate_mobility}{mobest_origin_grid}(origin_grid, mobility_regions)
+\method{estimate_mobility}{mobest_interpol_grid}(input_grid, mobility_regions)
+
+\method{estimate_mobility}{mobest_origin_grid}(input_grid, mobility_regions)
 }
 \arguments{
-\item{origin_grid}{Either an object of class \code{mobest_origin_grid} as
-produced by \link{search_spatial_origin} or just an object of class
+\item{input_grid}{Either an object of class \code{mobest_input_grid} as
+produced by \link{search_spatial_origin} or a specific object of class
 \code{mobest_interpol_grid}. Depending on the input a different mobility
 estimation algorithm is applied}
 

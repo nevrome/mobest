@@ -6,6 +6,7 @@
 \usage{
 create_prediction_grid(
   area,
+  mobility_regions,
   spatial_cell_size = 1e+05,
   time_layers = seq(-7500, -500, 100)
 )
@@ -13,6 +14,9 @@ create_prediction_grid(
 \arguments{
 \item{area}{An object of class \code{sf}. Polygons where the spatial grid should
 be constructed}
+
+\item{mobility_regions}{An object of class \code{sf}. Polygons of regions the grid points
+should be attributed to}
 
 \item{spatial_cell_size}{Numeric. Size of the spatial grid cells in the unit of
 \code{area}. See \code{?sf::st_make_grid} for more info}
