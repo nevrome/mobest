@@ -42,14 +42,19 @@ function(input, output, session) {
       )
     )
 
-    interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+    withProgress(message = "GPR", {
+      interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+    })
 
     interpol_grid
   })
 
-  # clusters <- reactive({
-  #   kmeans(selectedData(), input$clusters)
-  # })
+  output$time_slider_input <- renderUI({
+    sliderInput(
+      "plot_z", "Plot: time to show in [a calBC/AD]", -7500, 1500, -3000,
+      step = input$pred_grid_temporal_distance
+    )
+  })
 
   output$plot1 <- renderPlot({
 
@@ -57,7 +62,8 @@ function(input, output, session) {
       dplyr::filter(
         #kernel_setting_id == "ds400_dt700_g001",
         dependent_var_id == "C1",
-        z %in% seq(-7000, -2000, 500)
+        z == input$plot_z
+        #z %in% seq(-7000, -2000, 500)
         #z %% 500 == 0
       ) %>%
       ggplot() +
