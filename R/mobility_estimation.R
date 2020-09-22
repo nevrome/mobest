@@ -4,25 +4,27 @@
 #' produced by \link{search_spatial_origin} or a specific object of class
 #' \code{mobest_interpol_grid}. Depending on the input a different mobility
 #' estimation algorithm is applied
-#' @param mobility_regions test
+#' @param delta_x test
+#' @param delta_y test
+#' @param delta_z test
 #'
 #' @return test
 #'
 #' @rdname estimate_mobility
 #' @export
-estimate_mobility <- function(input_grid, mobility_regions) {
+estimate_mobility <- function(input_grid, delta_x, delta_y, delta_z) {
   UseMethod("estimate_mobility")
 }
 
 #' @rdname estimate_mobility
 #' @export
-estimate_mobility.default <- function(input_grid, mobility_regions) {
+estimate_mobility.default <- function(input_grid, delta_x, delta_y, delta_z) {
   stop("x is not an object of class mobest_interpol_grid or mobest_input_grid")
 }
 
 #' @rdname estimate_mobility
 #' @export
-estimate_mobility.mobest_interpol_grid <- function(input_grid, mobility_regions) {
+estimate_mobility.mobest_interpol_grid <- function(input_grid, delta_x, delta_y, delta_z) {
 
   mob <- input_grid %>% tidyr::pivot_wider(
     id_cols = c("pred_grid_id", "point_id", "x", "y", "z"),
@@ -30,47 +32,46 @@ estimate_mobility.mobest_interpol_grid <- function(input_grid, mobility_regions)
   ) %>% tidyr::pivot_wider(
     id_cols = c("point_id"),
     names_from = c("pred_grid_id"), values_from = c("mean_C1", "mean_C2", "sd_C1", "sd_C2")
+  ) %>% dplyr::left_join(
+    input_grid %>%
+      dplyr::filter(.data[["pred_grid_id"]] == "main") %>%
+      dplyr::select(c("point_id", "x", "y", "z")) %>%
+      unique()
   ) %>%
-    dplyr::left_join(
-      main_pred_grid
-    ) %>%
-    dplyr::mutate(
-      # delta
-      delta_x = delta_x,
-      delta_y = delta_y,
-      delta_z = delta_z,
-      # partial derivatives deriv_x_C*
-      deriv_x_C1 = (mean_C1_offset_x - mean_C1_main) / delta_x,
-      deriv_x_C2 = (mean_C2_offset_x - mean_C2_main) / delta_x,
-      # partial derivatives deriv_y_C*
-      deriv_y_C1 = (mean_C1_offset_y - mean_C1_main) / delta_y,
-      deriv_y_C2 = (mean_C2_offset_y - mean_C2_main) / delta_y,
-      # partial derivatives deriv_z_C*
-      deriv_z_C1 = (mean_C1_offset_z - mean_C1_main) / delta_z,
-      deriv_z_C2 = (mean_C2_offset_z - mean_C2_main) / delta_z,
-      # two directional speeds for each spatial direction x and y
-      J_x_C1 = -deriv_z_C1/deriv_x_C1,
-      J_y_C1 = -deriv_z_C1/deriv_y_C1,
-      J_x_C2 = -deriv_z_C2/deriv_x_C2,
-      J_y_C2 = -deriv_z_C2/deriv_y_C2,
-      # one combined speed for C1 and C2
-      J_x = (J_x_C1 + J_x_C2)/2,
-      J_y = (J_y_C1 + J_y_C2)/2,
-      # final strength of the speed
-      J_final = sqrt(J_x^2 + J_y^2)
-    ) %>%
-    dplyr::select(
-      point_id, x, y, z, sd_C1_main, J_x, J_y, J_final
-    ) %>%
-    dplyr::mutate(
-      angle = unlist(Map(function(x,y) {mobest::vec2deg(c(x,y))}, J_x, J_y)),
-      J_final_outlier_removed = ifelse(
-        J_final > quantile(J_final, probs = 0.90), NA, J_final
-      ),
-      J_x_outlier_removed = ifelse(
-        abs(J_x) > quantile(abs(J_x), probs = 0.90), NA, J_x
-      )
+  dplyr::mutate(
+    # delta
+    delta_x = delta_x,
+    delta_y = delta_y,
+    delta_z = delta_z,
+    # partial derivatives deriv_x_C*
+    deriv_x_C1 = (mean_C1_offset_x - mean_C1_main) / delta_x,
+    deriv_x_C2 = (mean_C2_offset_x - mean_C2_main) / delta_x,
+    # partial derivatives deriv_y_C*
+    deriv_y_C1 = (mean_C1_offset_y - mean_C1_main) / delta_y,
+    deriv_y_C2 = (mean_C2_offset_y - mean_C2_main) / delta_y,
+    # partial derivatives deriv_z_C*
+    deriv_z_C1 = (mean_C1_offset_z - mean_C1_main) / delta_z,
+    deriv_z_C2 = (mean_C2_offset_z - mean_C2_main) / delta_z,
+    # two directional speeds for each spatial direction x and y
+    J_x_C1 = -deriv_z_C1/deriv_x_C1,
+    J_y_C1 = -deriv_z_C1/deriv_y_C1,
+    J_x_C2 = -deriv_z_C2/deriv_x_C2,
+    J_y_C2 = -deriv_z_C2/deriv_y_C2,
+    # one combined speed for C1 and C2
+    J_x = (J_x_C1 + J_x_C2)/2,
+    J_y = (J_y_C1 + J_y_C2)/2,
+    # final strength of the speed
+    J_final = sqrt(J_x^2 + J_y^2)
+  ) %>%
+  dplyr::select(
+    point_id, x, y, z, sd_C1_main, J_x, J_y, J_final
+  ) %>%
+  dplyr::mutate(
+    angle = unlist(Map(function(x,y) {mobest::vec2deg(c(x,y))}, J_x, J_y)),
+    J_final_outlier_removed = ifelse(
+      J_final > quantile(J_final, probs = 0.90), NA, J_final
     )
+  )
 
   return(mob)
 
@@ -78,7 +79,7 @@ estimate_mobility.mobest_interpol_grid <- function(input_grid, mobility_regions)
 
 #' @rdname estimate_mobility
 #' @export
-estimate_mobility.mobest_origin_grid <- function(input_grid, mobility_regions) {
+estimate_mobility.mobest_origin_grid <- function(input_grid, delta_x, delta_y, delta_z) {
 
   speed <- input_grid %>%
     dplyr::mutate(

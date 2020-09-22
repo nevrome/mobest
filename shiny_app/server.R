@@ -9,6 +9,39 @@ load("../../coest.interpol.2020/data/spatial/mobility_regions.RData")
 
 function(input, output, session) {
 
+  # dynamic inputs
+  output$time_slider_input <- renderUI({
+    sliderInput(
+      "plot_z", "Plot: time to show in [a calBC/AD]", -7500, 1500, -3000,
+      step = input$pred_grid_temporal_distance
+    )
+  })
+
+  # prediction grid preparation
+  pred_grids <- reactive({
+
+    main_pred_grid <- mobest::create_prediction_grid(
+      area,
+      mobility_regions,
+      spatial_cell_size = input$pred_grid_spatial_cell_size,
+      time_layers = seq(-7500, 1500, input$pred_grid_temporal_distance)
+    )
+
+    if (input$mobility_algorithm == "clemens") {
+      list(
+        main = main_pred_grid
+      )
+    } else if (input$mobility_algorithm == "stephan") {
+      list(
+        main = main_pred_grid,
+        offset_x = main_pred_grid %>% dplyr::mutate(x = x + input$stephan_mobility_delta_x),
+        offset_y = main_pred_grid %>% dplyr::mutate(y = y + input$stephan_mobility_delta_y),
+        offset_z = main_pred_grid %>% dplyr::mutate(z = z + input$stephan_mobility_delta_z)
+      )
+    }
+
+  })
+
   # GPR
   interpol_grid <- reactive({
 
@@ -33,14 +66,7 @@ function(input, output, session) {
           on_residuals = T, auto = F
         )
       ),
-      prediction_grid = list(
-        scs100_tl100 = mobest::create_prediction_grid(
-          area,
-          mobility_regions,
-          spatial_cell_size = input$pred_grid_spatial_cell_size,
-          time_layers = seq(-7500, 1500, input$pred_grid_temporal_distance)
-        )
-      )
+      prediction_grid = pred_grids()
     )
 
     withProgress(message = "GPR", {
@@ -50,21 +76,27 @@ function(input, output, session) {
     interpol_grid
   })
 
-  # Spatial origin
+  # mobility calculation
   mobility_clemens <- reactive({
-    withProgress(message = "Spatial origin search", {
+    updateSelectInput(session, "mobility_algorithm", selected = "clemens")
+    withProgress(message = "Mobility estimation (Clemens)", {
       origin_grid <- mobest::search_spatial_origin(interpol_grid(), steps = 1)
+      mobility <- mobest::estimate_mobility(origin_grid)
     })
-    mobest::estimate_mobility(origin_grid)
+    mobility
   })
 
-
-  # dynamic inputs
-  output$time_slider_input <- renderUI({
-    sliderInput(
-      "plot_z", "Plot: time to show in [a calBC/AD]", -7500, 1500, -3000,
-      step = input$pred_grid_temporal_distance
-    )
+  mobility_stephan <- reactive({
+    updateSelectInput(session, "mobility_algorithm", selected = "stephan")
+    withProgress(message = "Mobility estimation (Stephan)", {
+      mobility <- mobest::estimate_mobility(
+        interpol_grid(),
+        input$stephan_mobility_delta_x,
+        input$stephan_mobility_delta_y,
+        input$stephan_mobility_delta_z
+      )
+    })
+    mobility
   })
 
   # plots
@@ -72,7 +104,7 @@ function(input, output, session) {
 
     if (input$plot_type == "C1_comic") {
 
-      interpol_grid() %>% dplyr::filter(dependent_var_id == "C1") %>%
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", pred_grid_id == "main") %>%
         ggplot() +
         geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
         facet_wrap(~z) +
@@ -81,7 +113,7 @@ function(input, output, session) {
 
     } else if (input$plot_type == "C2_comic") {
 
-      interpol_grid() %>% dplyr::filter(dependent_var_id == "C2") %>%
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", pred_grid_id == "main") %>%
         ggplot() +
         geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
         facet_wrap(~z) +
@@ -90,19 +122,17 @@ function(input, output, session) {
 
     } else if (input$plot_type == "C1") {
 
-      interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", z == input$plot_z) %>%
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", pred_grid_id == "main", z == input$plot_z) %>%
         ggplot() +
         geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
-        facet_wrap(~z) +
         scale_fill_viridis_c() +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
     } else if (input$plot_type == "C2") {
 
-      interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", z == input$plot_z) %>%
+      interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", pred_grid_id == "main", z == input$plot_z) %>%
         ggplot() +
         geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
-        facet_wrap(~z) +
         scale_fill_viridis_c(option = "plasma") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
@@ -120,7 +150,23 @@ function(input, output, session) {
       mobility_clemens() %>% dplyr::filter(z == input$plot_z) %>%
         ggplot() +
         geom_raster(aes(x, y, fill = speed_km_per_decade)) +#, alpha = sd)) +
+        scale_fill_viridis_c(option = "cividis") +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "mobility_stephan_comic") {
+
+      mobility_stephan() %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = J_final_outlier_removed)) +#, alpha = sd)) +
         facet_wrap(~z) +
+        scale_fill_viridis_c(option = "cividis") +
+        scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "mobility_stephan") {
+
+      mobility_stephan() %>% dplyr::filter(z == input$plot_z) %>%
+        ggplot() +
+        geom_raster(aes(x, y, fill = J_final_outlier_removed)) +#, alpha = sd)) +
         scale_fill_viridis_c(option = "cividis") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 

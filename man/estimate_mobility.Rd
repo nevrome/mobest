@@ -7,13 +7,13 @@
 \alias{estimate_mobility.mobest_origin_grid}
 \title{estimate_mobility}
 \usage{
-estimate_mobility(input_grid, mobility_regions)
+estimate_mobility(input_grid, delta_x, delta_y, delta_z)
 
-\method{estimate_mobility}{default}(input_grid, mobility_regions)
+\method{estimate_mobility}{default}(input_grid, delta_x, delta_y, delta_z)
 
-\method{estimate_mobility}{mobest_interpol_grid}(input_grid, mobility_regions)
+\method{estimate_mobility}{mobest_interpol_grid}(input_grid, delta_x, delta_y, delta_z)
 
-\method{estimate_mobility}{mobest_origin_grid}(input_grid, mobility_regions)
+\method{estimate_mobility}{mobest_origin_grid}(input_grid, delta_x, delta_y, delta_z)
 }
 \arguments{
 \item{input_grid}{Either an object of class \code{mobest_input_grid} as
@@ -21,7 +21,11 @@ produced by \link{search_spatial_origin} or a specific object of class
 \code{mobest_interpol_grid}. Depending on the input a different mobility
 estimation algorithm is applied}
 
-\item{mobility_regions}{test}
+\item{delta_x}{test}
+
+\item{delta_y}{test}
+
+\item{delta_z}{test}
 }
 \value{
 test

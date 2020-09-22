@@ -10,9 +10,15 @@ pageWithSidebar(
     numericInput("pred_grid_spatial_cell_size", "Prediction grid: spatial cell size in [m]", 200000),
     numericInput("pred_grid_temporal_distance", "Prediction grid: temporal distance in [a]", 500),
     hr(style="border-color: black;"),
+    selectInput("mobility_algorithm", "Mobility algorithm", choices = c("clemens", "stephan")),
+    numericInput("stephan_mobility_delta_x", "Stephan's algorithm: delta_x in [m]", 10000),
+    numericInput("stephan_mobility_delta_y", "Stephan's algorithm: delta_y in [m]", 10000),
+    numericInput("stephan_mobility_delta_z", "Stephan's algorithm: delta_z in [a]", 10),
+    hr(style="border-color: black;"),
     selectInput("plot_type", "Plot type", choices = c(
       "C1_comic", "C2_comic", "C1", "C2",
-      "mobility_clemens_comic", "mobility_clemens"
+      "mobility_clemens_comic", "mobility_clemens",
+      "mobility_stephan_comic", "mobility_stephan"
     )),
     uiOutput("time_slider_input")
   ),
