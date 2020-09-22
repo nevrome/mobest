@@ -21,7 +21,8 @@ pageWithSidebar(
       "mobility_clemens_comic", "mobility_clemens",
       "mobility_stephan_comic", "mobility_stephan"
     )),
-    uiOutput("time_slider_input")
+    uiOutput("time_slider_input"),
+    checkboxInput("sd_as_alpha", "Encode SD with alpha"),
   ),
   mainPanel(
     plotOutput('plot1', height = "1000px")

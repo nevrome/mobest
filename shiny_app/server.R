@@ -114,7 +114,13 @@ function(input, output, session) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", pred_grid_id == "main") %>%
         ggplot() +
-        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        {
+          if (input$sd_as_alpha) {
+            geom_raster(aes(x, y, fill = mean, alpha = sd))
+          } else {
+            geom_raster(aes(x, y, fill = mean))
+          }
+        } +
         facet_wrap(~z) +
         scale_fill_viridis_c() +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
@@ -123,7 +129,13 @@ function(input, output, session) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", pred_grid_id == "main") %>%
         ggplot() +
-        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        {
+          if (input$sd_as_alpha) {
+            geom_raster(aes(x, y, fill = mean, alpha = sd))
+          } else {
+            geom_raster(aes(x, y, fill = mean))
+          }
+        } +
         facet_wrap(~z) +
         scale_fill_viridis_c(option = "plasma") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
@@ -132,7 +144,13 @@ function(input, output, session) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", pred_grid_id == "main", z == input$plot_z) %>%
         ggplot() +
-        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        {
+          if (input$sd_as_alpha) {
+            geom_raster(aes(x, y, fill = mean, alpha = sd))
+          } else {
+            geom_raster(aes(x, y, fill = mean))
+          }
+        } +
         scale_fill_viridis_c() +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
@@ -140,7 +158,13 @@ function(input, output, session) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", pred_grid_id == "main", z == input$plot_z) %>%
         ggplot() +
-        geom_raster(aes(x, y, fill = mean)) +#, alpha = sd)) +
+        {
+          if (input$sd_as_alpha) {
+            geom_raster(aes(x, y, fill = mean, alpha = sd))
+          } else {
+            geom_raster(aes(x, y, fill = mean))
+          }
+        } +
         scale_fill_viridis_c(option = "plasma") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
