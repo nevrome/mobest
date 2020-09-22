@@ -88,7 +88,7 @@ function(input, output, session) {
     }
     # updateSelectInput(session, "mobility_algorithm", selected = "clemens")
     withProgress(message = "Mobility estimation (Clemens)", {
-      origin_grid <- mobest::search_spatial_origin(interpol_grid, steps = 1)
+      origin_grid <- mobest::search_spatial_origin(interpol_grid, steps = input$clemens_mobility_steps)
       mobility <- mobest::estimate_mobility(origin_grid)
     })
     mobility
