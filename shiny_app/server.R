@@ -232,19 +232,21 @@ function(input, output, session) {
         # main
         dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
         dplyr::summarise(
-          #mean_angle_deg = mobest::mean_deg(angle_deg)
-          mean_directed_distance = sqrt(mean(x - x_origin)^2 + mean(y - y_origin)^2)
+          mean_directed_distance = sqrt(mean(x - x_origin)^2 + mean(y - y_origin)^2),
+          mean_angle_deg = mobest::vec2deg(c(mean(x_origin - x), mean(y_origin - y)))
         ) %>%
         ggplot() +
         geom_line(
           aes(
             x = z, y = mean_directed_distance,
-            group = interaction(independent_table_id, kernel_setting_id)#,
-            #color = mean_angle_deg
-          ),
-          color = "red"
+            group = interaction(independent_table_id, kernel_setting_id),
+            color = mean_angle_deg
+          )
         ) +
-        facet_wrap(dplyr::vars(region_id))
+        facet_wrap(dplyr::vars(region_id)) +
+        scale_color_gradientn(
+          colours = c("#F5793A", "#85C0F9", "#85C0F9", "#A95AA1", "#A95AA1", "#33a02c", "#33a02c", "#F5793A")
+        )
     } else if (input$plot_type == "clemens_absolute_mobility_regional_curves") {
 
       mobility_clemens() %>%
