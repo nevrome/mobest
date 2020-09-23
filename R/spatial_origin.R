@@ -143,7 +143,7 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, steps = 3)
         # all genetic distances to current point A
         gendists_to_A <- genetic_distance[index_of_A,]
         # spatial search area limitation
-        gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
+        #gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
 
         # find closest point in the past B
 
