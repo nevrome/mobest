@@ -20,6 +20,8 @@ crossvalidate(
 \item{kernel}{test}
 
 \item{number_of_reorderings}{test}
+
+\item{number_of_splits}{test}
 }
 \description{
 crossvalidate

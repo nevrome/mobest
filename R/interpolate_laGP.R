@@ -33,15 +33,18 @@
 #'
 #' pred_grid <- tibble::as_tibble(expand.grid(x = 0:10, y = 0:10, z = 0:10))
 #'
-#' pred <- interpolate_laGP(independent, dependent, pred_grid, auto = F, d = c(3, 3, 3)^2, g = 0.01, on_residuals = T)
+#' pred <- interpolate_laGP(
+#'   independent, dependent, pred_grid, auto = FALSE, d = c(3, 3, 3)^2,
+#'   g = 0.01, on_residuals = TRUE
+#' )
 #'
 #' pred_grid$pred_mean <- pred$mean
 #'
-#' library(ggplot2)
-#' ggplot(data = pred_grid) +
-#'   geom_raster(aes(x, y, fill = pred_mean)) +
-#'   facet_wrap(~z) +
-#'   scale_fill_viridis_c()
+#' #library(ggplot2)
+#' #ggplot(data = pred_grid) +
+#' # geom_raster(aes(x, y, fill = pred_mean)) +
+#' # facet_wrap(~z) +
+#' # scale_fill_viridis_c()
 #'
 #' }
 #'

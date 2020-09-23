@@ -59,7 +59,7 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, steps = 3)
 
   # split by
   age_sample_run_pris <- pri %>% dplyr::group_split(
-    independent_table_id, kernel_setting_id, pred_grid_id
+    .data[["independent_table_id"]], .data[["kernel_setting_id"]], .data[["pred_grid_id"]]
   )
 
   # loop by
@@ -235,7 +235,7 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, steps = 3)
   pri_ready <- pri_ready_large %>% dplyr::bind_rows()
 
   # remove points with unknown/empty origin
-  pri_ready <- pri_ready %>% dplyr::filter(!is.na(x_origin) & !is.na(y_origin))
+  pri_ready <- pri_ready %>% dplyr::filter(!is.na(.data[["x_origin"]]) & !is.na(.data[["y_origin"]]))
 
   # add add_origin_vector_coordinates
   pri_ready <- pri_ready %>% add_origin_vector_coordinates()

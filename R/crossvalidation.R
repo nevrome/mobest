@@ -4,6 +4,7 @@
 #' @param dependent test
 #' @param kernel test
 #' @param number_of_reorderings test
+#' @param number_of_splits test
 #'
 #' @export
 crossvalidate <- function(
@@ -73,11 +74,7 @@ crossvalidate <- function(
 
     #### run interpolation on model grid ####
 
-    model_grid_result <- mobest::run_model_grid(model_grid)
-
-    #### unnest prediction to get a point-wise prediction table ####
-
-    interpol_grid <- mobest::unnest_model_grid(model_grid_result)
+    interpol_grid <- mobest::run_model_grid(model_grid)
 
     #### merge prediction and real values ####
 
@@ -150,7 +147,7 @@ create_kernel_grid <- function(ds, dt, g) {
       1:nrow(ks), function(i) {
         list(d = c(ks[["ds"]][i], ks[["ds"]][i], ks[["dt"]][i]), g = ks[["g"]][i], on_residuals = T, auto = F)
       }
-    ) %>% setNames(
+    ) %>% stats::setNames(
       sapply(
         1:nrow(ks), function(i) {
           paste0(ks[["ds"]][i]/1000, "_", ks[["dt"]][i], "_", ks[["g"]][i])
