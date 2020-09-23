@@ -216,7 +216,7 @@ function(input, output, session) {
       mobility_clemens() %>%
         ggplot() +
         geom_raster(aes(x, y, fill = mean_C1)) +
-        geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.1,"cm"))) +
+        geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.3,"cm"))) +
         facet_wrap(~z)
 
     } else if (input$plot_type == "clemens_origin_segments" && !input$comic) {
@@ -224,7 +224,7 @@ function(input, output, session) {
       mobility_clemens() %>% dplyr::filter(z == input$plot_z) %>%
         ggplot() +
         geom_raster(aes(x, y, fill = mean_C1)) +
-        geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.1,"cm")))
+        geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.3,"cm")))
 
     } else if (input$plot_type == "clemens_regional_curves") {
 
