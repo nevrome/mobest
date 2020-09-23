@@ -1,5 +1,3 @@
-vars <- setdiff(names(iris), "Species")
-
 pageWithSidebar(
   NULL,
   sidebarPanel(
@@ -17,7 +15,7 @@ pageWithSidebar(
     numericInput("stephan_mobility_delta_z", "Stephan's algorithm: delta_z in [a]", 10),
     hr(style="border-color: black;"),
     selectInput("plot_type", "Plot type", choices = c(
-      "C1", "C2", "mobility_clemens", "mobility_stephan", "clemens_origin_segments"
+      "C1", "C2", "mobility_clemens", "mobility_stephan", "clemens_origin_segments", "clemens_regional_curves"
     )),
     uiOutput("time_slider_input"),
     checkboxInput("sd_as_alpha", "Encode SD with alpha"),

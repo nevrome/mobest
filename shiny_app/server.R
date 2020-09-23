@@ -210,17 +210,36 @@ function(input, output, session) {
 
       mobility_clemens() %>%
         ggplot() +
-        #geom_raster(aes(x, y, fill = mean_C1)) +
-        geom_segment(aes(x, y, xend = x_origin, yend = y_origin)) +
+        geom_raster(aes(x, y, fill = mean_C1)) +
+        geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.1,"cm"))) +
         facet_wrap(~z)
 
     } else if (input$plot_type == "clemens_origin_segments" && !input$comic) {
 
       mobility_clemens() %>% dplyr::filter(z == input$plot_z) %>%
         ggplot() +
-        #geom_raster(aes(x, y, fill = mean_C1)) +
-        geom_segment(aes(x, y, xend = x_origin, yend = y_origin))
+        geom_raster(aes(x, y, fill = mean_C1)) +
+        geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.1,"cm")))
 
+    } else if (input$plot_type == "clemens_regional_curves") {
+
+      mobility_clemens() %>%
+        # main
+        dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
+        dplyr::summarise(
+          mean_speed_km_per_decade = mean(speed_km_per_decade)#,
+          #mean_angle_deg = mobest::mean_deg(angle_deg)
+        ) %>%
+        ggplot() +
+        geom_line(
+          aes(
+            x = z, y = mean_speed_km_per_decade,
+            group = interaction(independent_table_id, kernel_setting_id)#,
+            #color = mean_angle_deg
+          ),
+          alpha = 0.5
+        ) +
+        facet_wrap(dplyr::vars(region_id))
     }
 
   })
