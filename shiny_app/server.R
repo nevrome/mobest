@@ -11,10 +11,14 @@ function(input, output, session) {
 
   # dynamic inputs
   output$time_slider_input <- renderUI({
-    sliderInput(
-      "plot_z", "Plot: time to show in [a calBC/AD]", -7500, 1500, -3000,
-      step = input$pred_grid_temporal_distance
-    )
+    if (!input$comic) {
+      sliderInput(
+        "plot_z", "Plot: time to show in [a calBC/AD]", -7500, 1500, -3000,
+        step = input$pred_grid_temporal_distance
+      )
+    } else {
+      HTML("Comic mode active")
+    }
   })
 
   # prediction grid preparation
@@ -110,7 +114,7 @@ function(input, output, session) {
   # plots
   output$plot1 <- renderPlot({
 
-    if (input$plot_type == "C1_comic") {
+    if (input$plot_type == "C1" && input$comic) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", pred_grid_id == "main") %>%
         ggplot() +
@@ -125,7 +129,7 @@ function(input, output, session) {
         scale_fill_viridis_c() +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "C2_comic") {
+    } else if (input$plot_type == "C2" && input$comic) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", pred_grid_id == "main") %>%
         ggplot() +
@@ -140,7 +144,7 @@ function(input, output, session) {
         scale_fill_viridis_c(option = "plasma") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "C1") {
+    } else if (input$plot_type == "C1" && !input$comic) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C1", pred_grid_id == "main", z == input$plot_z) %>%
         ggplot() +
@@ -154,7 +158,7 @@ function(input, output, session) {
         scale_fill_viridis_c() +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "C2") {
+    } else if (input$plot_type == "C2" && !input$comic) {
 
       interpol_grid() %>% dplyr::filter(dependent_var_id == "C2", pred_grid_id == "main", z == input$plot_z) %>%
         ggplot() +
@@ -168,7 +172,7 @@ function(input, output, session) {
         scale_fill_viridis_c(option = "plasma") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "mobility_clemens_comic") {
+    } else if (input$plot_type == "mobility_clemens" && input$comic) {
 
       mobility_clemens() %>%
         ggplot() +
@@ -177,7 +181,7 @@ function(input, output, session) {
         scale_fill_viridis_c(option = "cividis") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "mobility_clemens") {
+    } else if (input$plot_type == "mobility_clemens" && !input$comic) {
 
       mobility_clemens() %>% dplyr::filter(z == input$plot_z) %>%
         ggplot() +
@@ -185,7 +189,7 @@ function(input, output, session) {
         scale_fill_viridis_c(option = "cividis") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "mobility_stephan_comic") {
+    } else if (input$plot_type == "mobility_stephan" && input$comic) {
 
       mobility_stephan() %>%
         ggplot() +
@@ -194,13 +198,28 @@ function(input, output, session) {
         scale_fill_viridis_c(option = "cividis") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
 
-    } else if (input$plot_type == "mobility_stephan") {
+    } else if (input$plot_type == "mobility_stephan" && !input$comic) {
 
       mobility_stephan() %>% dplyr::filter(z == input$plot_z) %>%
         ggplot() +
         geom_raster(aes(x, y, fill = J_final_outlier_removed)) +#, alpha = sd)) +
         scale_fill_viridis_c(option = "cividis") +
         scale_alpha_continuous(range = c(1, 0), na.value = 0)
+
+    } else if (input$plot_type == "clemens_origin_segments" && input$comic) {
+
+      mobility_clemens() %>%
+        ggplot() +
+        #geom_raster(aes(x, y, fill = mean_C1)) +
+        geom_segment(aes(x, y, xend = x_origin, yend = y_origin)) +
+        facet_wrap(~z)
+
+    } else if (input$plot_type == "clemens_origin_segments" && !input$comic) {
+
+      mobility_clemens() %>% dplyr::filter(z == input$plot_z) %>%
+        ggplot() +
+        #geom_raster(aes(x, y, fill = mean_C1)) +
+        geom_segment(aes(x, y, xend = x_origin, yend = y_origin))
 
     }
 
