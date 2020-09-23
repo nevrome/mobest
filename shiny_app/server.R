@@ -21,75 +21,80 @@ function(input, output, session) {
     }
   })
 
-  # prediction grid preparation
-  pred_grids <- reactive({
-
-    main_pred_grid <- mobest::create_prediction_grid(
-      area,
-      mobility_regions,
-      spatial_cell_size = input$pred_grid_spatial_cell_size,
-      time_layers = seq(-7500, 1500, input$pred_grid_temporal_distance)
-    )
-
-    if (input$mobility_algorithm == "clemens") {
-      list(
-        main = main_pred_grid
-      )
-    } else if (input$mobility_algorithm == "stephan") {
-      list(
-        main = main_pred_grid,
-        offset_x = main_pred_grid %>% dplyr::mutate(x = x + input$stephan_mobility_delta_x),
-        offset_y = main_pred_grid %>% dplyr::mutate(y = y + input$stephan_mobility_delta_y),
-        offset_z = main_pred_grid %>% dplyr::mutate(z = z + input$stephan_mobility_delta_z)
-      )
-    }
-
-  })
-
   # GPR
   interpol_grid <- reactive({
 
-    req(pred_grids())
+    #req(pred_grids())
 
-    model_grid <- mobest::create_model_grid(
-      independent = list(
-        tibble::tibble(
-          x = janno_final$x,
-          y = janno_final$y,
-          z = janno_final$Date_BC_AD_Median_Derived
-        )
-      ) %>% stats::setNames("age_median"),
-      dependent = list(
-        C1 = janno_final$C1,
-        C2 = janno_final$C2
-      ),
-      kernel = list(
-        shiny_kernel = list(d = c(
-            input$kernel_spatial_size,
-            input$kernel_spatial_size,
-            input$kernel_temporal_size
-          ), g = input$kernel_nugget,
-          on_residuals = T, auto = F
-        )
-      ),
-      prediction_grid = pred_grids()
+    cache_file_path <- paste0(
+      "cache/interpol_",
+      "cs", input$pred_grid_spatial_cell_size, "_",
+      "td", input$pred_grid_temporal_distance, "_",
+      "ds", input$kernel_spatial_size, "_",
+      "dt", input$kernel_temporal_size, "_",
+      "g", input$kernel_nugget, "_",
+      "smdx", input$stephan_mobility_delta_x, "_",
+      "smdy", input$stephan_mobility_delta_y, "_",
+      "smdz", input$stephan_mobility_delta_z,
+      ".RData"
     )
 
-    withProgress(message = "GPR", {
-      interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
-    })
+    if (file.exists(cache_file_path)) {
+      load(cache_file_path)
+      interpol_grid
+    } else {
 
-    interpol_grid
+      main_pred_grid <- mobest::create_prediction_grid(
+        area,
+        mobility_regions,
+        spatial_cell_size = input$pred_grid_spatial_cell_size,
+        time_layers = seq(-7500, 1500, input$pred_grid_temporal_distance)
+      )
+
+      model_grid <- mobest::create_model_grid(
+        independent = list(
+          tibble::tibble(
+            x = janno_final$x,
+            y = janno_final$y,
+            z = janno_final$Date_BC_AD_Median_Derived
+          )
+        ) %>% stats::setNames("age_median"),
+        dependent = list(
+          C1 = janno_final$C1,
+          C2 = janno_final$C2
+        ),
+        kernel = list(
+          shiny_kernel = list(d = c(
+              input$kernel_spatial_size,
+              input$kernel_spatial_size,
+              input$kernel_temporal_size
+            ), g = input$kernel_nugget,
+            on_residuals = T, auto = F
+          )
+        ),
+        prediction_grid = list(
+          main = main_pred_grid,
+          offset_x = main_pred_grid %>% dplyr::mutate(x = x + input$stephan_mobility_delta_x),
+          offset_y = main_pred_grid %>% dplyr::mutate(y = y + input$stephan_mobility_delta_y),
+          offset_z = main_pred_grid %>% dplyr::mutate(z = z + input$stephan_mobility_delta_z)
+        )
+      )
+
+      withProgress(message = "GPR", {
+        interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+      })
+
+      save(interpol_grid, file = cache_file_path)
+
+      interpol_grid
+
+    }
+
   })
 
   # mobility calculation
   mobility_clemens <- reactive({
-    # hacky trick to reduce calculcation time
-    if (input$mobility_algorithm == "stephan") {
-      interpol_grid <- interpol_grid() %>% dplyr::filter(pred_grid_id == "main")
-    } else {
-      interpol_grid <- interpol_grid()
-    }
+    interpol_grid <- interpol_grid() %>% dplyr::filter(pred_grid_id == "main")
     # updateSelectInput(session, "mobility_algorithm", selected = "clemens")
     withProgress(message = "Mobility estimation (Clemens)", {
       origin_grid <- mobest::search_spatial_origin(interpol_grid, steps = input$clemens_mobility_steps)

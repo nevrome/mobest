@@ -8,7 +8,6 @@ pageWithSidebar(
     numericInput("pred_grid_spatial_cell_size", "Prediction grid: spatial cell size in [m]", 200000),
     numericInput("pred_grid_temporal_distance", "Prediction grid: temporal distance in [a]", 500),
     hr(style="border-color: black;"),
-    selectInput("mobility_algorithm", "Mobility algorithm", choices = c("clemens", "stephan")),
     sliderInput("clemens_mobility_steps", "Clemens' algorithm: steps in the past", 1, 10, 1),
     numericInput("stephan_mobility_delta_x", "Stephan's algorithm: delta_x in [m]", 10000),
     numericInput("stephan_mobility_delta_y", "Stephan's algorithm: delta_y in [m]", 10000),
