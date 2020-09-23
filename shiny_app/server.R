@@ -235,7 +235,8 @@ function(input, output, session) {
         dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
         dplyr::summarise(
           mean_directed_distance = sqrt(mean(x - x_origin)^2 + mean(y - y_origin)^2),
-          mean_angle_deg = mobest::vec2deg(c(mean(x_origin - x), mean(y_origin - y)))
+          mean_angle_deg = mobest::vec2deg(c(mean(x_origin - x), mean(y_origin - y))),
+          .groups = "drop"
         ) %>%
         ggplot() +
         geom_line(
