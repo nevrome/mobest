@@ -98,7 +98,7 @@ function(input, output, session) {
     # updateSelectInput(session, "mobility_algorithm", selected = "clemens")
     withProgress(message = "Mobility estimation (Clemens)", {
       origin_grid <- mobest::search_spatial_origin(interpol_grid, steps = input$clemens_mobility_steps)
-      mobility <- mobest::estimate_mobility(origin_grid)
+      mobility <- origin_grid#mobest::estimate_mobility(origin_grid)
     })
     mobility
   })
@@ -226,23 +226,41 @@ function(input, output, session) {
         geom_raster(aes(x, y, fill = mean_C1)) +
         geom_segment(aes(x, y, xend = x_origin, yend = y_origin), arrow = arrow(length = unit(0.3,"cm")))
 
-    } else if (input$plot_type == "clemens_regional_curves") {
+    } else if (input$plot_type == "clemens_directed_mobility_regional_curves") {
 
       mobility_clemens() %>%
         # main
         dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
         dplyr::summarise(
-          mean_speed_km_per_decade = mean(speed_km_per_decade)#,
           #mean_angle_deg = mobest::mean_deg(angle_deg)
+          mean_directed_distance = sqrt(mean(x - x_origin)^2 + mean(y - y_origin)^2)
         ) %>%
         ggplot() +
         geom_line(
           aes(
-            x = z, y = mean_speed_km_per_decade,
+            x = z, y = mean_directed_distance,
             group = interaction(independent_table_id, kernel_setting_id)#,
             #color = mean_angle_deg
           ),
-          alpha = 0.5
+          color = "red"
+        ) +
+        facet_wrap(dplyr::vars(region_id))
+    } else if (input$plot_type == "clemens_absolute_mobility_regional_curves") {
+
+      mobility_clemens() %>%
+        # main
+        dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
+        dplyr::summarise(
+          mean_absolute_distance = mean(sqrt((x - x_origin)^2 + (y - y_origin)^2))
+        ) %>%
+        ggplot() +
+        geom_line(
+          aes(
+            x = z, y = mean_absolute_distance,
+            group = interaction(independent_table_id, kernel_setting_id)#,
+            #color = mean_angle_deg
+          ),
+          color = "red"
         ) +
         facet_wrap(dplyr::vars(region_id))
     }
