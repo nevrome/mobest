@@ -81,7 +81,7 @@ function(input, output, session) {
       )
 
       withProgress(message = "GPR", {
-        interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+        interpol_grid <- mobest::run_model_grid(model_grid, quiet = F)
       })
 
       save(interpol_grid, file = cache_file_path)
@@ -118,6 +118,8 @@ function(input, output, session) {
 
   # plots
   output$plot1 <- renderPlot({
+
+    req(input$plot_z)
 
     if (input$plot_type == "C1" && input$comic) {
 
