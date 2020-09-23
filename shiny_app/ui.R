@@ -15,7 +15,8 @@ pageWithSidebar(
     hr(style="border-color: black;"),
     selectInput("plot_type", "Plot type", choices = c(
       "C1", "C2", "mobility_clemens", "mobility_stephan", "clemens_origin_segments",
-      "clemens_directed_mobility_regional_curves", "clemens_absolute_mobility_regional_curves"
+      "clemens_directed_mobility_regional_curves", "clemens_absolute_mobility_regional_curves",
+      "stephan_directed_mobility_regional_curves"
     )),
     uiOutput("time_slider_input"),
     checkboxInput("sd_as_alpha", "Encode SD with alpha"),

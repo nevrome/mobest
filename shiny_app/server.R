@@ -231,7 +231,6 @@ function(input, output, session) {
     } else if (input$plot_type == "clemens_directed_mobility_regional_curves") {
 
       mobility_clemens() %>%
-        # main
         dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
         dplyr::summarise(
           mean_directed_distance = sqrt(mean(x - x_origin)^2 + mean(y - y_origin)^2),
@@ -253,7 +252,6 @@ function(input, output, session) {
     } else if (input$plot_type == "clemens_absolute_mobility_regional_curves") {
 
       mobility_clemens() %>%
-        # main
         dplyr::group_by(region_id, z, independent_table_id, kernel_setting_id) %>%
         dplyr::summarise(
           mean_absolute_distance = mean(sqrt((x - x_origin)^2 + (y - y_origin)^2))
@@ -268,6 +266,28 @@ function(input, output, session) {
           color = "red"
         ) +
         facet_wrap(dplyr::vars(region_id))
+
+    } else if (input$plot_type == "stephan_directed_mobility_regional_curves") {
+
+      mobility_stephan() %>%
+        dplyr::group_by(region_id, z) %>%
+        dplyr::summarise(
+          mean_speed = mean(J_final_outlier_removed, na.rm = T),
+          mean_angle_deg = mobest::mean_deg(angle),
+          .groups = "drop"
+        ) %>%
+        ggplot() +
+        geom_line(
+          aes(
+            x = z, y = mean_speed,
+            color = mean_angle_deg
+          )
+        ) +
+        facet_wrap(dplyr::vars(region_id)) +
+        scale_color_gradientn(
+          colours = c("#F5793A", "#85C0F9", "#85C0F9", "#A95AA1", "#A95AA1", "#33a02c", "#33a02c", "#F5793A")
+        )
+
     }
 
   })

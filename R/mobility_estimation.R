@@ -35,7 +35,7 @@ estimate_mobility.mobest_interpol_grid <- function(input_grid, delta_x, delta_y,
   ) %>% dplyr::left_join(
     input_grid %>%
       dplyr::filter(.data[["pred_grid_id"]] == "main") %>%
-      dplyr::select(c("point_id", "x", "y", "z")) %>%
+      dplyr::select(c("point_id", "x", "y", "z", "region_id")) %>%
       unique()
   ) %>%
   dplyr::mutate(
@@ -64,7 +64,7 @@ estimate_mobility.mobest_interpol_grid <- function(input_grid, delta_x, delta_y,
     J_final = sqrt(.data[["J_x"]]^2 + .data[["J_y"]]^2)
   ) %>%
   dplyr::select(
-    "point_id", "x", "y", "z", "sd_C1_main", "J_x", "J_y", "J_final"
+    "point_id", "x", "y", "z", "region_id", "sd_C1_main", "J_x", "J_y", "J_final"
   ) %>%
   dplyr::mutate(
     angle = unlist(Map(function(x,y) {mobest::vec2deg(c(x,y))}, .data[["J_x"]], .data[["J_y"]])),
