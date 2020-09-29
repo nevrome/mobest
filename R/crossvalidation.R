@@ -19,7 +19,9 @@ crossvalidate <- function(
 
   #### compile randomly reordered versions of crossval ####
 
-  crossval_mixed_list <- lapply(1:number_of_reorderings, function(i) { crossval[sample(1:nrow(crossval), replace = F), ] })
+  crossval_mixed_list <- lapply(1:number_of_reorderings, function(i) {
+    crossval[sample(1:nrow(crossval), replace = F), ]
+  })
 
   #### run prediction test for each of this versions ####
 
@@ -66,9 +68,7 @@ crossvalidate <- function(
               dplyr::select(x, y, z) %>%
               dplyr::mutate(point_id = 1:nrow(.))
           ) %>% stats::setNames(i)
-        ) %>%
-          dplyr::select(-independent_table_type)
-
+        )
       }
     ) %>% dplyr::bind_rows()
 
