@@ -21,6 +21,7 @@ create_prediction_grid <- function(area, mobility_regions, spatial_cell_size = 1
   point_grid <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
     sf::st_sf() %>%
+    sf::st_intersection(area) %>%
     sf::st_join(mobility_regions, join = sf::st_intersects) %>%
     dplyr::mutate(
       x = sf::st_coordinates(.)[,1],
