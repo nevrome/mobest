@@ -63,7 +63,7 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, steps = 3)
   )
 
   # loop by
-  pri_ready_large <- pbapply::pblapply(age_sample_run_pris, function(age_sample_run_pri) {
+  pri_ready_large <- lapply(age_sample_run_pris, function(age_sample_run_pri) {
 
     # split dataset by age slice
     time_pris <- split(
