@@ -1,6 +1,6 @@
 create_spatpos <- function(id, x, y, z, name) {
   # input check and modifications
-  checkmate::assert_list(id)
+  checkmate::assert_vector(id)
   checkmate::assert_list(x)
   checkmate::assert_list(y)
   checkmate::assert_list(z)
@@ -12,7 +12,10 @@ create_spatpos <- function(id, x, y, z, name) {
       purrr::some(function(x) { length(x) != length(id) }))
     { stop("Each vector in id, x, y, z must have identical length") }
   # compile list of tibbles
-  list(id = id, x = x, y = y, z = z) %>%
+  list(
+    id = rep(list(id), length(x)),
+    x = x, y = y, z = z
+  ) %>%
     purrr::pmap(
       function(id, x, y, z) {
         tibble::tibble(
@@ -24,9 +27,20 @@ create_spatpos <- function(id, x, y, z, name) {
       }
     ) %>%
     magrittr::set_names(name) %>%
-    magrittr::set_class("spatpos")
+    magrittr::set_class("mobest_spatiotemporalposition")
 }
 
-create_spatobs <- function(spatpos, ) {
-
+create_obs <- function(id, ...) {
+  # input check
+  checkmate::assert_vector(id)
+  if (list(...) %>%
+      purrr::some(function(x) { length(x) != length(id) }))
+    { stop("Each vector in ... must have the same length as id") }
+  # compile obs tibble
+  tibble::tibble(
+    id = id
+  ) %>%
+    cbind(...) %>%
+    magrittr::set_class("mobest_observation")
 }
+
