@@ -17,6 +17,7 @@ Imports:
     dplyr (>= 0.8.5),
     fields (>= 10.3),
     magrittr,
+    modelr,
     parallel,
     pbapply (>= 1.4-2),
     purrr (>= 0.3.3),

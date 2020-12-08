@@ -1,3 +1,9 @@
+merge_spatpos_obs <- function(spatpos, obs) {
+  dplyr::inner_join(
+    spatpos, obs, by = "id"
+  )
+}
+
 mean_spatpos_uncertain <- function(spatpos_uncertain) {
   # input check
   checkmate::assert_class(spatpos_uncertain, "mobest_uncertain_spatiotemporalpositions")
@@ -17,6 +23,17 @@ mean_spatpos_uncertain <- function(spatpos_uncertain) {
   )
 }
 
+#' Title
+#'
+#' @param id
+#' @param x
+#' @param y
+#' @param z
+#'
+#' @return
+#' @export
+#'
+#' @examples
 create_spatpos <- function(id, x, y, z) {
   # input check
   checkmate::assert_vector(id)
@@ -55,6 +72,20 @@ create_spatpos_uncertain <- function(id, x, y, z, name) {
     magrittr::set_class("mobest_uncertain_spatiotemporalpositions")
 }
 
+get_var_names <- function(obs) {
+  t_obs <- colnames(obs)
+  t_obs[t_obs != "id"]
+}
+
+#' Title
+#'
+#' @param id
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 create_obs <- function(id, ...) {
   # input check
   checkmate::assert_vector(id)
@@ -66,6 +97,6 @@ create_obs <- function(id, ...) {
     id = id
   ) %>%
     cbind(...) %>%
-    magrittr::set_class("mobest_observations")
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
 }
 
