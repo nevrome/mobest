@@ -6,7 +6,7 @@
 #' @return
 #'
 #' @export
-calculate_all_distances <- function(independent, dependent) {
+calculate_pairwise_distances <- function(independent, dependent) {
   # input check
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   checkmate::assert_class(dependent, "mobest_observations")
@@ -49,6 +49,7 @@ calculate_all_distances <- function(independent, dependent) {
         d_obs_long, d_obs_resid_long, by = c("Var1", "Var2")
       )
     })
+  # join different distances
   purrr::reduce(
     c(list(d_geo_long, d_time_long, d_obs_total_long), d_obs_long_list),
     function(x, y) {
@@ -56,5 +57,40 @@ calculate_all_distances <- function(independent, dependent) {
         x, y, by = c("Var1", "Var2")
       )
     }
-  ) %>% tibble::tibble()
+  ) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_pairwisedistances")
+}
+
+#' Title
+#'
+#' @param x
+#'
+#' @return
+#' @export
+bin_pairwise_distances <- function(x) {
+  # input check
+  checkmate::assert_class(x, "mobest_pairwisedistances")
+  # perform binning
+  x %>%
+    dplyr::mutate(
+      geo_dist_cut = (cut(
+        .data[["geo_dist"]],
+        breaks = c(seq(0, max(.data[["geo_dist"]]), 100), max(.data[["geo_dist"]])),
+        include.lowest	= T, labels = F
+      ) * 100) - 50,
+      time_dist_cut = (cut(
+        .data[["time_dist"]],
+        breaks = c(seq(0, max(.data[["time_dist"]]), 100), max(.data[["time_dist"]])),
+        include.lowest	= T, labels = F
+      ) * 100) - 50
+    ) %>%
+    dplyr::group_by(.data[["geo_dist_cut"]], .data[["time_dist_cut"]]) %>%
+    dplyr::summarise(
+      dplyr::across(
+        -tidyselect::any_of(c("Var1", "Var2", "geo_dist", "time_dist")),
+        function(x) { 0.5*mean(x^2, na.rm = T) }
+      ),
+      n = dplyr::n(),
+      .groups	= "drop"
+    )
 }
