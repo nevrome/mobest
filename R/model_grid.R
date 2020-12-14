@@ -50,6 +50,23 @@ create_model_grid <- function(
   kernel,
   prediction_grid
 ) {
+  # input check
+  checkmate::assert_list(
+    independent, types = "mobest_spatiotemporalpositions",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_list(
+    dependent, types = "numeric",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_list(
+    kernel, types = "mobest_kernel_setting",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_list(
+    prediction_grid, types = "mobest_predictiongrid",
+    any.missing = F, min.len = 1, names = "strict"
+  )
 
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
