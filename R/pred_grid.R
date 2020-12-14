@@ -40,7 +40,8 @@ create_prediction_grid <- function(area, mobility_regions, spatial_cell_size, ti
     tidyr::crossing(time_grid) %>%
     dplyr::mutate(
       point_id = 1:nrow(.)
-    )
+    ) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_predictiongrid")
 
   return(pred_grid)
 }
