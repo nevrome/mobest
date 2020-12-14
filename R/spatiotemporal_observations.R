@@ -34,42 +34,52 @@ mean_spatpos_uncertain <- function(spatpos_uncertain) {
 #' @export
 #'
 #' @examples
-create_spatpos <- function(id, x, y, z) {
+create_spatpos <- function(id, x, y, z, it = "default") {
   # input check
-  checkmate::assert_vector(id)
+  checkmate::assert_atomic_vector(id, any.missing = F, unique = T)
   checkmate::assert_numeric(x)
   checkmate::assert_numeric(y)
   checkmate::assert_numeric(z)
+  checkmate::assert_scalar(it)
+  if (list(id, x, y, z) %>%
+      purrr::some(function(x) { length(x) != length(id) }))
+  { stop("Each vector in id, x, y and z must have identical length") }
   # compile tibble
-  tibble::tibble(id = id, x = x, y = y, z = z) %>%
+  tibble::tibble(id = id, x = x, y = y, z = z, it = it) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatiotemporalpositions")
 }
 
-create_spatpos_uncertain <- function(id, x, y, z, name) {
+#' Title
+#'
+#' @param id
+#' @param x
+#' @param y
+#' @param z
+#' @param name
+#'
+#' @return
+#' @export
+create_spatpos_uncertain <- function(id, x, y, z, it) {
   # input check
   checkmate::assert_vector(id)
   checkmate::assert_list(x)
   checkmate::assert_list(y)
   checkmate::assert_list(z)
-  checkmate::assert_character(name)
+  checkmate::assert_atomic_vector(it, any.missing = F, unique = T)
   if (list(x, y, z) %>%
-      purrr::some(function(x) { length(x) != length(name) }))
-    { stop("id, x, y, z, and names must have identical length") }
-  if (purrr::flatten(list(x, y, z)) %>%
-      purrr::some(function(x) { length(x) != length(id) }))
-    { stop("Each vector in id, x, y, z must have identical length") }
+      purrr::some(function(x) { length(x) != length(it) }))
+    { stop("x, y, z, and it must have identical length") }
   # compile list of tibbles
   list(
     id = rep(list(id), length(x)),
-    x = x, y = y, z = z
+    x = x, y = y, z = z, it = it
   ) %>%
     purrr::pmap(
-      function(id, x, y, z) {
-        create_spatpos(id = id, x = x, y = y, z = z)
+      function(id, x, y, z, it) {
+        create_spatpos(id = id, x = x, y = y, z = z, it = it)
       }
     ) %>%
-    magrittr::set_names(name) %>%
-    magrittr::set_class("mobest_uncertain_spatiotemporalpositions")
+    dplyr::bind_rows()
 }
 
 get_var_names <- function(obs) {

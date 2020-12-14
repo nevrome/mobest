@@ -13,6 +13,9 @@ calculate_pairwise_distances <- function(independent, dependent) {
   if (nrow(independent) != nrow(dependent)) {
     stop("independent and dependent must have the same number of rows")
   }
+  if (length(unique(independent$id)) > 1) {
+    "independent must not be uncertain (only one iteration)"
+  }
   # geo distance
   d_geo <- dist(independent %>% dplyr::select(.data[["x"]], .data[["y"]]), "euclidean") %>% as.matrix()
   rownames(d_geo) <- colnames(d_geo) <- independent$id
