@@ -4,7 +4,7 @@
 \alias{create_spatpos}
 \title{Title}
 \usage{
-create_spatpos(id, x, y, z, it = "default")
+create_spatpos(id, x, y, z)
 }
 \arguments{
 \item{z}{}

@@ -34,18 +34,17 @@ mean_spatpos_uncertain <- function(spatpos_uncertain) {
 #' @export
 #'
 #' @examples
-create_spatpos <- function(id, x, y, z, it = "default") {
+create_spatpos <- function(id, x, y, z) {
   # input check
   checkmate::assert_atomic_vector(id, any.missing = F, unique = T)
   checkmate::assert_numeric(x)
   checkmate::assert_numeric(y)
   checkmate::assert_numeric(z)
-  checkmate::assert_scalar(it)
   if (list(id, x, y, z) %>%
       purrr::some(function(x) { length(x) != length(id) }))
   { stop("Each vector in id, x, y and z must have identical length") }
   # compile tibble
-  tibble::tibble(id = id, x = x, y = y, z = z, it = it) %>%
+  tibble::tibble(id = id, x = x, y = y, z = z) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatiotemporalpositions")
 }
 
@@ -59,7 +58,7 @@ create_spatpos <- function(id, x, y, z, it = "default") {
 #'
 #' @return
 #' @export
-create_spatpos_uncertain <- function(id, x, y, z, it) {
+create_spatpos_multi <- function(id, x, y, z, it) {
   # input check
   checkmate::assert_vector(id)
   checkmate::assert_list(x)
@@ -72,14 +71,14 @@ create_spatpos_uncertain <- function(id, x, y, z, it) {
   # compile list of tibbles
   list(
     id = rep(list(id), length(x)),
-    x = x, y = y, z = z, it = it
+    x = x, y = y, z = z
   ) %>%
     purrr::pmap(
       function(id, x, y, z, it) {
-        create_spatpos(id = id, x = x, y = y, z = z, it = it)
+        create_spatpos(id = id, x = x, y = y, z = z)
       }
     ) %>%
-    dplyr::bind_rows()
+    magrittr::set_names(it)
 }
 
 get_var_names <- function(obs) {

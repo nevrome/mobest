@@ -4,12 +4,7 @@
 \alias{create_prediction_grid}
 \title{Create a spatiotemporal point grid}
 \usage{
-create_prediction_grid(
-  area,
-  mobility_regions,
-  spatial_cell_size = 1e+05,
-  time_layers = seq(-7500, -500, 100)
-)
+create_prediction_grid(area, mobility_regions, spatial_cell_size, time_layers)
 }
 \arguments{
 \item{area}{An object of class \code{sf}. Polygons where the spatial grid should
