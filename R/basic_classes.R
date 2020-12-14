@@ -88,29 +88,6 @@ get_var_names <- function(obs) {
 
 #' Title
 #'
-#' @param id
-#' @param ...
-#'
-#' @return
-#' @export
-#'
-#' @examples
-create_obs <- function(id, ...) {
-  # input check
-  checkmate::assert_vector(id)
-  if (list(...) %>%
-      purrr::some(function(x) { length(x) != length(id) }))
-    { stop("Each vector in ... must have the same length as id") }
-  # compile obs tibble
-  tibble::tibble(
-    id = id
-  ) %>%
-    cbind(...) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
-}
-
-#' Title
-#'
 #' @param d
 #' @param g
 #' @param on_residuals
