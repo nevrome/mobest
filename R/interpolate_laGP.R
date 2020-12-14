@@ -67,7 +67,7 @@ interpolate_laGP <- function(independent, dependent, pred_grid, d, g, auto = F, 
   }
 
   # fit the global GP
-  gp <- laGP::newGPsep(X = independent, Z = dependent, d = d, g = g)
+  gp <- laGP::newGPsep(X = independent[, c("x", "y", "z")], Z = dependent, d = d, g = g)
 
   # optimise fit automatically
   if (auto) {
