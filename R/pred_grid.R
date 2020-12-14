@@ -16,7 +16,7 @@
 #' point identifier column point_id
 #'
 #' @export
-create_prediction_grid <- function(area, mobility_regions, spatial_cell_size = 100000, time_layers = seq(-7500, -500, 100)) {
+create_prediction_grid <- function(area, mobility_regions, spatial_cell_size, time_layers) {
 
   point_grid <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
@@ -27,7 +27,10 @@ create_prediction_grid <- function(area, mobility_regions, spatial_cell_size = 1
       x = sf::st_coordinates(.)[,1],
       y = sf::st_coordinates(.)[,2]
     ) %>%
-    sf::st_drop_geometry()
+    sf::st_drop_geometry() %>%
+    dplyr::select(
+      region_id, x, y
+    )
 
   time_grid <- tibble::tibble(
     z = time_layers
