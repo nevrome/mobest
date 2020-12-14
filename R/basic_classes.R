@@ -109,3 +109,21 @@ create_obs <- function(id, ...) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
 }
 
+#' Title
+#'
+#' @param d
+#' @param g
+#' @param on_residuals
+#' @param auto
+#'
+#' @return
+#' @export
+create_kernset <- function(d, g, on_residuals, auto) {
+  list(
+    d = d,
+    g = g,
+    on_residuals = on_residuals,
+    auto = auto
+  ) %>%
+    magrittr::set_class("mobest_kernel_setting")
+}
