@@ -4,26 +4,72 @@
 #' \link{run_model_grid}
 #' @param rearview_distance How many years in the past should the reference point be
 #' searched
+#' @param cl A cluster object created by \link{parallel::makeCluster()},
+#' or an integer to indicate number of child-processes
+#' (integer values are ignored on Windows) for parallel
+#' evaluations (see \link{pbapply::pbapply()}).
 #'
 #' @return An object of class \code{mobest_origin_grid}
 #'
 #' @rdname search_spatial_origin
 #' @export
-search_spatial_origin <- function(interpol_grid, rearview_distance) {
+search_spatial_origin <- function(
+    interpol_grid,
+    model_grid = NA,
+    rearview_distance,
+    cl = parallel::detectCores()
+  ) {
   UseMethod("search_spatial_origin")
 }
 
 #' @rdname search_spatial_origin
 #' @export
-search_spatial_origin.default <- function(interpol_grid, rearview_distance) {
+search_spatial_origin <- function(
+  interpol_grid,
+  model_grid = NA,
+  rearview_distance,
+  cl = parallel::detectCores()
+) {
   stop("x is not an object of class mobest_interpol_grid")
 }
 
 #' @rdname search_spatial_origin
 #' @export
-search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, rearview_distance) {
+search_spatial_origin <- function(
+  interpol_grid,
+  model_grid = NA,
+  rearview_distance,
+  cl = parallel::detectCores()
+) {
   # input checks
   checkmate::assert_count(rearview_distance)
+
+  # check if either auto-search or search from input points
+  if (is.na(model_grid)) {
+    # auto-search: interpol_grid is search_points
+    search_points <- interpol_grid
+  } else {
+    # check independent and dependent
+    checkmate::assert_class(model_grid, "mobest_model_grid")
+    if (
+         !setequal(interpol_grid$independent_table_id, model_grid$independent_table_id)
+      && !setequal(interpol_grid$dependent_var_id, model_grid$dependent_var_id)
+      && !setequal(interpol_grid$kernel_setting_id, model_grid$kernel_setting_id)
+      && !setequal(interpol_grid$pred_grid_id, model_grid$pred_grid_id)
+    ) {
+      stop(
+        "interpol_grid and independent must have the same entries in ",
+        "independent_table_id, dependent_var_id, kernel_setting_id, pred_grid_id"
+      )
+    }
+    # construct search_points for grid combinations
+    search_points <- model_grid %>%
+      dplyr::select(-.data[["kernel_setting"]], -.data[["pred_grid"]]) %>%
+      tidyr::unnest(cols = c(
+        "independent_table", "dependent_var"
+      )) %>%
+      dplyr::rename(mean = .data[["dependent_var"]])
+  }
 
   # check temporal distance raster and translate rearview distance to steps
   timeseries <- sort(unique(interpol_grid$z))
@@ -37,6 +83,7 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, rearview_d
     steps <- rearview_distance / td
   }
 
+  # get relevant column names
   dependent_vars <- unique(interpol_grid$dependent_var_id)
   mean_cols <- paste0("mean_", dependent_vars)
   sd_cols <- paste0("sd_", dependent_vars)
@@ -64,20 +111,23 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, rearview_d
 
   # add new columns for output dataset
   pri <- pri %>% dplyr::mutate(
-      spatial_distance = NA_real_,
-      x_origin = NA_real_,
-      y_origin = NA_real_,
-      z_origin = NA_real_,
-      angle_deg = NA_real_,
-    )
+    spatial_distance = NA_real_,
+    x_origin = NA_real_,
+    y_origin = NA_real_,
+    z_origin = NA_real_,
+    angle_deg = NA_real_,
+  )
 
   # split by
   age_sample_run_pris <- pri %>% dplyr::group_split(
-    .data[["independent_table_id"]], .data[["kernel_setting_id"]], .data[["pred_grid_id"]]
+    .data[["independent_table_id"]],
+    .data[["kernel_setting_id"]],
+    .data[["pred_grid_id"]]
   )
 
   # loop by
-  pri_ready_large <- lapply(age_sample_run_pris, function(age_sample_run_pri) {
+  pri_ready_large <- lapply(
+    age_sample_run_pris, function(age_sample_run_pri) {
 
     # split dataset by age slice
     time_pris <- split(
@@ -88,7 +138,8 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, rearview_d
     time_pris_current_list <- time_pris[(1 + steps):length(time_pris)]
     time_pris_past_list <- time_pris[1:(length(time_pris) - steps)]
 
-    origin_points_list <- pbapply::pblapply(seq_along(time_pris_current_list), function(ind) {
+    origin_points_list <- pbapply::pblapply(
+      seq_along(time_pris_current_list), function(ind) {
 
       time_pris_current <- time_pris_current_list[[ind]]
       time_pris_past <- time_pris_past_list[[ind]]
@@ -138,7 +189,8 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, rearview_d
       genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
 
       # get points with least genetic distance in the past
-      centroid_points <- do.call(rbind, lapply(1:nrow(current_pri_genetics), function(index_of_A) {
+      centroid_points <- do.call(rbind, lapply(
+          1:nrow(current_pri_genetics), function(index_of_A) {
 
         # density overlap search
         #search_area <- 1:nrow(past_pri_genetics)
@@ -232,14 +284,17 @@ search_spatial_origin.mobest_interpol_grid <- function(interpol_grid, rearview_d
       # add closest points info to current age slice points
       list(centroid_points[,1], centroid_points[,2], unique(time_pris_past[["z"]]))
 
-    }, cl = parallel::detectCores() )
+    }, cl = cl )
 
-    pri_ready <- Map(function(time_pris_current, origin_points) {
-      time_pris_current$x_origin <- origin_points[[1]]
-      time_pris_current$y_origin <- origin_points[[2]]
-      time_pris_current$z_origin <- origin_points[[3]]
-      return(time_pris_current)
-    }, time_pris_current_list, origin_points_list) %>%
+    pri_ready <- purrr::map2(
+      time_pris_current_list, origin_points_list,
+      function(time_pris_current, origin_points) {
+        time_pris_current$x_origin <- origin_points[[1]]
+        time_pris_current$y_origin <- origin_points[[2]]
+        time_pris_current$z_origin <- origin_points[[3]]
+        return(time_pris_current)
+      }
+    ) %>%
       do.call(rbind, .)
 
     return(pri_ready)
