@@ -4,10 +4,10 @@
 \alias{bin_pairwise_distances}
 \title{Title}
 \usage{
-bin_pairwise_distances(x)
+bin_pairwise_distances(x, geo_bin = 100, time_bin = 100)
 }
 \arguments{
-\item{x}{}
+\item{time_bin}{}
 }
 \value{
 

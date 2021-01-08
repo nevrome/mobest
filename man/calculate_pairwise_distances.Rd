@@ -4,10 +4,10 @@
 \alias{calculate_pairwise_distances}
 \title{Title}
 \usage{
-calculate_pairwise_distances(independent, dependent)
+calculate_pairwise_distances(independent, dependent, m_to_km = T)
 }
 \arguments{
-\item{dependent}{}
+\item{m_to_km}{}
 }
 \value{
 

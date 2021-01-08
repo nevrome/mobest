@@ -1,0 +1,111 @@
+---
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- Rmd -> md --> 
+
+# mobest
+
+This R package provides a pipeline for spatiotemporal interpolation of human genetic ancestry components and a derived measure for **mob**ility **est**imation. The workflow in version 1.0 was specifically developed for this research paper:
+
+> ..., Estimating human mobility in Holocene Western Eurasia with bulk ancient genetic data, ...
+
+## Installation
+
+Install the package from github with the following command in R:
+
+```
+if(!require('remotes')) install.packages('remotes')
+remotes::install_github('nevrome/mobest')
+```
+
+## Workflow
+
+`mobest` assumes you have a set of ancient DNA samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a Multidimensional scaling space). This package now provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided. `mobest` then allows to estimate a point-wise measure of mobility based on a search for “ancestry origin” positions with similar genetic make-up in the respective past.
+
+The research paper linked above explains the details and background. The following guide just briefly lists the functions in the order you would usually call them and introduces the interface from a technical point of view.
+
+### Basic classes for the input data
+
+`create_spatpos` creates an object of class `mobest_spatiotemporalpositions` which is a `data.frame` that represents spatiotemporal positions.
+
+```{r}
+positions <- mobest::create_spatpos(
+  id = 1:5,
+  x = c(100, 500, 300, 150, 400),
+  y = c(100, 500, 300, 250, 400),
+  z = c(-5000, -4000, -4500, -4250, -4700)
+)
+```
+
+```{r, echo=F}
+positions
+```
+
+`create_spatpos_multi` creates a list of `mobest_spatiotemporalpositions` objects. It's meant to represent positional uncertainty, by providing multiple sets of spatiotemporal coordinates for points with identical IDs.
+
+```{r}
+uncertain_positions <- mobest::create_spatpos_multi(
+  id = 1:5,
+  x = rep(list(c(100, 500, 300, 150, 400)), 2),
+  y = rep(list(c(100, 500, 300, 250, 400)), 2),
+  z = list(c(-5000, -4000, -4500, -4250, -4700), c(-5050, -3950, 4450, -4200, -4600)),
+  it = c("run_a", "run_b")
+)
+```
+
+```{r, echo=F}
+uncertain_positions
+```
+
+### Parameter estimation
+
+Gaussian process regression requires a parametrized covariance function. `mobest` provides helper functions to estimate the relevant parameters from the input data.
+
+#### Variogram calculation
+
+`mobest::calculate_pairwise_distances` calculates different types of pairwise distances (spatial, temporal, ancestry components) and returns them in a long format `data.frame` object of class `mobest_pairwisedistances`.
+
+```{r}
+pairwise_distances <- mobest::calculate_pairwise_distances(
+  independent = positions,
+  dependent = list(
+    ac1 = c(1, 2, 3, 2, 2), # "ac" for "ancestry component"
+    ac2 = c(2, 1, 4, 3, 4)
+  ),
+  m_to_km = T
+)
+```
+
+```{r, echo=F}
+pairwise_distances
+```
+
+`mobest::bin_pairwise_distances` bins the pairwaise differences in an object of class `mobest_pairwisedistances` and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
+
+```{r}
+variogram <- mobest::bin_pairwise_distances(
+  pairwise_distances,
+  geo_bin = 0.1, time_bin = 100
+)
+```
+
+```{r, echo=F}
+variogram
+```
+
+#### Maximum likelihood estimation
+
+#### Crossvalidation
+
+### Spatiotemporal interpolation
+
+
+
+### Mobility estimation
+
+
+
+

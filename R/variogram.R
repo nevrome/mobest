@@ -2,11 +2,12 @@
 #'
 #' @param independent
 #' @param dependent
+#' @param m_to_km
 #'
 #' @return
 #'
 #' @export
-calculate_pairwise_distances <- function(independent, dependent) {
+calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
   # input check and transformation
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   dependent <- dplyr::bind_cols(dependent)
@@ -21,18 +22,18 @@ calculate_pairwise_distances <- function(independent, dependent) {
     reshape2::melt(value.name = "geo_dist") %>%
     dplyr::mutate(
       # m to km
-      geo_dist = .data[["geo_dist"]]/1000
+      geo_dist = if (m_to_km) {.data[["geo_dist"]]/1000} else {.data[["geo_dist"]]}
     )
   # time distance
   d_time <- dist(independent %>% dplyr::select(.data[["z"]]), "euclidean") %>% as.matrix()
   rownames(d_time) <- colnames(d_time) <- ids
   d_time_long <- d_time %>% reshape2::melt(value.name = "time_dist")
   # obs total distance
-  d_obs_total <- dist(dependent %>% dplyr::select(-.data[["id"]]), "euclidean") %>% as.matrix()
+  d_obs_total <- dist(dependent, "euclidean") %>% as.matrix()
   rownames(d_obs_total) <- colnames(d_obs_total) <- ids
   d_obs_total_long <- d_obs_total %>% reshape2::melt(value.name = "obs_dist_total")
   # obs individual distance
-  var_names <- get_var_names(dependent)
+  var_names <- names(dependent)
   d_obs_long_list <- var_names %>%
     purrr::map(function(var_name) {
       # d_obs
@@ -65,10 +66,12 @@ calculate_pairwise_distances <- function(independent, dependent) {
 #' Title
 #'
 #' @param x
+#' @param geo_bin
+#' @param time_bin
 #'
 #' @return
 #' @export
-bin_pairwise_distances <- function(x) {
+bin_pairwise_distances <- function(x, geo_bin = 100, time_bin = 100) {
   # input check
   checkmate::assert_class(x, "mobest_pairwisedistances")
   # perform binning
@@ -76,14 +79,14 @@ bin_pairwise_distances <- function(x) {
     dplyr::mutate(
       geo_dist_cut = (cut(
         .data[["geo_dist"]],
-        breaks = c(seq(0, max(.data[["geo_dist"]]), 100), max(.data[["geo_dist"]])),
+        breaks = unique(c(seq(0, max(.data[["geo_dist"]]), geo_bin), max(.data[["geo_dist"]]))),
         include.lowest	= T, labels = F
-      ) * 100) - 50,
+      ) * geo_bin) - geo_bin/2,
       time_dist_cut = (cut(
         .data[["time_dist"]],
-        breaks = c(seq(0, max(.data[["time_dist"]]), 100), max(.data[["time_dist"]])),
+        breaks = unique(c(seq(0, max(.data[["time_dist"]]), time_bin), max(.data[["time_dist"]]))),
         include.lowest	= T, labels = F
-      ) * 100) - 50
+      ) * time_bin) - time_bin/2
     ) %>%
     dplyr::group_by(.data[["geo_dist_cut"]], .data[["time_dist_cut"]]) %>%
     dplyr::summarise(
@@ -93,5 +96,6 @@ bin_pairwise_distances <- function(x) {
       ),
       n = dplyr::n(),
       .groups	= "drop"
-    )
+    ) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_empiricalvariogram")
 }

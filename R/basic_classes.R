@@ -81,11 +81,6 @@ create_spatpos_multi <- function(id, x, y, z, it) {
     magrittr::set_names(it)
 }
 
-get_var_names <- function(obs) {
-  t_obs <- colnames(obs)
-  t_obs[t_obs != "id"]
-}
-
 #' Title
 #'
 #' @param d
