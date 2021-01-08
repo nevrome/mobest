@@ -10,6 +10,7 @@
 calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
   # input check and transformation
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
+  checkmate::assert_class(dependent, "mobest_observations")
   dependent <- dplyr::bind_cols(dependent)
   if (nrow(independent) != nrow(dependent)) {
     stop("independent and dependent must have the same number of rows")

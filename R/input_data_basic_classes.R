@@ -15,7 +15,7 @@ create_obs <- function(...) {
       purrr::some(function(x) { length(x) != length(res[[1]]) }))
   { stop("Each input vector must have identical length") }
   # return list
-  class(res) <- "mobest_observations"
+  class(res) <- c("mobest_observations", class(res))
   return(res)
 }
 

@@ -96,6 +96,26 @@ uncertain_positions <- mobest::create_spatpos_multi(
     ## 4     4   150   250 -4200
     ## 5     5   400   400 -4600
 
+`create_obs` creates named lists of observations vectors (class
+`mobest_observations`) corresponding to the spatiotemporal positions
+defined above.
+
+``` r
+observations <- mobest::create_obs(
+  ac1 = c(1, 2, 3, 2, 2), # "ac" for "ancestry component"
+  ac2 = c(2, 1, 4, 3, 4)
+)
+```
+
+    ## $ac1
+    ## [1] 1 2 3 2 2
+    ## 
+    ## $ac2
+    ## [1] 2 1 4 3 4
+    ## 
+    ## attr(,"class")
+    ## [1] "mobest_observations" "list"
+
 ### Parameter estimation
 
 Gaussian process regression requires a parametrized covariance function.
@@ -112,10 +132,7 @@ them in a long format `data.frame` object of class
 ``` r
 pairwise_distances <- mobest::calculate_pairwise_distances(
   independent = positions,
-  dependent = list(
-    ac1 = c(1, 2, 3, 2, 2), # "ac" for "ancestry component"
-    ac2 = c(2, 1, 4, 3, 4)
-  ),
+  dependent = observations,
   m_to_km = T
 )
 ```
