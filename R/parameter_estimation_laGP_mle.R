@@ -16,8 +16,7 @@ laGP_mle_anisotropic <- function(independent, dependent, iterations, scaling_fac
       y = y / scaling_factor,
       z = z / scaling_factor
     )
-  # todo: check dependent
-  #checkmate::assert_class(dependent, "")
+  checkmate::assert_class(dependent, "mobest_observations")
   checkmate::assert_count(iterations)
   checkmate::assert_count(scaling_factor)
   # run parameter estimation loop for each dependent variable and iteration
@@ -79,8 +78,7 @@ laGP_jmle_anisotropic <- function(independent, dependent, iterations, scaling_fa
       y = y / scaling_factor,
       z = z / scaling_factor
     )
-  # todo: check dependent
-  #checkmate::assert_class(dependent, "")
+  checkmate::assert_class(dependent, "mobest_observations")
   checkmate::assert_count(iterations)
   checkmate::assert_count(scaling_factor)
   # run parameter estimation loop for each dependent variable and iteration
