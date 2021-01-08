@@ -1,3 +1,24 @@
+#' Title
+#'
+#' @param ...
+#'
+#' @return
+#'
+#' @export
+create_obs <- function(...) {
+  # prepare list
+  res <- list(...)
+  # check list
+  checkmate::assert_names(names(res), type = "strict")
+  purrr::walk(res, checkmate::assert_numeric)
+  if (res %>%
+      purrr::some(function(x) { length(x) != length(res[[1]]) }))
+  { stop("Each input vector must have identical length") }
+  # return list
+  class(res) <- "mobest_observations"
+  return(res)
+}
+
 merge_spatpos_obs <- function(spatpos, obs) {
   dplyr::inner_join(
     spatpos, obs, by = "id"
