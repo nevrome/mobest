@@ -111,12 +111,73 @@ create_spatpos_multi <- function(id, x, y, z, it) {
 #'
 #' @return
 #' @export
-create_kernset <- function(d, g, on_residuals, auto) {
+create_kernset <- function(d, g, on_residuals = T, auto = F, ...) {
+  # input check
+  checkmate::assert_numeric(d, len = 3)
+  checkmate::assert_number(g)
+  checkmate::assert_logical(on_residuals, len = 1)
+  checkmate::assert_logical(auto, len = 1)
+  # compile output data structure
   list(
     d = d,
     g = g,
     on_residuals = on_residuals,
-    auto = auto
+    auto = auto,
+    ...
   ) %>%
     magrittr::set_class("mobest_kernel_setting")
 }
+
+#' Title
+#'
+#' @param d
+#' @param g
+#' @param ...
+#' @param it
+#'
+#' @return
+#' @export
+create_kernset_multi <- function(d, g, on_residuals = T, auto = F, ..., it) {
+  # input check
+  checkmate::assert_list(d)
+  checkmate::assert_vector(g)
+  checkmate::assert_logical(on_residuals)
+  checkmate::assert_logical(auto)
+  checkmate::assert_atomic_vector(it, any.missing = F, unique = T)
+  if (list(d, g, on_residuals, auto, ...) %>%
+      purrr::some(function(x) { length(x) != length(it) && length(x) != 1 }))
+  { stop("Each input list must have identical length") }
+  # compile output data structure
+  purrr::pmap(list(d, g, on_residuals, auto, ...), mobest::create_kernset) %>%
+    magrittr::set_names(it)
+}
+
+#' create_kernel_grid
+#'
+#' @param ds test
+#' @param dt test
+#' @param g test
+#'
+#' @export
+create_kernset_cross <- function(ds, dt, g, on_residuals = T, auto = F) {
+  # input check
+  checkmate::assert_numeric(ds)
+  checkmate::assert_numeric(dt)
+  checkmate::assert_numeric(g)
+  checkmate::assert_logical(on_residuals)
+  checkmate::assert_logical(auto)
+  # cross
+  ks <- expand.grid(ds = ds, dt = dt, g = g)
+  # create kernset list
+  create_kernset_multi(
+    d = purrr::map2(ks$ds, ks$dt, function(x, y) { c(x, x, y) }),
+    g = as.list(ks$g),
+    on_residuals = on_residuals,
+    auto = auto,
+    it = purrr::pmap_chr(
+      list(ks$ds, ks$dt, ks$g),
+      function(x, y, z) { paste("kernel", x, y, z, sep = "_") }
+    )
+  )
+}
+
