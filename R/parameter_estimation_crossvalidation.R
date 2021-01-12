@@ -3,74 +3,66 @@
 #' @param independent test
 #' @param dependent test
 #' @param kernel test
-#' @param number_of_reorderings test
-#' @param number_of_splits test
+#' @param iterations test
+#' @param groups test
 #'
 #' @export
 crossvalidate <- function(
   independent,
   dependent,
   kernel,
-  number_of_reorderings = 1,
-  number_of_splits = 10
+  iterations,
+  groups = 10
 ) {
-
+  # input check
+  checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
+  checkmate::assert_class(dependent, "mobest_observations")
+  checkmate::assert_list(
+    kernel, types = "mobest_kernelsetting",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_count(iterations)
+  checkmate::assert_count(groups)
+  # create crossvalidation dataset
   crossval <- cbind(independent, dependent %>% dplyr::bind_cols())
-
-  #### compile randomly reordered versions of crossval ####
-
-  crossval_mixed_list <- lapply(1:number_of_reorderings, function(i) {
-    crossval[sample(1:nrow(crossval), replace = F), ]
+  # compile randomly reordered versions of crossval
+  crossval_mixed_list <- lapply(1:iterations, function(i) {
+    dplyr::slice_sample(crossval, n = nrow(crossval), replace = F)
   })
-
-  #### run prediction test for each of this versions ####
-
-  lapply(crossval_mixed_list, function(crossval_mixed) {
-
-    #### split crossval into 10 sections ####
-
-    n <- number_of_splits
+  # run prediction test for each iteration
+  purrr::map_dfr(crossval_mixed_list, function(crossval_mixed) {
+    # split crossval into sections
+    n <- groups
     nr <- nrow(crossval_mixed)
-    crossval_10 <- split(crossval_mixed, rep(1:n, times = diff(floor(seq(0, nr, length.out = n + 1)))))
-
-    # 9 sections are used as a training dataset for the GP model
-    crossval_9_training <- lapply(
-      1:n, function(i) {
-        dplyr::bind_rows(crossval_10[-i])
-      }
-    )
-
+    crossval_all <- split(crossval_mixed, rep(1:n, times = diff(floor(seq(0, nr, length.out = n + 1)))))
+    # n-1 sections are used as a training dataset for the GP model
+    crossval_training <- purrr::map(1:n, function(i) { dplyr::bind_rows(crossval_all[-i]) })
     # 1 section is used as a test dataset
-    crossval_9_test <- lapply(
-      1:n, function(i) {
-        crossval_10[[i]]
-      }
-    )
-
-    #### prepare model grid for current (n-1):1 comparison with different kernels ####
-
-    model_grid <- lapply(
-      1:n, function(i) {
-
-        # create model grid
-        model_grid <- mobest::create_model_grid(
-          independent = list(
-            training = crossval_9_training[[i]] %>% dplyr::select(x, y, z)
-          ),
-          dependent = lapply(
-            names(dependent), function(depvar) {
-              crossval_9_training[[i]][[depvar]]
-            }) %>%
-            stats::setNames(names(dependent)),
-          kernel = kernel,
-          prediction_grid = list(
-            crossval_9_test[[i]] %>%
-              dplyr::select(x, y, z) %>%
-              dplyr::mutate(point_id = 1:nrow(.))
-          ) %>% stats::setNames(i)
+    crossval_test <- purrr::map(1:n, function(i) { crossval_10[[i]] })
+    # prepare model grid for current (n-1):1 comparison with different kernels
+    model_grid <- purrr::map2_dfr(crossval_training, crossval_test, function(training, test) {
+      mobest::create_model_grid(
+        independent = mobest::create_spatpos_multi(
+          id = training$id,
+          x = list(training$x),
+          y = list(training$y),
+          z = list(training$z),
+          it = "age_median"
+        ),
+        dependent = do.call(
+          mobest::create_obs,
+          training[, names(dependent)]
+        ),
+        kernel = kernel,
+        prediction_grid = mobest::create_spatpos_multi(
+          id = test$id,
+          x = list(test$x),
+          y = list(test$y),
+          z = list(test$z),
+          it = "age_median"
         )
-      }
-    ) %>% dplyr::bind_rows()
+      )
+    })
 
     #### run interpolation on model grid ####
 
@@ -101,7 +93,7 @@ crossvalidate <- function(
 
     return(interpol_grid_merged)
 
-  }) %>% dplyr::bind_rows() -> interpol_grid_merged_all
+  }) -> interpol_grid_merged_all
 
   for (dep in names(dependent)) {
     interpol_grid_merged_all[[paste0(dep, "_dist")]] <- interpol_grid_merged_all[[dep]] -
@@ -129,32 +121,5 @@ crossvalidate <- function(
     )
 
   return(interpol_comparison)
-
-}
-
-#' create_kernel_grid
-#'
-#' @param ds test
-#' @param dt test
-#' @param g test
-#'
-#' @export
-create_kernel_grid <- function(ds, dt, g) {
-
-  ks <- expand.grid(ds = ds, dt = dt, g = g)
-
-  kernel_settings <- lapply(
-      1:nrow(ks), function(i) {
-        list(d = c(ks[["ds"]][i], ks[["ds"]][i], ks[["dt"]][i]), g = ks[["g"]][i], on_residuals = T, auto = F)
-      }
-    ) %>% stats::setNames(
-      sapply(
-        1:nrow(ks), function(i) {
-          paste0(ks[["ds"]][i]/1000, "_", ks[["dt"]][i], "_", ks[["g"]][i])
-        }
-      )
-    )
-
-  return(kernel_settings)
 
 }

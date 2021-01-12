@@ -4,13 +4,7 @@
 \alias{crossvalidate}
 \title{crossvalidate}
 \usage{
-crossvalidate(
-  independent,
-  dependent,
-  kernel,
-  number_of_reorderings = 1,
-  number_of_splits = 10
-)
+crossvalidate(independent, dependent, kernel, iterations, groups = 10)
 }
 \arguments{
 \item{independent}{test}
@@ -19,9 +13,9 @@ crossvalidate(
 
 \item{kernel}{test}
 
-\item{number_of_reorderings}{test}
+\item{iterations}{test}
 
-\item{number_of_splits}{test}
+\item{groups}{test}
 }
 \description{
 crossvalidate
