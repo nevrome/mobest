@@ -40,32 +40,33 @@ crossvalidate <- function(
     # 1 section is used as a test dataset
     crossval_test <- purrr::map(1:n, function(i) { crossval_10[[i]] })
     # prepare model grid for current (n-1):1 comparison with different kernels
-    model_grid <- purrr::map2_dfr(crossval_training, crossval_test, function(training, test) {
-      mobest::create_model_grid(
-        independent = mobest::create_spatpos_multi(
-          id = training$id,
-          x = list(training$x),
-          y = list(training$y),
-          z = list(training$z),
-          it = "age_median"
-        ),
-        dependent = do.call(
-          mobest::create_obs,
-          training[, names(dependent)]
-        ),
-        kernel = kernel,
-        prediction_grid = mobest::create_spatpos_multi(
-          id = test$id,
-          x = list(test$x),
-          y = list(test$y),
-          z = list(test$z),
-          it = "age_median"
+    model_grid <- purrr::map2_dfr(
+      crossval_training, crossval_test,
+      function(training, test) {
+        mobest::create_model_grid(
+          independent = mobest::create_spatpos_multi(
+            id = training$id,
+            x = list(training$x),
+            y = list(training$y),
+            z = list(training$z),
+            it = "age_median"
+          ),
+          dependent = do.call(
+            mobest::create_obs,
+            training[, names(dependent)]
+          ),
+          kernel = kernel,
+          prediction_grid = mobest::create_spatpos_multi(
+            id = test$id,
+            x = list(test$x),
+            y = list(test$y),
+            z = list(test$z),
+            it = "age_median"
+          )
         )
-      )
-    })
-
-    #### run interpolation on model grid ####
-
+      }
+    )
+    # run interpolation on model grid
     interpol_grid <- mobest::run_model_grid(model_grid)
 
     #### merge prediction and real values ####
