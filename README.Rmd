@@ -23,7 +23,7 @@ remotes::install_github('nevrome/mobest')
 
 ## Workflow
 
-`mobest` assumes you have a set of ancient DNA samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a Multidimensional scaling space). This package now provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided. `mobest` then allows to estimate a point-wise measure of mobility based on a search for “ancestry origin” positions with similar genetic make-up in the respective past.
+`mobest` assumes you have a set of ancient DNA samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a multidimensional scaling space). This package now provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided. `mobest` then allows to estimate a point-wise measure of mobility based on a search for “ancestry origin” positions with similar genetic make-up in the respective past.
 
 The research paper linked above explains the details and background. The following guide just briefly lists the functions in the order you would usually call them and introduces the interface from a technical point of view.
 
@@ -33,10 +33,10 @@ The research paper linked above explains the details and background. The followi
 
 ```{r}
 positions <- mobest::create_spatpos(
-  id = 1:5,
-  x = c(100, 500, 300, 150, 400),
-  y = c(100, 500, 300, 250, 400),
-  z = c(-5000, -4000, -4500, -4250, -4700)
+  id = 1:100,
+  x = sample(100000:500000, 100),
+  y = sample(500000:999999, 100),
+  z = sample(-5000:-3000, 100)
 )
 ```
 
@@ -48,10 +48,10 @@ positions
 
 ```{r}
 uncertain_positions <- mobest::create_spatpos_multi(
-  id = 1:5,
-  x = rep(list(c(100, 500, 300, 150, 400)), 2),
-  y = rep(list(c(100, 500, 300, 250, 400)), 2),
-  z = list(c(-5000, -4000, -4500, -4250, -4700), c(-5050, -3950, 4450, -4200, -4600)),
+  id = 1:100,
+  x = list(positions$x, positions$x),
+  y = list(positions$y, positions$y),
+  z = list(positions$y + sample(-100:100, 100), positions$y + sample(-100:100, 100)),
   it = c("run_a", "run_b")
 )
 ```
@@ -64,13 +64,15 @@ uncertain_positions
 
 ```{r}
 observations <- mobest::create_obs(
-  ac1 = c(1, 2, 3, 2, 2), # "ac" for "ancestry component"
-  ac2 = c(2, 1, 4, 3, 4)
+  ac1 = runif(100, 0, 1), # "ac" for "ancestry component"
+  ac2 = runif(100, 0, 1)
 )
 ```
 
+The first ten observations:
+
 ```{r, echo=F}
-observations
+lapply(observations, head, N = 10)
 ```
 
 ### Parameter estimation
@@ -107,6 +109,34 @@ variogram
 ```
 
 #### Maximum likelihood estimation
+
+`mobest::laGP_mle_anisotropic` wraps around `laGP::mleGPsep` to perform marginal maximum likelihood inference for anisotropic (separable) Gaussian lengthscale and nugget parameters.
+
+```{r}
+mleGPsep_out <- mobest::laGP_mle_anisotropic(
+  independent = dplyr::mutate(positions, x = x/1000, y = y/1000),
+  dependent = observations,
+  iterations = 2
+)
+```
+
+```{r, echo=F}
+mleGPsep_out
+```
+
+`mobest::laGP_jmle_anisotropic` wraps around `laGP::mleGPsep` to perform joint maximum likelihood inference for anisotropic (separable) Gaussian lengthscale and nugget parameters.
+
+```{r}
+jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
+  independent = dplyr::mutate(positions, x = x/1000, y = y/1000),
+  dependent = observations,
+  iterations = 2
+)
+```
+
+```{r, echo=F}
+jmleGPsep_out
+```
 
 #### Crossvalidation
 
