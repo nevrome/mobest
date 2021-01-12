@@ -55,17 +55,17 @@ mean_spatpos_uncertain <- function(spatpos_uncertain) {
 #' @export
 #'
 #' @examples
-create_spatpos <- function(id, x, y, z) {
+create_spatpos <- function(id, x, y, z, ...) {
   # input check
   checkmate::assert_atomic_vector(id, any.missing = F, unique = T)
   checkmate::assert_numeric(x)
   checkmate::assert_numeric(y)
   checkmate::assert_numeric(z)
-  if (list(id, x, y, z) %>%
-      purrr::some(function(x) { length(x) != length(id) }))
-  { stop("Each vector in id, x, y and z must have identical length") }
+  if (list(id, x, y, z, ...) %>%
+      purrr::some(function(x) { length(x) != length(id) && length(x) != 1 }))
+  { stop("Each vector input vector must be of identical length") }
   # compile tibble
-  tibble::tibble(id = id, x = x, y = y, z = z) %>%
+  tibble::tibble(id = id, x = x, y = y, z = z, ...) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatiotemporalpositions")
 }
 
@@ -88,7 +88,7 @@ create_spatpos_multi <- function(id, x, y, z, it) {
   checkmate::assert_atomic_vector(it, any.missing = F, unique = T)
   if (list(x, y, z) %>%
       purrr::some(function(x) { length(x) != length(it) }))
-    { stop("x, y, z, and it must have identical length") }
+    { stop("Each input list must have identical length") }
   # compile list of tibbles
   list(
     id = rep(list(id), length(x)),
