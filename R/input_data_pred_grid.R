@@ -5,7 +5,7 @@
 #'
 #' @param area An object of class \code{sf}. Polygons where the spatial grid should
 #' be constructed
-#' @param mobility_regions An object of class \code{sf}. Polygons of regions the grid points
+#' @param regions An object of class \code{sf}. Polygons of regions the grid points
 #' should be attributed to
 #' @param spatial_cell_size Numeric. Size of the spatial grid cells in the unit of
 #' \code{area}. See \code{?sf::st_make_grid} for more info
@@ -16,13 +16,13 @@
 #' point identifier column point_id
 #'
 #' @export
-create_prediction_grid <- function(area, mobility_regions, spatial_cell_size, time_layers) {
+prediction_grid_for_spatiotemporal_area <- function(area, regions, spatial_cell_size, temporal_layers) {
 
-  point_grid <- area %>%
+  space_grid <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
     sf::st_sf() %>%
     sf::st_intersection(area) %>%
-    sf::st_join(mobility_regions, join = sf::st_intersects) %>%
+    sf::st_join(regions, join = sf::st_intersects) %>%
     dplyr::mutate(
       x = sf::st_coordinates(.)[,1],
       y = sf::st_coordinates(.)[,2]
@@ -33,15 +33,17 @@ create_prediction_grid <- function(area, mobility_regions, spatial_cell_size, ti
     )
 
   time_grid <- tibble::tibble(
-    z = time_layers
+    z = temporal_layers
   )
 
-  pred_grid <- point_grid %>%
-    tidyr::crossing(time_grid) %>%
-    dplyr::mutate(
-      point_id = 1:nrow(.)
-    ) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_predictiongrid")
+  pred_grid <- space_grid %>%
+    tidyr::crossing(time_grid)
 
-  return(pred_grid)
+  mobest::create_spatpos(
+    id = 1:nrow(pred_grid),
+    x = pred_grid$x,
+    y = pred_grid$y,
+    z = pred_grid$z,
+    region_id = pred_grid$region_id
+  )
 }
