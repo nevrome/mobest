@@ -64,7 +64,7 @@ create_model_grid <- function(
     any.missing = F, min.len = 1, names = "strict"
   )
   checkmate::assert_list(
-    prediction_grid, types = "mobest_predictiongrid",
+    prediction_grid, types = "mobest_spatiotemporalpositions",
     any.missing = F, min.len = 1, names = "strict"
   )
 
