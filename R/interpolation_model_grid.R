@@ -60,7 +60,7 @@ create_model_grid <- function(
     any.missing = F, min.len = 1, names = "strict"
   )
   checkmate::assert_list(
-    kernel, types = "mobest_kernel_setting",
+    kernel, types = "mobest_kernelsetting",
     any.missing = F, min.len = 1, names = "strict"
   )
   checkmate::assert_list(

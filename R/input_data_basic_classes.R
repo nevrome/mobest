@@ -125,7 +125,7 @@ create_kernset <- function(d, g, on_residuals = T, auto = F, ...) {
     auto = auto,
     ...
   ) %>%
-    magrittr::set_class("mobest_kernel_setting")
+    magrittr::set_class("mobest_kernelsetting")
 }
 
 #' Title
@@ -176,8 +176,12 @@ create_kernset_cross <- function(ds, dt, g, on_residuals = T, auto = F) {
     auto = auto,
     it = purrr::pmap_chr(
       list(ks$ds, ks$dt, ks$g),
-      function(x, y, z) { paste("kernel", x, y, z, sep = "_") }
+      function(x, y, z) { paste("kernel", ps(x), ps(y), ps(z), sep = "_") }
     )
   )
+}
+
+ps <- function(x) {
+  suppressWarnings(format(x, scientific = FALSE, decimal.mark = ""))
 }
 
