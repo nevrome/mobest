@@ -68,14 +68,14 @@ crossvalidate <- function(
     )
     # run interpolation on model grid
     interpol_grid <- mobest::run_model_grid(model_grid)
-
-    #### merge prediction and real values ####
-
+    # merge prediction and real values
     # make wide for mean and sd PC values
     interpol_grid_wide <- interpol_grid %>% tidyr::pivot_wider(
       names_from = "dependent_var_id",
       values_from = c("mean", "sd")
     )
+
+    #### TODO from here ####
 
     # split by run training+test run setup to be able to merge with real test values
     interpol_grid_wide_split <- interpol_grid_wide %>% split(interpol_grid_wide$pred_grid_id)

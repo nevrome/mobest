@@ -162,19 +162,12 @@ mle_sequence
 
 ```{r}
 interpol_comparison <- mobest::crossvalidate(
-  independent = tibble::tibble(
-    x = janno_final$x, 
-    y = janno_final$y, 
-    z = janno_final$Date_BC_AD_Median_Derived
-  ),
-  dependent = list(
-    C1 = janno_final$C1,
-    C2 = janno_final$C2
-  ),
-  kernel = mobest::create_kernel_grid(
-    ds = seq(50, 2000, 50)*1000,#seq(100, 10000, 100)*1000, 
-    dt = dt_for_this_run, 
-    g = g_for_this_run
+  independent = positions,
+  dependent = observations,
+  kernel = mobest::create_kernset_cross(
+    ds = seq(100,200, 50)*1000,
+    dt = seq(100,200, 50), 
+    g = 0.1
   )
 )
 ```
