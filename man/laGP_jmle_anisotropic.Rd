@@ -8,11 +8,11 @@ laGP_jmle_anisotropic(
   independent,
   dependent,
   iterations,
-  scaling_factor = 1000
+  total_scaling_factor = 1000
 )
 }
 \arguments{
-\item{scaling_factor}{}
+\item{total_scaling_factor}{}
 }
 \value{
 

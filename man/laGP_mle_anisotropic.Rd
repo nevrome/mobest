@@ -4,10 +4,15 @@
 \alias{laGP_mle_anisotropic}
 \title{Title}
 \usage{
-laGP_mle_anisotropic(independent, dependent, iterations, scaling_factor = 1000)
+laGP_mle_anisotropic(
+  independent,
+  dependent,
+  iterations,
+  total_scaling_factor = 1000
+)
 }
 \arguments{
-\item{scaling_factor}{}
+\item{total_scaling_factor}{}
 }
 \value{
 
