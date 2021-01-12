@@ -10,11 +10,12 @@ laGP_mle_sequence_isotropic_fixed_g(
   iterations,
   total_scaling_factor = 1000,
   g,
-  space_time_scaling_factor_sequence
+  space_time_scaling_factor_sequence,
+  verb = 1
 )
 }
 \arguments{
-\item{space_time_scaling_factor_sequence}{}
+\item{verb}{}
 }
 \value{
 

@@ -8,11 +8,12 @@ laGP_mle_anisotropic(
   independent,
   dependent,
   iterations,
-  total_scaling_factor = 1000
+  total_scaling_factor = 1000,
+  verb = 1
 )
 }
 \arguments{
-\item{total_scaling_factor}{}
+\item{verb}{}
 }
 \value{
 
