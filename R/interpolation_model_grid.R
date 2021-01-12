@@ -67,7 +67,6 @@ create_model_grid <- function(
     prediction_grid, types = "mobest_spatiotemporalpositions",
     any.missing = F, min.len = 1, names = "strict"
   )
-
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
@@ -85,7 +84,6 @@ create_model_grid <- function(
     pred_grid = prediction_grid,
     pred_grid_id = factor(names(prediction_grid), levels = names(prediction_grid))
   )
-
   # expand grid and create model grid
   model_grid <- create_model_grid_raw(
     independent_tables = independent_tables,
@@ -95,13 +93,10 @@ create_model_grid <- function(
   ) %>%
   # make subclass of tibble
   tibble::new_tibble(., nrow = nrow(.), class = "mobest_model_grid")
-
   return(model_grid)
-
 }
 
 create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
-
   expand.grid(
     independent_table_id = independent_tables[["independent_table_id"]],
     dependent_var_id = dependent_vars[["dependent_var_id"]],
@@ -121,7 +116,6 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
     dplyr::left_join(
       pred_grids, by = "pred_grid_id"
     )
-
 }
 
 #' Run kriging interpolation on model grid
@@ -153,27 +147,22 @@ run_model_grid.default <- function(model_grid, unnest = T, quiet = F) {
 #' @rdname run_model_grid
 #' @export
 run_model_grid.mobest_model_grid <- function(model_grid, unnest = T, quiet = F) {
-
   # run interpolation for each entry in the model_grid
-  prediction <- lapply(
-    1:nrow(model_grid),
-    function(i) {
-      if (!quiet) {
-        message("running model ", i, " of ", nrow(model_grid))
-      }
-      interpolate_laGP(
-        independent = model_grid[["independent_table"]][[i]],
-        dependent = model_grid[["dependent_var"]][[i]],
-        pred_grid = model_grid[["pred_grid"]][[i]],
-        # d has to be squared because of the configuration of the default laGP kernel
-        d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
-        g = model_grid[["kernel_setting"]][[i]][["g"]],
-        auto = model_grid[["kernel_setting"]][[i]][["auto"]],
-        on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
-      )
+  prediction <- purrr::map(1:nrow(model_grid), function(i) {
+    if (!quiet) {
+      message("running model ", i, " of ", nrow(model_grid))
     }
-  )
-
+    interpolate_laGP(
+      independent = model_grid[["independent_table"]][[i]],
+      dependent = model_grid[["dependent_var"]][[i]],
+      pred_grid = model_grid[["pred_grid"]][[i]],
+      # d has to be squared because of the configuration of the default laGP kernel
+      d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
+      g = model_grid[["kernel_setting"]][[i]][["g"]],
+      auto = model_grid[["kernel_setting"]][[i]][["auto"]],
+      on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
+    )
+  })
   # simplify model_grid
   model_grid_simplified <- model_grid %>%
     dplyr::select(
@@ -182,25 +171,19 @@ run_model_grid.mobest_model_grid <- function(model_grid, unnest = T, quiet = F) 
       -.data[["dependent_var"]],
       -.data[["pred_grid"]]
     )
-
   # add prediction results for each run as a data.frame in a list column to model_grid
   model_grid_simplified$prediction <- purrr::map2(
     prediction, model_grid[["pred_grid"]],
     function(x, y) {
       pred <- data.frame(
-        point_id = 1:length(x$mean),
         mean = x$mean,
         sd = sqrt(x$s2),
         stringsAsFactors = F
       )
       # merge with pred_grid to add relevant spatial information
-      dplyr::left_join(
-        pred, y,
-        by = "point_id"
-      )
+      cbind(y, pred)
     }
   )
-
   if (unnest) {
     model_grid_simplified %>%
       tidyr::unnest(cols = "prediction") %>%
