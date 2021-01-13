@@ -4,15 +4,12 @@
 \name{estimate_mobility}
 \alias{estimate_mobility}
 \alias{estimate_mobility.default}
-\alias{estimate_mobility.mobest_interpol_grid}
 \alias{estimate_mobility.mobest_origin_grid}
 \title{estimate_mobility}
 \usage{
 estimate_mobility(input_grid, delta_x, delta_y, delta_z)
 
 \method{estimate_mobility}{default}(input_grid, delta_x, delta_y, delta_z)
-
-\method{estimate_mobility}{mobest_interpol_grid}(input_grid, delta_x, delta_y, delta_z)
 
 \method{estimate_mobility}{mobest_origin_grid}(input_grid, delta_x, delta_y, delta_z)
 }
