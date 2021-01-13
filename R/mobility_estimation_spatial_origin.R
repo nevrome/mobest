@@ -50,7 +50,7 @@ search_spatial_origin <- function(
     search_points <- interpol_grid
   } else {
     # check independent and dependent
-    checkmate::assert_class(model_grid, "mobest_model_grid")
+    checkmate::assert_class(model_grid, "mobest_modelgrid")
     if (
          !setequal(interpol_grid$independent_table_id, model_grid$independent_table_id)
       && !setequal(interpol_grid$dependent_var_id, model_grid$dependent_var_id)

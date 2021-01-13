@@ -47,7 +47,7 @@ See \code{?create_prediction_grid} for a function to create grid for a certain
 spatial region}
 }
 \value{
-An object of class \code{mobest_model_grid} which inherits from tibble
+An object of class \code{mobest_modelgrid} which inherits from tibble
 }
 \description{
 Constructs a model grid with all combinations of the different input parameter

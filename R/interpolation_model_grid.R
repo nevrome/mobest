@@ -41,7 +41,7 @@
 #' See \code{?create_prediction_grid} for a function to create grid for a certain
 #' spatial region
 #'
-#' @return An object of class \code{mobest_model_grid} which inherits from tibble
+#' @return An object of class \code{mobest_modelgrid} which inherits from tibble
 #'
 #' @export
 create_model_grid <- function(
@@ -92,7 +92,7 @@ create_model_grid <- function(
     pred_grids = pred_grids
   ) %>%
   # make subclass of tibble
-  tibble::new_tibble(., nrow = nrow(.), class = "mobest_model_grid")
+  tibble::new_tibble(., nrow = nrow(.), class = "mobest_modelgrid")
   return(model_grid)
 }
 
@@ -122,7 +122,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
 #'
 #' Calculate kriging interpolation for all entries in a model grid.
 #'
-#' @param model_grid An object of class \code{mobest_model_grid} as created by
+#' @param model_grid An object of class \code{mobest_modelgrid} as created by
 #' \link{create_model_grid}
 #' @param unnest Boolean. Should the kriging result be unnested to return a
 #' prediction point-wise table of class \code{mobest_interpol_grid}?
@@ -141,12 +141,12 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
 #' @rdname run_model_grid
 #' @export
 run_model_grid.default <- function(model_grid, unnest = T, quiet = F) {
-  stop("x is not an object of class mobest_model_grid")
+  stop("x is not an object of class mobest_modelgrid")
 }
 
 #' @rdname run_model_grid
 #' @export
-run_model_grid.mobest_model_grid <- function(model_grid, unnest = T, quiet = F) {
+run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
   # run interpolation for each entry in the model_grid
   prediction <- purrr::map(1:nrow(model_grid), function(i) {
     if (!quiet) {

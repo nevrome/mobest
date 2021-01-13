@@ -3,17 +3,17 @@
 \name{run_model_grid}
 \alias{run_model_grid}
 \alias{run_model_grid.default}
-\alias{run_model_grid.mobest_model_grid}
+\alias{run_model_grid.mobest_modelgrid}
 \title{Run kriging interpolation on model grid}
 \usage{
 run_model_grid(model_grid, unnest = T, quiet = F)
 
 \method{run_model_grid}{default}(model_grid, unnest = T, quiet = F)
 
-\method{run_model_grid}{mobest_model_grid}(model_grid, unnest = T, quiet = F)
+\method{run_model_grid}{mobest_modelgrid}(model_grid, unnest = T, quiet = F)
 }
 \arguments{
-\item{model_grid}{An object of class \code{mobest_model_grid} as created by
+\item{model_grid}{An object of class \code{mobest_modelgrid} as created by
 \link{create_model_grid}}
 
 \item{unnest}{Boolean. Should the kriging result be unnested to return a
