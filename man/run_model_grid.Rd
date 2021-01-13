@@ -17,12 +17,12 @@ run_model_grid(model_grid, unnest = T, quiet = F)
 \link{create_model_grid}}
 
 \item{unnest}{Boolean. Should the kriging result be unnested to return a
-prediction point-wise table of class \code{mobest_interpol_grid}?}
+prediction point-wise table of class \code{mobest_interpolgrid}?}
 
 \item{quiet}{Boolean. Should a progress indication be printed?}
 }
 \value{
-If \code{unnest = T } then an object of class \code{mobest_interpol_grid},
+If \code{unnest = T } then an object of class \code{mobest_interpolgrid},
 otherwise a tibble with a list column \code{prediction} that contains the
 kriging results for each model grid row
 }
