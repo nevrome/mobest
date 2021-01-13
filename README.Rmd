@@ -159,7 +159,7 @@ mle_sequence
 
 #### Crossvalidation
 
-`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function paramters. Internally it already employs `mobest::create_model_grid` and `mobest::run_model_grid`.
+`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it already employs `mobest::create_model_grid` and `mobest::run_model_grid`.
 
 ```{r, message=FALSE}
 interpol_comparison <- mobest::crossvalidate(
@@ -180,6 +180,37 @@ interpol_comparison
 ```
 
 ### Spatiotemporal interpolation
+
+The spatiotemporal interpolation workflow consists of the creation of a list of models and then running each element on this list.
+
+`mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of input elements. Each row equals one complete model definition with all parameters and input data fully defined.
+
+```{r}
+model_grid <- mobest::create_model_grid(
+  independent = uncertain_positions,
+  dependent = observations,
+  kernel = mobest::create_kernset_multi(
+    d = list(c(100000, 100000, 200)),
+    g = 0.1,
+    it = "kernel_100000_200_01"
+  ),
+  prediction_grid = mobest::create_spatpos_multi(
+    id = c(1,2,3),
+    x = list(sample(300000:999999, 3)),
+    y = list(sample(300000:999999, 3)),
+    z = list(sample(-4500:-3000, 3)),
+    it = "pred_grid_1"
+  )
+)
+```
+
+```{r, echo=F}
+model_grid
+```
+
+The helper function `mobest::prediction_grid_for_spatiotemporal_area` can be used to construct a regular, spatiotemporal grid for the `prediction_grid` argument. It uses `sf::st_make_grid` under the hood to create the spatial grid for an input region.
+
+`mobest::run_model_grid`
 
 
 
