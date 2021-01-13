@@ -91,9 +91,10 @@ crossvalidate <- function(
     )
   # calculate differences between estimated and measured values
   for (dep in names(dependent)) {
-    crossval_interpol_comparison[[paste0(dep, "_dist")]] <-
+    crossval_interpol_comparison[[paste0(dep, "_dist")]] <- abs(
       crossval_interpol_comparison[[paste0("mean_", dep)]] -
       crossval_interpol_comparison[[dep]]
+    )
   }
   # prepare output dataset
   crossval_interpol_comparison %>%
