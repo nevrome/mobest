@@ -353,6 +353,29 @@ can be used to construct a regular, spatiotemporal grid for the
 `prediction_grid` argument. It uses `sf::st_make_grid` under the hood to
 create the spatial grid for an input region.
 
-`mobest::run_model_grid`
+`mobest::run_model_grid` runs each model and returns an unnested table
+of interpolation results for each prediction grid point and each model
+parameter setting.
+
+``` r
+interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+```
+
+    ## # A tibble: 12 x 10
+    ##    independent_tab… dependent_var_id kernel_setting_… pred_grid_id    id      x
+    ##    <fct>            <fct>            <fct>            <fct>        <dbl>  <int>
+    ##  1 run_a            ac1              kernel_100000_2… pred_grid_1      1 328359
+    ##  2 run_a            ac1              kernel_100000_2… pred_grid_1      2 431985
+    ##  3 run_a            ac1              kernel_100000_2… pred_grid_1      3 917245
+    ##  4 run_b            ac1              kernel_100000_2… pred_grid_1      1 328359
+    ##  5 run_b            ac1              kernel_100000_2… pred_grid_1      2 431985
+    ##  6 run_b            ac1              kernel_100000_2… pred_grid_1      3 917245
+    ##  7 run_a            ac2              kernel_100000_2… pred_grid_1      1 328359
+    ##  8 run_a            ac2              kernel_100000_2… pred_grid_1      2 431985
+    ##  9 run_a            ac2              kernel_100000_2… pred_grid_1      3 917245
+    ## 10 run_b            ac2              kernel_100000_2… pred_grid_1      1 328359
+    ## 11 run_b            ac2              kernel_100000_2… pred_grid_1      2 431985
+    ## 12 run_b            ac2              kernel_100000_2… pred_grid_1      3 917245
+    ## # … with 4 more variables: y <int>, z <int>, mean <dbl>, sd <dbl>
 
 ### Mobility estimation

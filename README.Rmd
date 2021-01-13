@@ -214,9 +214,15 @@ model_grid
 
 The helper function `mobest::prediction_grid_for_spatiotemporal_area` can be used to construct a regular, spatiotemporal grid for the `prediction_grid` argument. It uses `sf::st_make_grid` under the hood to create the spatial grid for an input region.
 
-`mobest::run_model_grid`
+`mobest::run_model_grid` runs each model and returns an unnested table of interpolation results for each prediction grid point and each model parameter setting.
 
+```{r}
+interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+```
 
+```{r, echo=F}
+interpol_grid
+```
 
 ### Mobility estimation
 
