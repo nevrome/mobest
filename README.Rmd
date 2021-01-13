@@ -34,9 +34,9 @@ The research paper linked above explains the details and background. The followi
 ```{r}
 positions <- mobest::create_spatpos(
   id = 1:100,
-  x = sample(100000:500000, 100),
-  y = sample(500000:999999, 100),
-  z = sample(-5000:-3000, 100)
+  x = c(sample(100000:700000, 50), sample(300000:999999, 50)),
+  y = c(sample(100000:700000, 50), sample(300000:999999, 50)),
+  z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))
 )
 ```
 
@@ -64,8 +64,8 @@ uncertain_positions
 
 ```{r}
 observations <- mobest::create_obs(
-  ac1 = runif(100, 0, 1), # "ac" for "ancestry component"
-  ac2 = runif(100, 0, 1)
+  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" for "ancestry component"
+  ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
 )
 ```
 
@@ -149,7 +149,6 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
   iterations = 2,
   g = 0.1,
   space_time_scaling_factor_sequence = c(seq(0.1, 0.9, 0.1), 1, seq(2, 10, 1)),
-  iterations = 2,
   verb = 0
 )
 ```
