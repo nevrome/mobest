@@ -5,6 +5,7 @@
 #' @param kernel test
 #' @param iterations test
 #' @param groups test
+#' @param quiet
 #'
 #' @export
 crossvalidate <- function(
@@ -12,7 +13,8 @@ crossvalidate <- function(
   dependent,
   kernel,
   iterations,
-  groups = 10
+  groups = 10,
+  quiet = T
 ) {
   # input check
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
@@ -30,97 +32,94 @@ crossvalidate <- function(
     dplyr::slice_sample(crossval, n = nrow(crossval), replace = F)
   })
   # run prediction test for each iteration
-  purrr::map_dfr(crossval_mixed_list, function(crossval_mixed) {
-    # split crossval into sections
-    n <- groups
-    nr <- nrow(crossval_mixed)
-    crossval_all <- split(crossval_mixed, rep(1:n, times = diff(floor(seq(0, nr, length.out = n + 1)))))
-    # n-1 sections are used as a training dataset for the GP model
-    crossval_training <- purrr::map(1:n, function(i) { dplyr::bind_rows(crossval_all[-i]) })
-    # 1 section is used as a test dataset
-    crossval_test <- purrr::map(1:n, function(i) { crossval_10[[i]] })
-    # prepare model grid for current (n-1):1 comparison with different kernels
-    model_grid <- purrr::map2_dfr(
-      crossval_training, crossval_test,
-      function(training, test) {
-        mobest::create_model_grid(
-          independent = mobest::create_spatpos_multi(
-            id = training$id,
-            x = list(training$x),
-            y = list(training$y),
-            z = list(training$z),
-            it = "age_median"
-          ),
-          dependent = do.call(
-            mobest::create_obs,
-            training[, names(dependent)]
-          ),
-          kernel = kernel,
-          prediction_grid = mobest::create_spatpos_multi(
-            id = test$id,
-            x = list(test$x),
-            y = list(test$y),
-            z = list(test$z),
-            it = "age_median"
+  crossval_interpol_grid <- purrr::map2_dfr(
+    1:iterations, crossval_mixed_list,
+    function(mixing_iteration, crossval_mixed) {
+      # split crossval into sections
+      n <- groups
+      nr <- nrow(crossval_mixed)
+      crossval_all <- split(crossval_mixed, rep(1:n, times = diff(floor(seq(0, nr, length.out = n + 1)))))
+      # n-1 sections are used as a training dataset for the GP model
+      crossval_training <- purrr::map(1:n, function(i) { dplyr::bind_rows(crossval_all[-i]) })
+      # 1 section is used as a test dataset
+      crossval_test <- purrr::map(1:n, function(i) { crossval_all[[i]] })
+      # prepare model grid for current (n-1):1 comparison with different kernels
+      model_grid <- purrr::pmap_dfr(
+        list(1:n, crossval_training, crossval_test),
+        function(run_id, training, test) {
+          mobest::create_model_grid(
+            independent = mobest::create_spatpos_multi(
+              id = training$id,
+              x = list(training$x),
+              y = list(training$y),
+              z = list(training$z),
+              it = paste0("ind_crossval_run_", run_id)
+            ),
+            dependent = do.call(
+              mobest::create_obs,
+              training[, names(dependent)]
+            ),
+            kernel = kernel,
+            prediction_grid = mobest::create_spatpos_multi(
+              id = test$id,
+              x = list(test$x),
+              y = list(test$y),
+              z = list(test$z),
+              it = paste0("pred_crossval_run_", run_id)
+            )
           )
-        )
-      }
+        }
+      )
+      # run interpolation on model grid
+      interpol_grid <- mobest::run_model_grid(model_grid, quiet = quiet)
+      # add mixing iteration column
+      interpol_grid %>% dplyr::mutate(mixing_iteration = mixing_iteration)
+    }
+  )
+  # make wide for predicted (by the GPR) mean and sd values
+  crossval_interpol_grid_wide <- crossval_interpol_grid %>% tidyr::pivot_wider(
+    names_from = "dependent_var_id",
+    values_from = c("mean", "sd")
+  )
+  # merge with actually measured information
+  crossval_interpol_comparison <- crossval_interpol_grid_wide %>%
+    dplyr::left_join(
+      crossval %>% dplyr::select(
+        -.data[["x"]], -.data[["y"]], -.data[["z"]]
+      ),
+      by = "id"
     )
-    # run interpolation on model grid
-    interpol_grid <- mobest::run_model_grid(model_grid)
-    # merge prediction and real values
-    # make wide for mean and sd PC values
-    interpol_grid_wide <- interpol_grid %>% tidyr::pivot_wider(
-      names_from = "dependent_var_id",
-      values_from = c("mean", "sd")
-    )
-
-    #### TODO from here ####
-
-    # split by run training+test run setup to be able to merge with real test values
-    interpol_grid_wide_split <- interpol_grid_wide %>% split(interpol_grid_wide$pred_grid_id)
-
-    interpol_grid_merged <- lapply(
-      unique(interpol_grid_wide$pred_grid_id), function(i) {
-        interpol_grid_wide_split[[i]] %>%
-          dplyr::left_join(
-            crossval_9_test[[as.numeric(i)]] %>%
-              dplyr::select(names(dependent)) %>%
-              dplyr::mutate(point_id = 1:nrow(.)),
-            by = "point_id"
-          )
-      }
-    ) %>% dplyr::bind_rows()
-
-    return(interpol_grid_merged)
-
-  }) -> interpol_grid_merged_all
-
+  # calculate differences between estimated and measured values
   for (dep in names(dependent)) {
-    interpol_grid_merged_all[[paste0(dep, "_dist")]] <- interpol_grid_merged_all[[dep]] -
-      interpol_grid_merged_all[[paste0("mean_", dep)]]
+    crossval_interpol_comparison[[paste0(dep, "_dist")]] <-
+      crossval_interpol_comparison[[paste0("mean_", dep)]] -
+      crossval_interpol_comparison[[dep]]
   }
-
-  interpol_comparison <- interpol_grid_merged_all %>%
+  # prepare output dataset
+  crossval_interpol_comparison %>%
     dplyr::select(
-      kernel_setting_id, tidyselect::contains("_dist")
+      .data[["id"]],
+      .data[["mixing_iteration"]],
+      .data[["kernel_setting_id"]],
+      tidyselect::contains("_dist")
     ) %>%
     tidyr::pivot_longer(
       cols = tidyselect::contains("_dist"),
       names_to = "dependent_var",
       values_to = "difference"
-    )
-
-  # turn kernel parameters into distinct columns again
-  interpol_comparison <- interpol_comparison %>%
+    ) %>%
+    # turn kernel parameters into distinct columns again
+    dplyr::mutate(
+      kernel_setting_id = gsub("kernel_", "", .data[["kernel_setting_id"]])
+    ) %>%
     tidyr::separate(
-      kernel_setting_id,
+      .data[["kernel_setting_id"]],
       c("ds", "dt", "g"),
       sep = "_",
       convert = T,
       remove = F
+    ) %>%
+    dplyr::select(
+      -.data[["kernel_setting_id"]]
     )
-
-  return(interpol_comparison)
-
 }

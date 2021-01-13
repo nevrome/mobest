@@ -4,7 +4,14 @@
 \alias{crossvalidate}
 \title{crossvalidate}
 \usage{
-crossvalidate(independent, dependent, kernel, iterations, groups = 10)
+crossvalidate(
+  independent,
+  dependent,
+  kernel,
+  iterations,
+  groups = 10,
+  quiet = T
+)
 }
 \arguments{
 \item{independent}{test}
@@ -16,6 +23,8 @@ crossvalidate(independent, dependent, kernel, iterations, groups = 10)
 \item{iterations}{test}
 
 \item{groups}{test}
+
+\item{quiet}{}
 }
 \description{
 crossvalidate

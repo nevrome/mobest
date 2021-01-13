@@ -167,7 +167,9 @@ interpol_comparison <- mobest::crossvalidate(
     ds = seq(100,200, 50)*1000,
     dt = seq(100,200, 50), 
     g = 0.1
-  )
+  ),
+  iterations = 2,
+  groups = 10
 )
 ```
 
