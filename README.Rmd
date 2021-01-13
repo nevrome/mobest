@@ -55,7 +55,7 @@ uncertain_positions <- mobest::create_spatpos_multi(
   id = 1:100,
   x = list(positions$x, positions$x),
   y = list(positions$y, positions$y),
-  z = list(positions$y + sample(-100:100, 100), positions$y + sample(-100:100, 100)),
+  z = list(positions$z + sample(-100:100, 100), positions$z + sample(-100:100, 100)),
   it = c("run_a", "run_b")
 )
 ```
