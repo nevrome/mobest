@@ -31,6 +31,10 @@ The research paper linked above explains the details and background. The followi
 
 `create_spatpos` creates an object of class `mobest_spatiotemporalpositions` which is a `data.frame` that represents spatiotemporal positions.
 
+```{r, echo=F}
+set.seed(123)
+```
+
 ```{r}
 positions <- mobest::create_spatpos(
   id = 1:100,
