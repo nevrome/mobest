@@ -77,7 +77,7 @@ lapply(observations, head, N = 10)
 
 ### Parameter estimation
 
-Gaussian process regression requires a parametrized covariance function. `mobest` provides helper functions to estimate the relevant parameters from the input data.
+Gaussian process regression requires a parametrized covariance function (a "kernel"). `mobest` provides helper functions to estimate the relevant parameters from the input data.
 
 #### Variogram calculation
 
@@ -153,13 +153,15 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
 )
 ```
 
-```{r}
+```{r, echo=F}
 mle_sequence
 ```
 
 #### Crossvalidation
 
-```{r}
+`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function paramters. Internally it already employs `mobest::create_model_grid` and `mobest::run_model_grid`.
+
+```{r, message=FALSE}
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
   dependent = observations,
@@ -171,6 +173,10 @@ interpol_comparison <- mobest::crossvalidate(
   iterations = 2,
   groups = 10
 )
+```
+
+```{r, echo=F}
+interpol_comparison
 ```
 
 ### Spatiotemporal interpolation
