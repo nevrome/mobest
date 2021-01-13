@@ -38,8 +38,8 @@ set.seed(123)
 ```{r}
 positions <- mobest::create_spatpos(
   id = 1:100,
-  x = c(sample(100000:700000, 50), sample(300000:999999, 50)),
-  y = c(sample(100000:700000, 50), sample(300000:999999, 50)),
+  x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
+  y = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
   z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))
 )
 ```
@@ -198,12 +198,17 @@ model_grid <- mobest::create_model_grid(
     g = 0.1,
     it = "kernel_100000_200_01"
   ),
-  prediction_grid = mobest::create_spatpos_multi(
-    id = c(1,2,3),
-    x = list(sample(300000:999999, 3)),
-    y = list(sample(300000:999999, 3)),
-    z = list(sample(-4500:-3000, 3)),
-    it = "pred_grid_1"
+  prediction_grid = list(
+    pred_grid = expand.grid(
+      x = seq(100000, 1000000, 100000),
+      y = seq(100000, 1000000, 100000),
+      z = seq(-5000, -3000, 400)
+    ) %>% {create_spatpos(
+      id = 1:nrow(.),
+      x = .$x,
+      y = .$y,
+      z = .$z
+    )}
   )
 )
 ```
@@ -226,6 +231,9 @@ interpol_grid
 
 ### Mobility estimation
 
-
+```{r}
+search_spatial_origin
+interpol_grid
+```
 
 
