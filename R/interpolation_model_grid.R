@@ -148,21 +148,23 @@ run_model_grid.default <- function(model_grid, unnest = T, quiet = F) {
 #' @export
 run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
   # run interpolation for each entry in the model_grid
-  prediction <- purrr::map(1:nrow(model_grid), function(i) {
-    if (!quiet) {
-      message("running model ", i, " of ", nrow(model_grid))
+  prediction <- purrr::map(
+    1:nrow(model_grid), function(i) {
+      if (!quiet) {
+        message("running model ", i, " of ", nrow(model_grid))
+      }
+      interpolate_laGP(
+        independent = model_grid[["independent_table"]][[i]],
+        dependent = model_grid[["dependent_var"]][[i]],
+        pred_grid = model_grid[["pred_grid"]][[i]],
+        # d has to be squared because of the configuration of the default laGP kernel
+        d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
+        g = model_grid[["kernel_setting"]][[i]][["g"]],
+        auto = model_grid[["kernel_setting"]][[i]][["auto"]],
+        on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
+      )
     }
-    interpolate_laGP(
-      independent = model_grid[["independent_table"]][[i]],
-      dependent = model_grid[["dependent_var"]][[i]],
-      pred_grid = model_grid[["pred_grid"]][[i]],
-      # d has to be squared because of the configuration of the default laGP kernel
-      d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
-      g = model_grid[["kernel_setting"]][[i]][["g"]],
-      auto = model_grid[["kernel_setting"]][[i]][["auto"]],
-      on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
-    )
-  })
+  )
   # simplify model_grid
   model_grid_simplified <- model_grid %>%
     dplyr::select(
