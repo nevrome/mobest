@@ -56,7 +56,7 @@ search_spatial_origin <- function(
     .data[["kernel_setting_id"]]
   )
   # run for each field
-  purrr::map2_dfr(
+  origin_grid <- purrr::map2_dfr(
     1:length(fields), fields,
     function(cur_field_id, cur_field) {
       # run for each independent (search points) iteration
@@ -99,54 +99,19 @@ search_spatial_origin <- function(
       )
     }
   )
-
-  # add add_origin_vector_coordinates
-  pri_ready <- pri_ready %>% add_origin_vector_coordinates()
-
   # add distance
-  pri_ready$spatial_distance <- sqrt(pri_ready$x_to_origin^2 + pri_ready$y_to_origin^2)
-
+  origin_grid$spatial_distance <- sqrt(
+    (origin_table$search_x - origin_table$origin_x)^2 +
+      (origin_table$search_y - origin_table$origin_y)^2
+  )
   # add angle
-  pri_ready$angle_deg[pri_ready$spatial_distance != 0] <- sapply(
-    1:nrow(pri_ready[pri_ready$spatial_distance != 0, ]), function(i) {
-    vec2deg(c(pri_ready$x_to_origin[i], pri_ready$y_to_origin[i]))
-  })
-
-  # add class
-  pri_ready <- pri_ready %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_origin_grid")
-
-  return(pri_ready)
-}
-
-add_origin_vector_coordinates <- function(x) {
-
-  x <- x %>%
-    dplyr::mutate(
-      x_to_origin = .data[["x_origin"]] - .data[["x"]],
-      y_to_origin = .data[["y_origin"]] - .data[["y"]]
-    )
-
-  normalized_vector <- purrr::map2(
-    x[["x_to_origin"]], x[["y_to_origin"]], function(l, r) {
-      scalar1(c(l, r))
-    }
-  ) %>% do.call(rbind, .)
-
-  x <- x %>%
-    dplyr::mutate(
-      x_to_origin_norm = normalized_vector[,1],
-      y_to_origin_norm = normalized_vector[,2]
-    )
-
-  return(x)
-}
-
-scalar1 <- function(x) {
-  if (all(x == 0)) {
-    x
-  } else {
-    x / sqrt(sum(x^2))
-  }
+  origin_grid$angle_deg <- purrr::map2_dbl(
+    (origin_table$search_x - origin_table$origin_x),
+    (origin_table$search_y - origin_table$origin_y),
+    function(x, y) { vec2deg(c(x, y)) }
+  )
+  # return result
+  origin_grid %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_origingrid")
 }
 
