@@ -58,266 +58,47 @@ search_spatial_origin <- function(
   # run for each field
   purrr::map2_dfr(
     1:length(fields), fields,
-    function(cur_field_nr, cur_field) {
+    function(cur_field_id, cur_field) {
       # run for each independent (search points) iteration
-      purrr::map_dfr(
-        search_points,
-        function(cur_search_points) {
+      purrr::map2_dfr(
+        names(search_points), search_points,
+        function(cur_search_points_id, cur_search_points) {
           # run for each search point
           purrr::pmap_dfr(
             cur_search_points,
             function(...) {
               cur_point <- data.frame(...)
-              closest_timestep <- cur_field$z[max(which(cur_field$z < cur_point$z))]
-              field_slice <- field[field$z == closest_timestep, ]
-              closest_point <- which.min(obs_distance <- fields::rdist(
+              closest_timestep <- cur_field$z[which.min(abs(cur_field$z - (cur_point$z - rearview_distance)))]
+              field_slice <- cur_field[cur_field$z == closest_timestep, ]
+              closest_point_index <- which.min(fields::rdist(
                 cur_point[dep],
                 field_slice[paste0("mean_", dep)]
               ))
-              field_slice[closest_point,]
+              closest_point <- field_slice[closest_point_index,]
+              tibble::tibble(
+                search_id = cur_point$id,
+                search_x = cur_point$x,
+                search_y = cur_point$y,
+                search_z = cur_point$z,
+                dplyr::rename_with(cur_point[dep], ~paste("search", .x, sep = "_")),
+                origin_id = closest_point$id,
+                origin_x = closest_point$x,
+                origin_y = closest_point$y,
+                origin_z = closest_point$z,
+                dplyr::rename_with(closest_point[
+                  c(paste0("mean_", dep), paste0("sd_", dep))
+                ], ~paste("origin", .x, sep = "_")),
+                search_points = cur_search_points_id,
+                field_id = cur_field_id,
+                field_independent_table_id = closest_point$independent_table_id,
+                field_kernel_setting_id = closest_point$kernel_setting_id
+              )
             }
           )
-
-
         }
       )
     }
   )
-
-  # check temporal distance raster and translate rearview distance to steps
-  timeseries <- sort(unique(interpol_grid$z))
-  lt <- length(timeseries)
-  td <- unique(timeseries[2:lt] - timeseries[1:lt-1])
-  if (length(td) > 1) {
-    stop("The temporal grid must be equidistant")
-  } else if (rearview_distance %% td != 0) {
-    stop("The rearview distance must be a whole multiple of the temporal grid resolution")
-  } else {
-    steps <- rearview_distance / td
-  }
-
-  # get relevant column names
-  dependent_vars <- unique(interpol_grid$dependent_var_id)
-  mean_cols <- paste0("mean_", dependent_vars)
-  sd_cols <- paste0("sd_", dependent_vars)
-
-  # remove prediction points with too high standard deviation
-  # interpol_grid_sd_filtered <- interpol_grid %>%
-  #   dplyr::group_by(independent_table_id, dependent_var_id, kernel_setting_id, pred_grid_id) %>%
-  #   dplyr::filter(
-  #     sd < 0.2 * diff(range(mean))
-  #   ) %>%
-  #   dplyr::ungroup()
-
-  # transform runs for different ancestry components to columns
-  pri <- tidyr::pivot_wider(
-    interpol_grid,
-    names_from = "dependent_var_id",
-    values_from = c("mean", "sd")
-  )
-
-  # filter prediction points that were only half removed by the sd filter
-  # pri <- pri %>%
-  #   dplyr::filter(
-  #     dplyr::across(tidyselect::one_of(mean_cols), ~!is.na(.x))
-  #   )
-
-  # add new columns for output dataset
-  pri <- pri %>% dplyr::mutate(
-    spatial_distance = NA_real_,
-    x_origin = NA_real_,
-    y_origin = NA_real_,
-    z_origin = NA_real_,
-    angle_deg = NA_real_,
-  )
-
-  # split by
-  age_sample_run_pris <- pri %>% dplyr::group_split(
-    .data[["independent_table_id"]],
-    .data[["kernel_setting_id"]],
-    .data[["pred_grid_id"]]
-  )
-
-  # loop by
-  pri_ready_large <- lapply(
-    age_sample_run_pris, function(age_sample_run_pri) {
-
-    # split dataset by age slice
-    time_pris <- split(
-      age_sample_run_pri,
-      age_sample_run_pri[["z"]]
-    )
-
-    time_pris_current_list <- time_pris[(1 + steps):length(time_pris)]
-    time_pris_past_list <- time_pris[1:(length(time_pris) - steps)]
-
-    origin_points_list <- pbapply::pblapply(
-      seq_along(time_pris_current_list), function(ind) {
-
-      time_pris_current <- time_pris_current_list[[ind]]
-      time_pris_past <- time_pris_past_list[[ind]]
-
-      # calculate spatial distance matrix between past and current points
-      current_pri_spatial <- as.matrix(time_pris_current[c("x", "y")])
-      past_pri_spatial <- as.matrix(time_pris_past[c("x", "y")])
-      spatial_distance <- fields::rdist(current_pri_spatial, past_pri_spatial)
-
-      # calculate genetic distance matrix between past and current points
-      current_pri_genetics <- as.matrix(time_pris_current[mean_cols])
-      #current_pri_genetics_sd <- as.matrix(time_pris_current[sd_cols])
-      past_pri_genetics <- as.matrix(time_pris_past[mean_cols])
-      #past_pri_genetics_sd <- as.matrix(time_pris_past[sd_cols])
-
-      # density overlap search
-      # # calculate multivariate normal density distributions
-      # # define grid
-      # along_each_dim <- lapply(mean_cols, function(mean_col) {
-      #   min_val <- min(c(time_pris_current[[mean_col]], time_pris_past[[mean_col]]))
-      #   max_val <- max(c(time_pris_current[[mean_col]], time_pris_past[[mean_col]]))
-      #   seq(min_val, max_val, length.out = 100)
-      # })
-      # exploration_grid_long <- expand.grid(along_each_dim)
-      # # calculate densities for all As
-      # densities_for_As <- lapply(1:nrow(current_pri_genetics), function(index_of_A) {
-      #   mvtnorm::dmvnorm(
-      #     exploration_grid_long,
-      #     mean = current_pri_genetics[index_of_A,],
-      #     sigma = diag(current_pri_genetics_sd[index_of_A,])
-      #   )
-      # })
-      # # calculate densities for all Bs
-      # densities_for_Bs <- lapply(1:nrow(past_pri_genetics), function(index_of_B) {
-      #   mvtnorm::dmvnorm(
-      #     exploration_grid_long,
-      #     mean = past_pri_genetics[index_of_B,],
-      #     sigma = diag(past_pri_genetics_sd[index_of_B,])
-      #   )
-      # })
-
-      # schu <- exploration_grid_long %>% dplyr::mutate(
-      #   hu = densities_for_As[[1]] * densities_for_Bs[[800]]
-      # )
-
-
-      genetic_distance <- fields::rdist(current_pri_genetics, past_pri_genetics)
-
-      # get points with least genetic distance in the past
-      centroid_points <- do.call(rbind, lapply(
-          1:nrow(current_pri_genetics), function(index_of_A) {
-
-        # density overlap search
-        #search_area <- 1:nrow(past_pri_genetics)
-        # search_area <- which(spatial_distance[index_of_A,] <= 1000000)
-        #
-        # sums_of_joint_prob_distributions <- sapply(
-        #   search_area,
-        #   function(index_of_B) {
-        #     sum(densities_for_As[[index_of_A]] * densities_for_Bs[[index_of_B]])
-        #   }
-        # )
-        #
-        # index_of_B <- search_area[which.max(sums_of_joint_prob_distributions)]
-        # past_pri_spatial[index_of_B,]
-
-        # all genetic distances to current point A
-        gendists_to_A <- genetic_distance[index_of_A,]
-        # spatial search area limitation
-        #gendists_to_A[spatial_distance[index_of_A,] > 500000] <- NA
-
-        # find closest point in the past B
-
-        # # simple min approach
-        index_of_B <- which.min(gendists_to_A)
-        past_pri_spatial[index_of_B,]
-
-        # # conservative bias approach
-        # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.01, na.rm = T)) {
-        #   index_of_B <- index_of_A
-        # } else {
-        #   index_of_B <- which.min(gendists_to_A)
-        # }
-
-        # weighted mean approach
-        # c(
-        #   weighted.mean(past_pri_spatial[,1], (1/gendists_to_A)^2),
-        #   weighted.mean(past_pri_spatial[,2], (1/gendists_to_A)^2)
-        # )
-
-        # weighted mean in reach approach
-        # in_reach <- spatial_distance[index_of_A,] <= 1000000
-        # c(
-        #   weighted.mean(past_pri_spatial[in_reach,1], (1/gendists_to_A[in_reach])^2),
-        #   weighted.mean(past_pri_spatial[in_reach,2], (1/gendists_to_A[in_reach])^2)
-        # )
-
-        # weighted mean + conservative bias
-        # if (gendists_to_A[index_of_A] < quantile(gendists_to_A, probs = 0.1, na.rm = T)) {
-        #   past_pri_spatial[index_of_A,]
-        # } else {
-        #   c(
-        #     weighted.mean(past_pri_spatial[,1], 1/gendists_to_A),
-        #     weighted.mean(past_pri_spatial[,2], 1/gendists_to_A)
-        #   )
-        # }
-
-        # library(ggplot2)
-        # past_pri_spatial %>%
-        #   tibble::as_tibble() %>%
-        #   dplyr::mutate(
-        #     gen = gendists_to_A
-        #   ) %>%
-        #   ggplot(aes(x, y, fill = gen)) +
-        #   geom_raster() +
-        #   geom_point(
-        #     aes(x = current_pri_spatial[index_of_A,][1] , y = current_pri_spatial[index_of_A,][2]),
-        #     color = "red"
-        #   ) +
-        #   geom_point(
-        #     aes(x = past_pri_spatial[index_of_B,][1] , y = past_pri_spatial[index_of_B,][2]),
-        #     color = "green", pch = 4
-        #   )
-
-        # # find points with similar genetic makeup like B
-        # B_mean <- past_pri_genetics[index_of_B,]
-        # B_sd <- past_pri_genetics_sd[index_of_B,]
-        # B_spatial_points <- past_pri_spatial[
-        #   past_pri_genetics[,1] < B_mean[1] + nugget & past_pri_genetics[,1] > B_mean[1] - nugget &
-        #   past_pri_genetics[,2] < B_mean[2] + nugget & past_pri_genetics[,2] > B_mean[2] - nugget,
-        # ]
-        # # find centroid point C
-        # if (is.vector(B_spatial_points)) {
-        #   C <- c(B_spatial_points[1], B_spatial_points[2])
-        # } else {
-        #   C <- c(mean(B_spatial_points[,1]), mean(B_spatial_points[,2]))
-        # }
-        # # return centroid point
-        # return(C)
-      }))
-
-      # add closest points info to current age slice points
-      list(centroid_points[,1], centroid_points[,2], unique(time_pris_past[["z"]]))
-
-    }, cl = cl )
-
-    pri_ready <- purrr::map2(
-      time_pris_current_list, origin_points_list,
-      function(time_pris_current, origin_points) {
-        time_pris_current$x_origin <- origin_points[[1]]
-        time_pris_current$y_origin <- origin_points[[2]]
-        time_pris_current$z_origin <- origin_points[[3]]
-        return(time_pris_current)
-      }
-    ) %>%
-      do.call(rbind, .)
-
-    return(pri_ready)
-
-  })
-
-  pri_ready <- pri_ready_large %>% dplyr::bind_rows()
-
-  # remove points with unknown/empty origin
-  pri_ready <- pri_ready %>% dplyr::filter(!is.na(.data[["x_origin"]]) & !is.na(.data[["y_origin"]]))
 
   # add add_origin_vector_coordinates
   pri_ready <- pri_ready %>% add_origin_vector_coordinates()
