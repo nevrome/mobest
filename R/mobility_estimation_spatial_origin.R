@@ -39,6 +39,21 @@ search_spatial_origin <- function(
       unique %in% dep %>% all %>% `!`) {
     stop("The interpol_grid must have the same variables as in dependent")
   }
+  interpol_grid_box <- list(
+    min_x = min(interpol_grid$x), max_x = max(interpol_grid$x),
+    min_y = min(interpol_grid$y), max_y = max(interpol_grid$y),
+    min_z = min(interpol_grid$z), max_z = max(interpol_grid$z)
+  )
+  all_search_points <- independent %>% dplyr::bind_rows()
+  search_point_box <- list(
+    min_x = min(all_search_points$x), max_x = max(all_search_points$x),
+    min_y = min(all_search_points$y), max_y = max(all_search_points$y),
+    min_z = min(all_search_points$z) - rearview_distance,
+    max_z = max(all_search_points$z) - rearview_distance
+  )
+  if (search_point_box %fits_in% interpol_grid_box %>% `!`) {
+    stop("The interpol_grid must fully inclose the search area (search points - rearview distance)")
+  }
   # transform input data
   interpol_grid_wide <- interpol_grid %>% tidyr::pivot_wider(
     names_from = "dependent_var_id",
@@ -113,5 +128,14 @@ search_spatial_origin <- function(
   # return result
   origin_grid %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_origingrid")
+}
+
+`%fits_in%` <- function(box_a, box_b) {
+  box_a$min_x > box_b$min_x &&
+  box_a$max_x < box_b$max_x &&
+  box_a$min_y > box_b$min_y &&
+  box_a$max_y < box_b$max_y &&
+  box_a$min_z > box_b$min_z &&
+  box_a$max_z < box_b$max_z
 }
 
