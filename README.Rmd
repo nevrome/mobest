@@ -190,6 +190,7 @@ The spatiotemporal interpolation workflow consists of the creation of a list of 
 `mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of input elements. Each row equals one complete model definition with all parameters and input data fully defined.
 
 ```{r}
+library(magrittr)
 model_grid <- mobest::create_model_grid(
   independent = uncertain_positions,
   dependent = observations,
@@ -202,7 +203,7 @@ model_grid <- mobest::create_model_grid(
     pred_grid = expand.grid(
       x = seq(100000, 1000000, 100000),
       y = seq(100000, 1000000, 100000),
-      z = seq(-5000, -3000, 400)
+      z = seq(-5500, -3000, 500)
     ) %>% {create_spatpos(
       id = 1:nrow(.),
       x = .$x,
@@ -232,8 +233,12 @@ interpol_grid
 ### Mobility estimation
 
 ```{r}
-search_spatial_origin
-interpol_grid
+mobest::search_spatial_origin(
+  independent = uncertain_positions,
+  dependent = observations,
+  interpol_grid = interpol_grid,
+  rearview_distance = 300
+)
 ```
 
 
