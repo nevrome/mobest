@@ -18,6 +18,7 @@ search_spatial_origin <- function(
   dependent,
   interpol_grid,
   rearview_distance,
+  quiet = FALSE,
   cl = parallel::detectCores()
 ) {
   # input checks
@@ -78,6 +79,13 @@ search_spatial_origin <- function(
       purrr::map2_dfr(
         names(search_points), search_points,
         function(cur_search_points_id, cur_search_points) {
+          if (!quiet) {
+            message(
+              "running field setting ",
+              cur_field_id, " with search points ",
+              cur_search_points_id
+            )
+          }
           # run for each search point
           purrr::pmap_dfr(
             cur_search_points,
