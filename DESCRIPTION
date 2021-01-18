@@ -16,6 +16,8 @@ Imports:
     laGP,
     dplyr (>= 0.8.5),
     fields (>= 10.3),
+    furrr,
+    future,
     magrittr,
     modelr,
     parallel,

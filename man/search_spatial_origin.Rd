@@ -9,6 +9,7 @@ search_spatial_origin(
   dependent,
   interpol_grid,
   rearview_distance,
+  quiet = FALSE,
   cl = parallel::detectCores()
 )
 }
@@ -18,11 +19,6 @@ search_spatial_origin(
 
 \item{rearview_distance}{How many years in the past should the reference point be
 searched}
-
-\item{cl}{A cluster object created by \link{parallel::makeCluster()},
-or an integer to indicate number of child-processes
-(integer values are ignored on Windows) for parallel
-evaluations (see \link{pbapply::pbapply()}).}
 }
 \value{
 An object of class \code{mobest_origin_grid}

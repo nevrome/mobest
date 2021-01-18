@@ -4,10 +4,6 @@
 #' \link{run_model_grid}
 #' @param rearview_distance How many years in the past should the reference point be
 #' searched
-#' @param cl A cluster object created by \link{parallel::makeCluster()},
-#' or an integer to indicate number of child-processes
-#' (integer values are ignored on Windows) for parallel
-#' evaluations (see \link{pbapply::pbapply()}).
 #'
 #' @return An object of class \code{mobest_origin_grid}
 #'
@@ -53,9 +49,9 @@ search_spatial_origin <- function(
     max_z = max(all_search_points$z) - rearview_distance
   )
   if (search_point_box %fits_in% interpol_grid_box %>% `!`) {
-    stop(paste(
-      "The interpol_grid must fully inclose the search area",
-      "(search points - rearview distance)"
+    warning(paste(
+      "The interpol_grid does not fully inclose the spatiotemporal",
+      "range of the search points (-rearview_distance)"
     ))
   }
   # transform input data
@@ -90,7 +86,8 @@ search_spatial_origin <- function(
             )
           }
           # run for each search point
-          purrr::pmap_dfr(
+          future::plan(future::multisession)
+          furrr::future_pmap(
             cur_search_points,
             function(...) {
               # search closest point
@@ -125,7 +122,7 @@ search_spatial_origin <- function(
                 field_kernel_setting_id = closest_point$kernel_setting_id
               )
             }
-          )
+          ) %>% dplyr::bind_rows()
         }
       )
     }
