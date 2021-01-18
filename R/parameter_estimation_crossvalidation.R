@@ -44,31 +44,33 @@ crossvalidate <- function(
       # 1 section is used as a test dataset
       crossval_test <- purrr::map(1:n, function(i) { crossval_all[[i]] })
       # prepare model grid for current (n-1):1 comparison with different kernels
-      model_grid <- purrr::pmap_dfr(
-        list(1:n, crossval_training, crossval_test),
-        function(run_id, training, test) {
-          mobest::create_model_grid(
-            independent = mobest::create_spatpos_multi(
-              id = training$id,
-              x = list(training$x),
-              y = list(training$y),
-              z = list(training$z),
-              it = paste0("ind_crossval_run_", run_id)
-            ),
-            dependent = do.call(
-              mobest::create_obs,
-              training[, names(dependent)]
-            ),
-            kernel = kernel,
-            prediction_grid = mobest::create_spatpos_multi(
-              id = test$id,
-              x = list(test$x),
-              y = list(test$y),
-              z = list(test$z),
-              it = paste0("pred_crossval_run_", run_id)
+      model_grid <- suppressMessages(
+        purrr::pmap_dfr(
+          list(1:n, crossval_training, crossval_test),
+          function(run_id, training, test) {
+            mobest::create_model_grid(
+              independent = mobest::create_spatpos_multi(
+                id = training$id,
+                x = list(training$x),
+                y = list(training$y),
+                z = list(training$z),
+                it = paste0("ind_crossval_run_", run_id)
+              ),
+              dependent = do.call(
+                mobest::create_obs,
+                training[, names(dependent)]
+              ),
+              kernel = kernel,
+              prediction_grid = mobest::create_spatpos_multi(
+                id = test$id,
+                x = list(test$x),
+                y = list(test$y),
+                z = list(test$z),
+                it = paste0("pred_crossval_run_", run_id)
+              )
             )
-          )
-        }
+          }
+        )
       )
       # run interpolation on model grid
       interpol_grid <- mobest::run_model_grid(model_grid, quiet = quiet)
