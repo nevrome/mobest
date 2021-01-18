@@ -119,7 +119,7 @@ search_spatial_origin <- function(
                 dplyr::rename_with(closest_point[
                   c(paste0("mean_", dep), paste0("sd_", dep))
                 ], ~paste("origin", .x, sep = "_")),
-                search_points = cur_search_points_id,
+                search_points_id = cur_search_points_id,
                 field_id = cur_field_id,
                 field_independent_table_id = closest_point$independent_table_id,
                 field_kernel_setting_id = closest_point$kernel_setting_id
@@ -132,13 +132,13 @@ search_spatial_origin <- function(
   )
   # add distance
   origin_grid$spatial_distance <- sqrt(
-    (origin_table$search_x - origin_table$origin_x)^2 +
-      (origin_table$search_y - origin_table$origin_y)^2
+    (origin_grid$search_x - origin_grid$origin_x)^2 +
+      (origin_grid$search_y - origin_grid$origin_y)^2
   )
   # add angle
   origin_grid$angle_deg <- purrr::map2_dbl(
-    (origin_table$search_x - origin_table$origin_x),
-    (origin_table$search_y - origin_table$origin_y),
+    (origin_grid$search_x - origin_grid$origin_x),
+    (origin_grid$search_y - origin_grid$origin_y),
     function(x, y) { vec2deg(c(x, y)) }
   )
   # return result
