@@ -53,7 +53,10 @@ search_spatial_origin <- function(
     max_z = max(all_search_points$z) - rearview_distance
   )
   if (search_point_box %fits_in% interpol_grid_box %>% `!`) {
-    stop("The interpol_grid must fully inclose the search area (search points - rearview distance)")
+    stop(paste(
+      "The interpol_grid must fully inclose the search area",
+      "(search points - rearview distance)"
+    ))
   }
   # transform input data
   interpol_grid_wide <- interpol_grid %>% tidyr::pivot_wider(
@@ -90,14 +93,19 @@ search_spatial_origin <- function(
           purrr::pmap_dfr(
             cur_search_points,
             function(...) {
+              # search closest point
               cur_point <- data.frame(...)
-              closest_timestep <- cur_field$z[which.min(abs(cur_field$z - (cur_point$z - rearview_distance)))]
+              closest_timestep <- cur_field$z[
+                which.min(abs(cur_field$z - (cur_point$z - rearview_distance)))
+              ]
               field_slice <- cur_field[cur_field$z == closest_timestep, ]
               closest_point_index <- which.min(fields::rdist(
                 cur_point[dep],
                 field_slice[paste0("mean_", dep)]
               ))
               closest_point <- field_slice[closest_point_index,]
+              # create output tibble with one row for the current point and its
+              # origin point
               tibble::tibble(
                 search_id = cur_point$id,
                 search_x = cur_point$x,
