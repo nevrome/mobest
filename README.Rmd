@@ -232,8 +232,10 @@ interpol_grid
 
 ### Mobility estimation
 
+`mobest::search_spatial_origin` takes a number of "search points" (with `independent` and `dependent`) for which the spatial origin search should be performed, as well as a `interpol_grid`, which defines the field in which the origin search should be performed. It returns a data.frame with one row for each search point and interpol_grid setting. Each row contains the specifics of the genetically closest origin point.
+
 ```{r}
-mobest::search_spatial_origin(
+origin_grid <- mobest::search_spatial_origin(
   independent = uncertain_positions,
   dependent = observations,
   interpol_grid = interpol_grid,
@@ -241,4 +243,7 @@ mobest::search_spatial_origin(
 )
 ```
 
+```{r, echo=F}
+origin_grid
+```
 
