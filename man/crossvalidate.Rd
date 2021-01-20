@@ -2,7 +2,7 @@
 % Please edit documentation in R/parameter_estimation_crossvalidation.R
 \name{crossvalidate}
 \alias{crossvalidate}
-\title{crossvalidate}
+\title{Use crossvalidation for kriging kernel parameter estimation}
 \usage{
 crossvalidate(
   independent,
@@ -14,18 +14,22 @@ crossvalidate(
 )
 }
 \arguments{
-\item{independent}{test}
+\item{independent}{An object of class mobest_spatiotemporalpositions}
 
-\item{dependent}{test}
+\item{dependent}{An object of class mobest_observations}
 
-\item{kernel}{test}
+\item{kernel}{An object of class mobest_kernelsetting}
 
-\item{iterations}{test}
+\item{iterations}{Integer. Number of crossvalidation iterations. Each iteration
+goes along with a random reordering of the input points for training and test
+data}
 
-\item{groups}{test}
+\item{groups}{Integer. Number of groups for splitting up training and test data
+10 means for example that the data should be split up into 9 parts training and
+1 part test observations}
 
 \item{quiet}{Logical. Should a progress indication be printed?}
 }
 \description{
-crossvalidate
+Use crossvalidation for kriging kernel parameter estimation
 }

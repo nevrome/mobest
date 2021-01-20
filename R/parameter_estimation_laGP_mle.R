@@ -1,14 +1,17 @@
-#' Title
+#' Use laGPs mle algorithms for kriging kernel parameter estimation
 #'
-#' @param independent
-#' @param dependent
-#' @param iterations
-#' @param total_scaling_factor
-#' @param g
-#' @param space_time_scaling_factor_sequence
-#' @param verb
+#' @param independent An object of class mobest_spatiotemporalpositions
+#' @param dependent An object of class mobest_observations
+#' @param iterations Integer. Number of mle iterations
+#' @param total_scaling_factor Numeric. It turned out that the parameter estimation
+#' works better in certain numeric ranges. This scaling factor affects all three
+#' dimensions
+#' @param g Numeric. Fixed value for the nugget term
+#' @param space_time_scaling_factor_sequence Numeric vector. Sequence of space-time
+#' scaling factors
+#' @param verb Integer. See \link[laGP]{mleGP} for more information
 #'
-#' @return
+#' @rdname parameter_estimation_mle
 #' @export
 laGP_mle_sequence_isotropic_fixed_g <- function(
   independent, dependent, iterations, total_scaling_factor = 1000,
@@ -77,15 +80,7 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
   })
 }
 
-#' Title
-#'
-#' @param independent
-#' @param dependent
-#' @param iterations
-#' @param total_scaling_factor
-#' @param verb
-#'
-#' @return
+#' @rdname parameter_estimation_mle
 #' @export
 laGP_mle_anisotropic <- function(
   independent, dependent, iterations, total_scaling_factor = 1000, verb = 1) {
@@ -142,15 +137,7 @@ laGP_mle_anisotropic <- function(
   })
 }
 
-#' Title
-#'
-#' @param independent
-#' @param dependent
-#' @param iterations
-#' @param total_scaling_factor
-#' @param verb
-#'
-#' @return
+#' @rdname parameter_estimation_mle
 #' @export
 laGP_jmle_anisotropic <- function(
   independent, dependent, iterations, total_scaling_factor = 1000, verb = 1) {

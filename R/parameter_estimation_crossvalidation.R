@@ -1,10 +1,14 @@
-#' crossvalidate
+#' Use crossvalidation for kriging kernel parameter estimation
 #'
-#' @param independent test
-#' @param dependent test
-#' @param kernel test
-#' @param iterations test
-#' @param groups test
+#' @param independent An object of class mobest_spatiotemporalpositions
+#' @param dependent An object of class mobest_observations
+#' @param kernel An object of class mobest_kernelsetting
+#' @param iterations Integer. Number of crossvalidation iterations. Each iteration
+#' goes along with a random reordering of the input points for training and test
+#' data
+#' @param groups Integer. Number of groups for splitting up training and test data
+#' 10 means for example that the data should be split up into 9 parts training and
+#' 1 part test observations
 #' @param quiet Logical. Should a progress indication be printed?
 #'
 #' @export

@@ -1,11 +1,13 @@
-#' Title
+#' Prepare an empirical semivariogram
 #'
-#' @param independent
-#' @param dependent
-#' @param m_to_km
+#' @param independent An object of class mobest_spatiotemporalpositions
+#' @param dependent An object of class mobest_observations
+#' @param m_to_km Logical. Should distances be transformed from m to km (x/1000)
+#' @param x An object of class mobest_pairwisedistances
+#' @param geo_bin Numeric. Width of the spatial bins
+#' @param time_bin Numeric. Width of the temporal bins
 #'
-#' @return
-#'
+#' @rdname parameter_estimation_mle
 #' @export
 calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
   # input check and transformation
@@ -64,13 +66,7 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_pairwisedistances")
 }
 
-#' Title
-#'
-#' @param x
-#' @param geo_bin
-#' @param time_bin
-#'
-#' @return
+#' @rdname parameter_estimation_mle
 #' @export
 bin_pairwise_distances <- function(x, geo_bin = 100, time_bin = 100) {
   # input check
