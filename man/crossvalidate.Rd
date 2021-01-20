@@ -24,7 +24,7 @@ crossvalidate(
 
 \item{groups}{test}
 
-\item{quiet}{}
+\item{quiet}{Logical. Should a progress indication be printed?}
 }
 \description{
 crossvalidate

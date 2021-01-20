@@ -5,7 +5,7 @@
 #' @param kernel test
 #' @param iterations test
 #' @param groups test
-#' @param quiet
+#' @param quiet Logical. Should a progress indication be printed?
 #'
 #' @export
 crossvalidate <- function(
