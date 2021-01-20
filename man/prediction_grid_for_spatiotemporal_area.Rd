@@ -15,20 +15,16 @@ prediction_grid_for_spatiotemporal_area(
 \item{area}{An object of class \code{sf}. Polygons where the spatial grid should
 be constructed}
 
-\item{regions}{An object of class \code{sf}. Polygons of regions the grid points
-should be attributed to}
-
-\item{spatial_cell_size}{Numeric. Size of the spatial grid cells in the unit of
+\item{spatial_cell_size}{Numeric. Size of the output spatial grid cells in the unit of
 \code{area}. See \code{?sf::st_make_grid} for more info}
 
-\item{time_layers}{Numeric vector. Temporal layers of the requested spatiotemporal
-grid}
+\item{time_layers}{Numeric vector. Temporal layers of the requested spatiotemporal grid}
 }
 \value{
 Dataframe with columns x, y and z (spatiotemporal coordinates) and a
-point identifier column point_id
+point identifier column id
 }
 \description{
 Creates a prediction grid that can be used in the \link{create_model_grid} +
-\link{run_model_grid} interpolation workflow#'
+\link{run_model_grid} interpolation workflow
 }
