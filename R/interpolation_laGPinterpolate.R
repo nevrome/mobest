@@ -12,7 +12,6 @@
 #' @param auto Should the lengthscale and nugget values be automatically determined
 #' by laGPs maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
 #' @param on_residuals Should a linear model take out the main trends before the kriging interpolation?
-#'
 #' @return Output of \code{?laGP::predGPsep}
 #'
 #' @examples

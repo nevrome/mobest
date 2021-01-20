@@ -3,29 +3,13 @@
 #' Constructs a model grid with all combinations of the different input parameter
 #' configurations for the kriging model.
 #'
-#' @param independent Named list of dataframes. Spatiotemporal input point positions.
-#' Each dataframe should have three numeric columns x, y and z:
-#'
-#' \itemize{
-#'  \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
-#'  \item{y: }{Spatial coordinate in y-axis direction}
-#'  \item{z: }{Temporal position (age)}
-#' }
-#'
-#' @param dependent Named list of numeric vectors.
+#' @param independent Named list of mobest_spatiotemporalpositions objects.
+#' Spatiotemporal input point positions
+#' @param dependent Named list of mobest_observations objects.
 #' Dependent variables that should be interpolated. Each vector should have one
 #' entry for each row in the \code{independent} list dataframes
-#' @param kernel Named list of lists. Kernel parameter settings:
-#'
-#' \itemize{
-#'  \item{: }{Numeric vector with lengthscale values}
-#'  \item{g: }{Nugget value}
-#'  \item{on_residuals: }{Should a linear model take out the main trends before the kriging interpolation?}
-#'  \item{auto: }{Should the lengthscale and nugget values be automatically determined by laGPs maximum likelihood algorithm?}
-#' }
-#'
-#' See \code{?interpolate_laGP} for more information
-#'
+#' @param kernel Named list of mobest_kernelsetting objects.
+#' Kernel parameter settings. See \code{?interpolate_laGP} for more information#'
 #' @param prediction_grid Named list of dataframes.
 #' Prediction grid positions for the interpolation.
 #' Each dataframe should have three numeric columns x, y and z and a point id column:
@@ -35,10 +19,9 @@
 #'  \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
 #'  \item{y: }{Spatial coordinate in y-axis direction}
 #'  \item{z: }{Temporal position (age)}
-#'  \item{region_id: }{Name of the region this point belongs to}
 #' }
 #'
-#' See \code{?create_prediction_grid} for a function to create grid for a certain
+#' See \code{?prediction_grid_for_spatiotemporal_area} for a function to create grid for a certain
 #' spatial region
 #'
 #' @return An object of class \code{mobest_modelgrid} which inherits from tibble
@@ -55,9 +38,8 @@ create_model_grid <- function(
     independent, types = "mobest_spatiotemporalpositions",
     any.missing = F, min.len = 1, names = "strict"
   )
-  checkmate::assert_list(
-    dependent, types = "numeric",
-    any.missing = F, min.len = 1, names = "strict"
+  checkmate::assert_class(
+    dependent, classes = "mobest_observations"
   )
   checkmate::assert_list(
     kernel, types = "mobest_kernelsetting",

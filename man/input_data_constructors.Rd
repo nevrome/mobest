@@ -5,6 +5,7 @@
 \alias{create_spatpos}
 \alias{create_spatpos_multi}
 \alias{create_kernset}
+\alias{create_kernset_multi}
 \alias{create_kernset_cross}
 \title{Input data type constructors}
 \usage{
@@ -16,26 +17,28 @@ create_spatpos_multi(id, x, y, z, it)
 
 create_kernset(d, g, on_residuals = T, auto = F, ...)
 
+create_kernset_multi(d, g, on_residuals = T, auto = F, ..., it)
+
 create_kernset_cross(ds, dt, g, on_residuals = T, auto = F)
 }
 \arguments{
-\item{id}{vector. IDs of the observation points}
+\item{id}{Vector. IDs of the observation points}
 
-\item{x}{numeric vector. Spatial x-axis coordinates}
+\item{x}{Numeric vector. Spatial x-axis coordinates}
 
-\item{y}{numeric vector. Spatial y-axis coordinates}
+\item{y}{Numeric vector. Spatial y-axis coordinates}
 
-\item{z}{numeric vector. Temporal positions}
+\item{z}{Numeric vector. Temporal positions}
 
-\item{d}{3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension}
+\item{d}{3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info}
 
 \item{g}{numeric vector. Kernel nugget parameter}
 
-\item{on_residuals}{logical. Should the field calculated with these settings be calculated
-on real values or the residuals of a linear model?}
+\item{on_residuals}{logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?}
 
-\item{auto}{logical. Should the field calculated with these settings be calculated
-on exactly these values for d and g, or should laGP attempt to estimate them from the data.}
+\item{auto}{logical. In the field calculation down the pipeline:
+Should the lengthscale and nugget values be automatically determined by laGPs
+maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info}
 
 \item{ds}{numeric vector. Different kernel lengthscale parameters for the x and y dimension
 (isotropic)}

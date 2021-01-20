@@ -3,19 +3,19 @@
 #' Functions to create the main input data types for the mobest package.
 #' See the README for example code.
 #'
-#' @param id vector. IDs of the observation points
-#' @param x numeric vector. Spatial x-axis coordinates
-#' @param y numeric vector. Spatial y-axis coordinates
-#' @param z numeric vector. Temporal positions
-#' @param d 3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension
+#' @param id Vector. IDs of the observation points
+#' @param x Numeric vector. Spatial x-axis coordinates
+#' @param y Numeric vector. Spatial y-axis coordinates
+#' @param z Numeric vector. Temporal positions
+#' @param d 3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info
 #' @param ds numeric vector. Different kernel lengthscale parameters for the x and y dimension
 #' (isotropic)
 #' @param dt numeric vector. Different kernel lengthscale parameters for the z dimension
 #' @param g numeric vector. Kernel nugget parameter
-#' @param on_residuals logical. Should the field calculated with these settings be calculated
-#' on real values or the residuals of a linear model?
-#' @param auto logical. Should the field calculated with these settings be calculated
-#' on exactly these values for d and g, or should laGP attempt to estimate them from the data.
+#' @param on_residuals logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?
+#' @param auto logical. In the field calculation down the pipeline:
+#' Should the lengthscale and nugget values be automatically determined by laGPs
+#' maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
 #'
 #' @return Different data types for specific applications.
 #'
@@ -95,6 +95,8 @@ create_kernset <- function(d, g, on_residuals = T, auto = F, ...) {
     magrittr::set_class("mobest_kernelsetting")
 }
 
+#' @rdname input_data_constructors
+#' @export
 create_kernset_multi <- function(d, g, on_residuals = T, auto = F, ..., it) {
   # input check
   checkmate::assert_list(d)

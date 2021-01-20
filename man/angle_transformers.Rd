@@ -24,8 +24,8 @@ vec2rad(x)
 \arguments{
 \item{x}{Input for transformation
 \itemize{
- \item{deg: }{double. Angle in degrees}
- \item{rad: }{double. Angle in radians}
+ \item{deg: }{Double. Angle in degrees}
+ \item{rad: }{Double. Angle in radians}
  \item{vec: }{2 element double vector. Angle as unit vector}
 }}
 }

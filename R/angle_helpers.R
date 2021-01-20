@@ -5,8 +5,8 @@
 #'
 #' @param x Input for transformation
 #' \itemize{
-#'  \item{deg: }{double. Angle in degrees}
-#'  \item{rad: }{double. Angle in radians}
+#'  \item{deg: }{Double. Angle in degrees}
+#'  \item{rad: }{Double. Angle in radians}
 #'  \item{vec: }{2 element double vector. Angle as unit vector}
 #' }
 #'
@@ -57,7 +57,7 @@ vec2rad <- function(x) {
 #'
 #' Functions to calculate the mean of multiple angles.
 #'
-#' @param x double vector. Angles in degrees
+#' @param x Double vector. Angles in degrees
 #'
 #' @return 2 element double vector. Angle as unit vector
 #'

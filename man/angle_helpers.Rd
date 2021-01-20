@@ -7,7 +7,7 @@
 mean_deg2vec(x)
 }
 \arguments{
-\item{x}{double vector. Angles in degrees}
+\item{x}{Double vector. Angles in degrees}
 }
 \value{
 2 element double vector. Angle as unit vector
