@@ -37,7 +37,8 @@ crossvalidate <- function(
   })
   # run prediction test for each iteration
   crossval_interpol_grid <- purrr::map2_dfr(
-    1:iterations, crossval_mixed_list,
+    1:iterations, # this counter is only passed here to document the run number in the output df
+    crossval_mixed_list,
     function(mixing_iteration, crossval_mixed) {
       # split crossval into sections
       n <- groups
