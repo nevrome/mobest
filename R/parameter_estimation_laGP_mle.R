@@ -20,9 +20,9 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   independent_without_id <- independent %>%
     dplyr::transmute(
-      x = x / total_scaling_factor,
-      y = y / total_scaling_factor,
-      z = z / total_scaling_factor
+      x = .data[["x"]] / total_scaling_factor,
+      y = .data[["y"]] / total_scaling_factor,
+      z = .data[["z"]] / total_scaling_factor
     )
   checkmate::assert_class(dependent, "mobest_observations")
   checkmate::assert_count(iterations)
@@ -38,7 +38,7 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
       mleGP_out_list <- purrr::map(space_time_scaling_factor_sequence, function(scaling_factor) {
         independent_rescaled <- independent_without_id %>%
           dplyr::mutate(
-            z = z * scaling_factor
+            z = .data[["z"]] * scaling_factor
           )
         # parameter estimation
         da <- laGP::darg(list(mle = TRUE), independent_rescaled)
@@ -64,17 +64,18 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
         iteration = i,
         ancestry_component = cur_dependent_name,
         scaling_factor = space_time_scaling_factor_sequence,
-        scaling_factor_fractional = fractional::fractional(space_time_scaling_factor_sequence),
+        scaling_factor_fractional = fractional::fractional(space_time_scaling_factor_sequence)
+      ) %>% dplyr::mutate(
         scaling_factor_label = factor(
-          as.character(as.character(scaling_factor_fractional)),
-          levels = as.character(as.character(scaling_factor_fractional))
+          as.character(as.character(.data[["scaling_factor_fractional"]])),
+          levels = as.character(as.character(.data[["scaling_factor_fractional"]]))
         ),
         d = sqrt(sapply(mleGP_out_list, function(x) { x$d })) * total_scaling_factor,
         l = sapply(mleGP_out_list, function(x) { x$l }),
         its = sapply(mleGP_out_list, function(x) { x$it })
       ) %>% dplyr::mutate(
-        ds = d,
-        dt = d / scaling_factor
+        ds = .data[["d"]],
+        dt = .data[["d"]] / .data[["scaling_factor"]]
       )
     })
   })
@@ -88,9 +89,9 @@ laGP_mle_anisotropic <- function(
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   independent_without_id <- independent %>%
     dplyr::transmute(
-      x = x / total_scaling_factor,
-      y = y / total_scaling_factor,
-      z = z / total_scaling_factor
+      x = .data[["x"]] / total_scaling_factor,
+      y = .data[["y"]] / total_scaling_factor,
+      z = .data[["z"]] / total_scaling_factor
     )
   checkmate::assert_class(dependent, "mobest_observations")
   checkmate::assert_count(iterations)
@@ -145,9 +146,9 @@ laGP_jmle_anisotropic <- function(
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   independent_without_id <- independent %>%
     dplyr::transmute(
-      x = x / total_scaling_factor,
-      y = y / total_scaling_factor,
-      z = z / total_scaling_factor
+      x = .data[["x"]] / total_scaling_factor,
+      y = .data[["y"]] / total_scaling_factor,
+      z = .data[["z"]] / total_scaling_factor
     )
   checkmate::assert_class(dependent, "mobest_observations")
   checkmate::assert_count(iterations)
@@ -184,13 +185,13 @@ laGP_jmle_anisotropic <- function(
         dplyr::transmute(
           mle_method = "jmleGPsep",
           ancestry_component = cur_dependent_name,
-          dx = sqrt(d.1) * total_scaling_factor,
-          dy = sqrt(d.2) * total_scaling_factor,
-          dt = sqrt(d.3) * total_scaling_factor,
-          g = g,
-          its = tot.its,
+          dx = sqrt(.data[["d.1"]]) * total_scaling_factor,
+          dy = sqrt(.data[["d.2"]]) * total_scaling_factor,
+          dt = sqrt(.data[["d.3"]]) * total_scaling_factor,
+          g = .data[["g"]],
+          its = .data[["tot.its"]],
           msg = NA,
-          conv = dconv
+          conv = .data[["dconv"]]
         ) %>%
         tibble::as_tibble()
     })

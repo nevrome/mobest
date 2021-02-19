@@ -22,6 +22,8 @@ create_kernset_multi(d, g, on_residuals = T, auto = F, ..., it)
 create_kernset_cross(ds, dt, g, on_residuals = T, auto = F)
 }
 \arguments{
+\item{...}{vector. Other settings to be added to the output object}
+
 \item{id}{Vector. IDs of the observation points}
 
 \item{x}{Numeric vector. Spatial x-axis coordinates}
@@ -29,6 +31,8 @@ create_kernset_cross(ds, dt, g, on_residuals = T, auto = F)
 \item{y}{Numeric vector. Spatial y-axis coordinates}
 
 \item{z}{Numeric vector. Temporal positions}
+
+\item{it}{vector. Names of the different object iterations}
 
 \item{d}{3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info}
 

@@ -16,6 +16,8 @@
 #' @param auto logical. In the field calculation down the pipeline:
 #' Should the lengthscale and nugget values be automatically determined by laGPs
 #' maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
+#' @param ... vector. Other settings to be added to the output object
+#' @param it vector. Names of the different object iterations
 #'
 #' @return Different data types for specific applications.
 #'

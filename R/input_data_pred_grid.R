@@ -7,14 +7,14 @@
 #' be constructed
 #' @param spatial_cell_size Numeric. Size of the output spatial grid cells in the unit of
 #' \code{area}. See \code{?sf::st_make_grid} for more info
-#' @param time_layers Numeric vector. Temporal layers of the requested spatiotemporal grid
+#' @param temporal_layers Numeric vector. Temporal layers of the requested spatiotemporal grid
 #'
 #' @return Dataframe with columns x, y and z (spatiotemporal coordinates) and a
 #' point identifier column id
 #'
 #' @export
 prediction_grid_for_spatiotemporal_area <- function(
-  area, regions, spatial_cell_size, temporal_layers) {
+  area, spatial_cell_size, temporal_layers) {
 
   space_grid <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
@@ -26,7 +26,7 @@ prediction_grid_for_spatiotemporal_area <- function(
     ) %>%
     sf::st_drop_geometry() %>%
     dplyr::select(
-      x, y
+      .data[["x"]], .data[["y"]]
     )
 
   time_grid <- tibble::tibble(

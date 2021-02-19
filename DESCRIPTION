@@ -14,8 +14,10 @@ LazyData: true
 RoxygenNote: 7.1.1
 Imports:
     laGP,
+    checkmate,
     dplyr (>= 0.8.5),
     fields (>= 10.3),
+    fractional,
     furrr,
     future,
     magrittr,
@@ -23,6 +25,7 @@ Imports:
     parallel,
     pbapply (>= 1.4-2),
     purrr (>= 0.3.3),
+    reshape2,
     rlang,
     sf (>= 0.8-1),
     stats,
