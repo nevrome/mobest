@@ -54,7 +54,8 @@ search_spatial_origin <- function(
   if (search_point_box %fits_in% interpol_grid_box %>% `!`) {
     warning(paste(
       "The interpol_grid does not fully inclose the spatiotemporal",
-      "range of the search points (-rearview_distance)"
+      "range of the search points. That could be intentional. If not",
+      "then check the respective range settings."
     ))
   }
   # transform input data
