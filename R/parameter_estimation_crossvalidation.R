@@ -1,11 +1,15 @@
-#' crossvalidate
+#' Use crossvalidation for kriging kernel parameter estimation
 #'
-#' @param independent test
-#' @param dependent test
-#' @param kernel test
-#' @param iterations test
-#' @param groups test
-#' @param quiet
+#' @param independent An object of class mobest_spatiotemporalpositions
+#' @param dependent An object of class mobest_observations
+#' @param kernel An object of class mobest_kernelsetting
+#' @param iterations Integer. Number of crossvalidation iterations. Each iteration
+#' goes along with a random reordering of the input points for training and test
+#' data
+#' @param groups Integer. Number of groups for splitting up training and test data
+#' 10 means for example that the data should be split up into 9 parts training and
+#' 1 part test observations
+#' @param quiet Logical. Should a progress indication be printed?
 #'
 #' @export
 crossvalidate <- function(
@@ -33,7 +37,8 @@ crossvalidate <- function(
   })
   # run prediction test for each iteration
   crossval_interpol_grid <- purrr::map2_dfr(
-    1:iterations, crossval_mixed_list,
+    1:iterations, # this counter is only passed here to document the run number in the output df
+    crossval_mixed_list,
     function(mixing_iteration, crossval_mixed) {
       # split crossval into sections
       n <- groups

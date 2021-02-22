@@ -1,9 +1,27 @@
-#' Title
+#' Input data type constructors
 #'
-#' @param ...
+#' Functions to create the main input data types for the mobest package.
+#' See the README for example code.
 #'
-#' @return
+#' @param id Vector. IDs of the observation points
+#' @param x Numeric vector. Spatial x-axis coordinates
+#' @param y Numeric vector. Spatial y-axis coordinates
+#' @param z Numeric vector. Temporal positions
+#' @param d 3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info
+#' @param ds numeric vector. Different kernel lengthscale parameters for the x and y dimension
+#' (isotropic)
+#' @param dt numeric vector. Different kernel lengthscale parameters for the z dimension
+#' @param g numeric vector. Kernel nugget parameter
+#' @param on_residuals logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?
+#' @param auto logical. In the field calculation down the pipeline:
+#' Should the lengthscale and nugget values be automatically determined by laGPs
+#' maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
+#' @param ... vector. Other settings to be added to the output object
+#' @param it vector. Names of the different object iterations
 #'
+#' @return Different data types for specific applications.
+#'
+#' @rdname input_data_constructors
 #' @export
 create_obs <- function(...) {
   # prepare list
@@ -19,42 +37,8 @@ create_obs <- function(...) {
   return(res)
 }
 
-merge_spatpos_obs <- function(spatpos, obs) {
-  dplyr::inner_join(
-    spatpos, obs, by = "id"
-  )
-}
-
-mean_spatpos_uncertain <- function(spatpos_uncertain) {
-  # input check
-  checkmate::assert_class(spatpos_uncertain, "mobest_uncertain_spatiotemporalpositions")
-  checkmate::assert_true(length(spatpos_uncertain) > 1)
-  # calculate mean
-  purrr::reduce(
-    spatpos_uncertain, function(a, b) {
-      create_spatpos(
-        id = a$id,
-        x = a$x+b$x,
-        y = a$y+b$y,
-        z = a$z+b$z
-      )
-    }
-  ) %>% dplyr::mutate(
-    dplyr::across(c("x", "y", "z"), function(x) { x/length(spatpos_uncertain) })
-  )
-}
-
-#' Title
-#'
-#' @param id
-#' @param x
-#' @param y
-#' @param z
-#'
-#' @return
+#' @rdname input_data_constructors
 #' @export
-#'
-#' @examples
 create_spatpos <- function(id, x, y, z, ...) {
   # input check
   checkmate::assert_atomic_vector(id, any.missing = F, unique = T)
@@ -69,15 +53,7 @@ create_spatpos <- function(id, x, y, z, ...) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatiotemporalpositions")
 }
 
-#' Title
-#'
-#' @param id
-#' @param x
-#' @param y
-#' @param z
-#' @param name
-#'
-#' @return
+#' @rdname input_data_constructors
 #' @export
 create_spatpos_multi <- function(id, x, y, z, it) {
   # input check
@@ -102,14 +78,7 @@ create_spatpos_multi <- function(id, x, y, z, it) {
     magrittr::set_names(it)
 }
 
-#' Title
-#'
-#' @param d
-#' @param g
-#' @param on_residuals
-#' @param auto
-#'
-#' @return
+#' @rdname input_data_constructors
 #' @export
 create_kernset <- function(d, g, on_residuals = T, auto = F, ...) {
   # input check
@@ -128,14 +97,7 @@ create_kernset <- function(d, g, on_residuals = T, auto = F, ...) {
     magrittr::set_class("mobest_kernelsetting")
 }
 
-#' Title
-#'
-#' @param d
-#' @param g
-#' @param ...
-#' @param it
-#'
-#' @return
+#' @rdname input_data_constructors
 #' @export
 create_kernset_multi <- function(d, g, on_residuals = T, auto = F, ..., it) {
   # input check
@@ -152,12 +114,7 @@ create_kernset_multi <- function(d, g, on_residuals = T, auto = F, ..., it) {
     magrittr::set_names(it)
 }
 
-#' create_kernel_grid
-#'
-#' @param ds test
-#' @param dt test
-#' @param g test
-#'
+#' @rdname input_data_constructors
 #' @export
 create_kernset_cross <- function(ds, dt, g, on_residuals = T, auto = F) {
   # input check

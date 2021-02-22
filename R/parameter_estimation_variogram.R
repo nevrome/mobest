@@ -1,11 +1,13 @@
-#' Title
+#' Prepare an empirical semivariogram
 #'
-#' @param independent
-#' @param dependent
-#' @param m_to_km
+#' @param independent An object of class mobest_spatiotemporalpositions
+#' @param dependent An object of class mobest_observations
+#' @param m_to_km Logical. Should distances be transformed from m to km (x/1000)
+#' @param x An object of class mobest_pairwisedistances
+#' @param geo_bin Numeric. Width of the spatial bins
+#' @param time_bin Numeric. Width of the temporal bins
 #'
-#' @return
-#'
+#' @rdname parameter_estimation_mle
 #' @export
 calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
   # input check and transformation
@@ -17,7 +19,7 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
   }
   ids <- independent$id
   # geo distance
-  d_geo <- dist(independent %>% dplyr::select(.data[["x"]], .data[["y"]]), "euclidean") %>% as.matrix()
+  d_geo <- stats::dist(independent %>% dplyr::select(.data[["x"]], .data[["y"]]), "euclidean") %>% as.matrix()
   rownames(d_geo) <- colnames(d_geo) <- ids
   d_geo_long <- d_geo %>%
     reshape2::melt(value.name = "geo_dist") %>%
@@ -26,11 +28,11 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
       geo_dist = if (m_to_km) {.data[["geo_dist"]]/1000} else {.data[["geo_dist"]]}
     )
   # time distance
-  d_time <- dist(independent %>% dplyr::select(.data[["z"]]), "euclidean") %>% as.matrix()
+  d_time <- stats::dist(independent %>% dplyr::select(.data[["z"]]), "euclidean") %>% as.matrix()
   rownames(d_time) <- colnames(d_time) <- ids
   d_time_long <- d_time %>% reshape2::melt(value.name = "time_dist")
   # obs total distance
-  d_obs_total <- dist(dependent, "euclidean") %>% as.matrix()
+  d_obs_total <- stats::dist(dependent, "euclidean") %>% as.matrix()
   rownames(d_obs_total) <- colnames(d_obs_total) <- ids
   d_obs_total_long <- d_obs_total %>% reshape2::melt(value.name = "obs_dist_total")
   # obs individual distance
@@ -38,13 +40,13 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
   d_obs_long_list <- var_names %>%
     purrr::map(function(var_name) {
       # d_obs
-      d_obs <- dist(dependent[[var_name]], "euclidean") %>% as.matrix()
+      d_obs <- stats::dist(dependent[[var_name]], "euclidean") %>% as.matrix()
       rownames(d_obs) <- colnames(d_obs) <- ids
       d_obs_long <- d_obs %>% reshape2::melt(value.name = paste0(var_name, "_dist"))
       # d_obs_resid
-      model <- lm(dependent[[var_name]] ~ independent$x + independent$y + independent$z)
-      model_residuals <- residuals(model)
-      d_obs_resid <- as.matrix(dist(model_residuals, "euclidean"))
+      model <- stats::lm(dependent[[var_name]] ~ independent$x + independent$y + independent$z)
+      model_residuals <- stats::residuals(model)
+      d_obs_resid <- as.matrix(stats::dist(model_residuals, "euclidean"))
       rownames(d_obs_resid) <- colnames(d_obs_resid) <- ids
       d_obs_resid_long <- d_obs_resid %>% reshape2::melt(value.name = paste0(var_name, "_dist_resid"))
       # combine
@@ -64,13 +66,7 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_pairwisedistances")
 }
 
-#' Title
-#'
-#' @param x
-#' @param geo_bin
-#' @param time_bin
-#'
-#' @return
+#' @rdname parameter_estimation_mle
 #' @export
 bin_pairwise_distances <- function(x, geo_bin = 100, time_bin = 100) {
   # input check
