@@ -137,8 +137,8 @@ search_spatial_origin <- function(
   )
   # add angle
   origin_grid$angle_deg <- purrr::map2_dbl(
-    (origin_grid$search_x - origin_grid$origin_x),
-    (origin_grid$search_y - origin_grid$origin_y),
+    (origin_grid$origin_x - origin_grid$search_x),
+    (origin_grid$origin_y - origin_grid$search_y),
     function(x, y) { vec2deg(c(x, y)) }
   )
   # return result
