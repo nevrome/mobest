@@ -11,6 +11,10 @@ for this research paper:
 > …, Estimating human mobility in Holocene Western Eurasia with bulk
 > ancient genetic data, …
 
+For other applications the code would probably have to be changed
+significantly. This is not a general-purpose package, but rather a
+structured collection of functions for said paper.
+
 ## Installation
 
 Install the package from github with the following command in R:
@@ -46,13 +50,13 @@ spatiotemporal positions.
 ``` r
 positions <- mobest::create_spatpos(
   id = 1:100,
-  x = c(sample(100000:700000, 50), sample(300000:999999, 50)),
-  y = c(sample(100000:700000, 50), sample(300000:999999, 50)),
+  x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
+  y = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
   z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))
 )
 ```
 
-    ## # A tibble: 100 x 4
+    ## # A tibble: 100 × 4
     ##       id      x      y     z
     ##    <int>  <int>  <int> <int>
     ##  1     1 288941 394406 -4577
@@ -77,41 +81,41 @@ uncertain_positions <- mobest::create_spatpos_multi(
   id = 1:100,
   x = list(positions$x, positions$x),
   y = list(positions$y, positions$y),
-  z = list(positions$y + sample(-100:100, 100), positions$y + sample(-100:100, 100)),
+  z = list(positions$z + sample(-100:100, 100), positions$z + sample(-100:100, 100)),
   it = c("run_a", "run_b")
 )
 ```
 
     ## $run_a
-    ## # A tibble: 100 x 4
-    ##       id      x      y      z
-    ##    <int>  <int>  <int>  <int>
-    ##  1     1 288941 394406 394445
-    ##  2     2 234057 693448 693419
-    ##  3     3 224021 349221 349247
-    ##  4     4 326317 181117 181057
-    ##  5     5 465208 119391 119298
-    ##  6     6 293626 408280 408364
-    ##  7     7 669691 298818 298769
-    ##  8     8 689448 626573 626539
-    ##  9     9 597689 159969 160036
-    ## 10    10 502857 315369 315270
+    ## # A tibble: 100 × 4
+    ##       id      x      y     z
+    ##    <int>  <int>  <int> <int>
+    ##  1     1 288941 394406 -4538
+    ##  2     2 234057 693448 -4274
+    ##  3     3 224021 349221 -4969
+    ##  4     4 326317 181117 -3909
+    ##  5     5 465208 119391 -4215
+    ##  6     6 293626 408280 -4249
+    ##  7     7 669691 298818 -5001
+    ##  8     8 689448 626573 -3772
+    ##  9     9 597689 159969 -3570
+    ## 10    10 502857 315369 -4907
     ## # … with 90 more rows
     ## 
     ## $run_b
-    ## # A tibble: 100 x 4
-    ##       id      x      y      z
-    ##    <int>  <int>  <int>  <int>
-    ##  1     1 288941 394406 394373
-    ##  2     2 234057 693448 693414
-    ##  3     3 224021 349221 349131
-    ##  4     4 326317 181117 181090
-    ##  5     5 465208 119391 119383
-    ##  6     6 293626 408280 408312
-    ##  7     7 669691 298818 298805
-    ##  8     8 689448 626573 626632
-    ##  9     9 597689 159969 159957
-    ## 10    10 502857 315369 315467
+    ## # A tibble: 100 × 4
+    ##       id      x      y     z
+    ##    <int>  <int>  <int> <int>
+    ##  1     1 288941 394406 -4610
+    ##  2     2 234057 693448 -4279
+    ##  3     3 224021 349221 -5085
+    ##  4     4 326317 181117 -3876
+    ##  5     5 465208 119391 -4130
+    ##  6     6 293626 408280 -4301
+    ##  7     7 669691 298818 -4965
+    ##  8     8 689448 626573 -3679
+    ##  9     9 597689 159969 -3649
+    ## 10    10 502857 315369 -4710
     ## # … with 90 more rows
 
 `create_obs` creates named lists of observations vectors (class
@@ -154,7 +158,7 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
 )
 ```
 
-    ## # A tibble: 10,000 x 9
+    ## # A tibble: 10,000 × 9
     ##     Var1  Var2 geo_dist time_dist obs_dist_total ac1_dist ac1_dist_resid
     ##    <int> <int>    <dbl>     <dbl>          <dbl>    <dbl>          <dbl>
     ##  1     1     1      0           0         0       0               0     
@@ -181,7 +185,7 @@ variogram <- mobest::bin_pairwise_distances(
 )
 ```
 
-    ## # A tibble: 4,807 x 8
+    ## # A tibble: 4,807 × 8
     ##    geo_dist_cut time_dist_cut obs_dist_total ac1_dist ac1_dist_resid ac2_dist
     ##           <dbl>         <dbl>          <dbl>    <dbl>          <dbl>    <dbl>
     ##  1         0.05            50         0       0              0       0       
@@ -211,13 +215,13 @@ mleGPsep_out <- mobest::laGP_mle_anisotropic(
 )
 ```
 
-    ## # A tibble: 4 x 9
-    ##   mle_method ancestry_compone…    dx    dy    dt      g   its msg           conv
-    ##   <chr>      <chr>             <dbl> <dbl> <dbl>  <dbl> <int> <chr>        <int>
-    ## 1 mleGPsep   ac1                989. 1444. 1822. 0.0648    42 CONVERGENCE…     0
-    ## 2 mleGPsep   ac1                989. 1444. 1822. 0.0648    42 CONVERGENCE…     0
-    ## 3 mleGPsep   ac2               1042. 1211. 1377. 0.0803    32 CONVERGENCE…     0
-    ## 4 mleGPsep   ac2               1042. 1211. 1377. 0.0803    32 CONVERGENCE…     0
+    ## # A tibble: 4 × 9
+    ##   mle_method ancestry_component    dx    dy    dt      g   its msg          conv
+    ##   <chr>      <chr>              <dbl> <dbl> <dbl>  <dbl> <int> <chr>       <int>
+    ## 1 mleGPsep   ac1                 989. 1444. 1822. 0.0648    42 CONVERGENC…     0
+    ## 2 mleGPsep   ac1                 989. 1444. 1822. 0.0648    42 CONVERGENC…     0
+    ## 3 mleGPsep   ac2                1042. 1211. 1377. 0.0803    32 CONVERGENC…     0
+    ## 4 mleGPsep   ac2                1042. 1211. 1377. 0.0803    32 CONVERGENC…     0
 
 `mobest::laGP_jmle_anisotropic` wraps around `laGP::mleGPsep` to perform
 joint maximum likelihood inference for anisotropic (separable) Gaussian
@@ -232,7 +236,7 @@ jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
 )
 ```
 
-    ## # A tibble: 4 x 9
+    ## # A tibble: 4 × 9
     ##   mle_method ancestry_component    dx    dy    dt      g   its msg    conv
     ##   <chr>      <chr>              <dbl> <dbl> <dbl>  <dbl> <int> <lgl> <int>
     ## 1 jmleGPsep  ac1                 989. 1444. 1822. 0.0648    87 NA        0
@@ -256,19 +260,19 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
 )
 ```
 
-    ## # A tibble: 76 x 10
-    ##    iteration ancestry_compon… scaling_factor scaling_factor_… scaling_factor_…
-    ##        <int> <chr>                     <dbl> <fractinl>       <fct>           
-    ##  1         1 ac1                         0.1 0.1              1/10            
-    ##  2         1 ac1                         0.2 0.2              1/5             
-    ##  3         1 ac1                         0.3 0.3              3/10            
-    ##  4         1 ac1                         0.4 0.4              2/5             
-    ##  5         1 ac1                         0.5 0.5              1/2             
-    ##  6         1 ac1                         0.6 0.6              3/5             
-    ##  7         1 ac1                         0.7 0.7              7/10            
-    ##  8         1 ac1                         0.8 0.8              4/5             
-    ##  9         1 ac1                         0.9 0.9              9/10            
-    ## 10         1 ac1                         1   1.0              1               
+    ## # A tibble: 76 × 10
+    ##    iteration ancestry_component scaling_factor scaling_factor_… scaling_factor_…
+    ##        <int> <chr>                       <dbl> <fractinl>       <fct>           
+    ##  1         1 ac1                           0.1 0.1              1/10            
+    ##  2         1 ac1                           0.2 0.2              1/5             
+    ##  3         1 ac1                           0.3 0.3              3/10            
+    ##  4         1 ac1                           0.4 0.4              2/5             
+    ##  5         1 ac1                           0.5 0.5              1/2             
+    ##  6         1 ac1                           0.6 0.6              3/5             
+    ##  7         1 ac1                           0.7 0.7              7/10            
+    ##  8         1 ac1                           0.8 0.8              4/5             
+    ##  9         1 ac1                           0.9 0.9              9/10            
+    ## 10         1 ac1                           1   1.0              1               
     ## # … with 66 more rows, and 5 more variables: d <dbl>, l <dbl>, its <int>,
     ## #   ds <dbl>, dt <dbl>
 
@@ -293,19 +297,19 @@ interpol_comparison <- mobest::crossvalidate(
 )
 ```
 
-    ## # A tibble: 3,600 x 7
+    ## # A tibble: 3,600 × 7
     ##       id mixing_iteration     ds    dt     g dependent_var difference
     ##    <int>            <int>  <int> <int> <int> <chr>              <dbl>
     ##  1    94                1 100000   100     1 ac1_dist         0.0109 
     ##  2    94                1 100000   100     1 ac2_dist         0.119  
     ##  3    52                1 100000   100     1 ac1_dist         0.297  
-    ##  4    52                1 100000   100     1 ac2_dist         0.0214 
+    ##  4    52                1 100000   100     1 ac2_dist        -0.0214 
     ##  5    37                1 100000   100     1 ac1_dist         0.512  
     ##  6    37                1 100000   100     1 ac2_dist         0.187  
     ##  7    27                1 100000   100     1 ac1_dist         0.256  
     ##  8    27                1 100000   100     1 ac2_dist         0.136  
     ##  9    73                1 100000   100     1 ac1_dist         0.00332
-    ## 10    73                1 100000   100     1 ac2_dist         0.111  
+    ## 10    73                1 100000   100     1 ac2_dist        -0.111  
     ## # … with 3,590 more rows
 
 ### Spatiotemporal interpolation
@@ -319,6 +323,7 @@ row equals one complete model definition with all parameters and input
 data fully defined.
 
 ``` r
+library(magrittr)
 model_grid <- mobest::create_model_grid(
   independent = uncertain_positions,
   dependent = observations,
@@ -327,26 +332,31 @@ model_grid <- mobest::create_model_grid(
     g = 0.1,
     it = "kernel_100000_200_01"
   ),
-  prediction_grid = mobest::create_spatpos_multi(
-    id = c(1,2,3),
-    x = list(sample(300000:999999, 3)),
-    y = list(sample(300000:999999, 3)),
-    z = list(sample(-4500:-3000, 3)),
-    it = "pred_grid_1"
+  prediction_grid = list(
+    pred_grid = expand.grid(
+      x = seq(100000, 1000000, 100000),
+      y = seq(100000, 1000000, 100000),
+      z = seq(-5500, -3000, 500)
+    ) %>% {mobest::create_spatpos(
+      id = 1:nrow(.),
+      x = .$x,
+      y = .$y,
+      z = .$z
+    )}
   )
 )
 ```
 
-    ## # A tibble: 4 x 8
-    ##   independent_tab… dependent_var_id kernel_setting_… pred_grid_id
-    ##   <fct>            <fct>            <fct>            <fct>       
-    ## 1 run_a            ac1              kernel_100000_2… pred_grid_1 
-    ## 2 run_b            ac1              kernel_100000_2… pred_grid_1 
-    ## 3 run_a            ac2              kernel_100000_2… pred_grid_1 
-    ## 4 run_b            ac2              kernel_100000_2… pred_grid_1 
+    ## # A tibble: 4 × 8
+    ##   independent_table_id dependent_var_id kernel_setting_id    pred_grid_id
+    ##   <fct>                <fct>            <fct>                <fct>       
+    ## 1 run_a                ac1              kernel_100000_200_01 pred_grid   
+    ## 2 run_b                ac1              kernel_100000_200_01 pred_grid   
+    ## 3 run_a                ac2              kernel_100000_200_01 pred_grid   
+    ## 4 run_b                ac2              kernel_100000_200_01 pred_grid   
     ## # … with 4 more variables: independent_table <named list>,
-    ## #   dependent_var <mbst_bsr>, kernel_setting <named list>, pred_grid <named
-    ## #   list>
+    ## #   dependent_var <mbst_bsr>, kernel_setting <named list>,
+    ## #   pred_grid <named list>
 
 The helper function `mobest::prediction_grid_for_spatiotemporal_area`
 can be used to construct a regular, spatiotemporal grid for the
@@ -361,21 +371,68 @@ parameter setting.
 interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 ```
 
-    ## # A tibble: 12 x 10
-    ##    independent_tab… dependent_var_id kernel_setting_… pred_grid_id    id      x
-    ##    <fct>            <fct>            <fct>            <fct>        <dbl>  <int>
-    ##  1 run_a            ac1              kernel_100000_2… pred_grid_1      1 328359
-    ##  2 run_a            ac1              kernel_100000_2… pred_grid_1      2 431985
-    ##  3 run_a            ac1              kernel_100000_2… pred_grid_1      3 917245
-    ##  4 run_b            ac1              kernel_100000_2… pred_grid_1      1 328359
-    ##  5 run_b            ac1              kernel_100000_2… pred_grid_1      2 431985
-    ##  6 run_b            ac1              kernel_100000_2… pred_grid_1      3 917245
-    ##  7 run_a            ac2              kernel_100000_2… pred_grid_1      1 328359
-    ##  8 run_a            ac2              kernel_100000_2… pred_grid_1      2 431985
-    ##  9 run_a            ac2              kernel_100000_2… pred_grid_1      3 917245
-    ## 10 run_b            ac2              kernel_100000_2… pred_grid_1      1 328359
-    ## 11 run_b            ac2              kernel_100000_2… pred_grid_1      2 431985
-    ## 12 run_b            ac2              kernel_100000_2… pred_grid_1      3 917245
-    ## # … with 4 more variables: y <int>, z <int>, mean <dbl>, sd <dbl>
+    ## # A tibble: 2,400 × 10
+    ##    independent_tabl… dependent_var_id kernel_setting_id pred_grid_id    id     x
+    ##    <fct>             <fct>            <fct>             <fct>        <int> <dbl>
+    ##  1 run_a             ac1              kernel_100000_20… pred_grid        1   1e5
+    ##  2 run_a             ac1              kernel_100000_20… pred_grid        2   2e5
+    ##  3 run_a             ac1              kernel_100000_20… pred_grid        3   3e5
+    ##  4 run_a             ac1              kernel_100000_20… pred_grid        4   4e5
+    ##  5 run_a             ac1              kernel_100000_20… pred_grid        5   5e5
+    ##  6 run_a             ac1              kernel_100000_20… pred_grid        6   6e5
+    ##  7 run_a             ac1              kernel_100000_20… pred_grid        7   7e5
+    ##  8 run_a             ac1              kernel_100000_20… pred_grid        8   8e5
+    ##  9 run_a             ac1              kernel_100000_20… pred_grid        9   9e5
+    ## 10 run_a             ac1              kernel_100000_20… pred_grid       10   1e6
+    ## # … with 2,390 more rows, and 4 more variables: y <dbl>, z <dbl>, mean <dbl>,
+    ## #   sd <dbl>
 
 ### Mobility estimation
+
+`mobest::search_spatial_origin` takes a number of “search points” (with
+`independent` and `dependent`) for which the spatial origin search
+should be performed, as well as a `interpol_grid`, which defines the
+field in which the origin search should be performed. It returns a
+data.frame with one row for each search point and interpol\_grid
+setting. Each row contains the specifics of the genetically closest
+origin point.
+
+``` r
+origin_grid <- mobest::search_spatial_origin(
+  independent = uncertain_positions,
+  dependent = observations,
+  interpol_grid = interpol_grid,
+  rearview_distance = 300
+)
+```
+
+    ## running field setting 1 with search points run_a
+
+    ## running field setting 1 with search points run_b
+
+    ## running field setting 2 with search points run_a
+
+    ## running field setting 2 with search points run_b
+
+    ## # A tibble: 400 × 20
+    ##    search_id search_x search_y search_z search_ac1 search_ac2 origin_id origin_x
+    ##        <int>    <int>    <int>    <int>      <dbl>      <dbl>     <int>    <dbl>
+    ##  1         1   288941   394406    -4538    0.432       0.122        146   600000
+    ##  2         2   234057   693448    -4274    0.274       0.0218       212   200000
+    ##  3         3   224021   349221    -4969    0.313       0.286         62   200000
+    ##  4         4   326317   181117    -3909    0.145       0.0652       302   200000
+    ##  5         5   465208   119391    -4215    0.0455      0.122        254   400000
+    ##  6         6   293626   408280    -4249    0.235       0.188        215   500000
+    ##  7         7   669691   298818    -5001    0.00786     0.189         41   100000
+    ##  8         8   689448   626573    -3772    0.520       0.0985       324   400000
+    ##  9         9   597689   159969    -3570    0.596       0.0417       324   400000
+    ## 10        10   502857   315369    -4907    0.425       0.274        119   900000
+    ## # … with 390 more rows, and 12 more variables: origin_y <dbl>, origin_z <dbl>,
+    ## #   origin_mean_ac1 <dbl>, origin_mean_ac2 <dbl>, origin_sd_ac1 <dbl>,
+    ## #   origin_sd_ac2 <dbl>, search_points_id <chr>, field_id <int>,
+    ## #   field_independent_table_id <fct>, field_kernel_setting_id <fct>,
+    ## #   spatial_distance <dbl>, angle_deg <dbl>
+
+From this output multiple data products can be derived for plotting with
+`average_origin_searchid`, `average_origin_moving_window` and
+`no_data_windows`.

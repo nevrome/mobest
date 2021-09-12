@@ -206,7 +206,7 @@ model_grid <- mobest::create_model_grid(
       x = seq(100000, 1000000, 100000),
       y = seq(100000, 1000000, 100000),
       z = seq(-5500, -3000, 500)
-    ) %>% {create_spatpos(
+    ) %>% {mobest::create_spatpos(
       id = 1:nrow(.),
       x = .$x,
       y = .$y,
@@ -249,7 +249,4 @@ origin_grid <- mobest::search_spatial_origin(
 origin_grid
 ```
 
-### Summarising mobility estimation
-
-
-
+From this output multiple data products can be derived for plotting with `average_origin_searchid`, `average_origin_moving_window` and `no_data_windows`.
