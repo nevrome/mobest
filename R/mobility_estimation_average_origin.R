@@ -6,7 +6,12 @@
 #' \link{search_spatial_origin}
 #' @param moving_origin_grid An object of class \code{mobest_movingorigingrid}
 #' as created by \link{average_origin_moving_window}
-#' @param ... undefined
+#' @param window_start Start date of the moving window sequence
+#' @param window_stop Stop date of the moving window sequence
+#' @param window_width Width of each individual moving window
+#' @param window_step Frequency of moving windows. Example:
+#' If the first window starts at -3500 and extends until -3200, should the next
+#' one start at -3450 or -3400, so with window_step = 50 or window_step = 100?
 #'
 #' @return Different data products: \code{mobest_meanorigingrid},
 #' \code{mobest_movingorigingrid} or \code{mobest_origingridnodatawindows}
@@ -31,23 +36,23 @@ average_origin_searchid.default <- function(origin_grid) {
 #' @export
 average_origin_searchid.mobest_origingrid <- function(origin_grid) {
   origin_grid %>%
-    dplyr::group_by(search_id) %>%
+    dplyr::group_by(.data[["search_id"]]) %>%
     dplyr::summarise(
-      mean_search_z = mean(search_z),
-      sd_search_z = sd(search_z),
-      region_id = dplyr::first(region_id),
-      undirected_mean_spatial_distance = mean(spatial_distance),
-      undirected_sd_spatial_distance = sd(spatial_distance),
+      mean_search_z = mean(.data[["search_z"]]),
+      sd_search_z = stats::sd(.data[["search_z"]]),
+      region_id = dplyr::first(.data[["region_id"]]),
+      undirected_mean_spatial_distance = mean(.data[["spatial_distance"]]),
+      undirected_sd_spatial_distance = stats::sd(.data[["spatial_distance"]]),
       directed_mean_spatial_distance = sqrt(
-        mean(search_x - origin_x)^2 +
-          mean(search_y - origin_y)^2
+        mean(.data[["search_x"]] - .data[["origin_x"]])^2 +
+          mean(.data[["search_y"]] - .data[["origin_y"]])^2
       ) / 1000,
       mean_angle_deg = mobest::vec2deg(
-        c(mean(origin_x - search_x), mean(origin_y - search_y))
+        c(mean(.data[["origin_x"]] - .data[["search_x"]]), mean(.data[["origin_y"]] - .data[["search_y"]]))
       ),
-      mean_angle_deg_cut = cut_angle_deg(mean_angle_deg),
+      mean_angle_deg_cut = cut_angle_deg(.data[["mean_angle_deg"]]),
       .groups = "drop"
-    ) %>% dplyr::arrange(undirected_mean_spatial_distance) %>%
+    ) %>% dplyr::arrange(.data[["undirected_mean_spatial_distance"]]) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_meanorigingrid")
 }
 
@@ -75,10 +80,10 @@ average_origin_moving_window.mobest_origingrid <- function(
   future::plan(future::multisession)
   furrr::future_map_dfr(
     # loop through all regions
-    unique(origin_grid_modified$region_id),
+    unique(origin_grid$region_id),
     function(region) {
-      origin_per_region <- origin_grid_modified %>%
-        dplyr::filter(region_id == region)
+      origin_per_region <- origin_grid %>%
+        dplyr::filter(.data[["region_id"]] == region)
       purrr::map2_df(
         # define moving windows and loop through them
         seq(window_start, window_stop - window_width, window_step),
@@ -86,18 +91,18 @@ average_origin_moving_window.mobest_origingrid <- function(
         function(start, end) {
           # prepare window data subsets
           io <- dplyr::filter(
-            origin_per_region,
-            search_z >= start,
-            search_z < end
+            .data[["origin_per_region"]],
+            .data[["search_z"]] >= start,
+            .data[["search_z"]] < end
           )
           io_upper_quartile <- dplyr::filter(
             io,
-            spatial_distance >= quantile(spatial_distance, probs = 0.75)
+            .data[["spatial_distance"]] >= stats::quantile(.data[["spatial_distance"]], probs = 0.75)
           )
           io_run_grouped <- io %>%
-            dplyr::group_by(search_id) %>%
+            dplyr::group_by(.data[["search_id"]]) %>%
             dplyr::summarise(
-              mean_spatial_distance = mean(spatial_distance),
+              mean_spatial_distance = mean(.data[["spatial_distance"]]),
               groups = "drop"
             )
           if (nrow(io) > 0) {
@@ -122,7 +127,7 @@ average_origin_moving_window.mobest_origingrid <- function(
                 Inf
               },
               sd_spatial_distance = if (nrow(io_run_grouped) >= 3) {
-                sd(io_run_grouped$mean_spatial_distance)
+                stats::sd(io_run_grouped$mean_spatial_distance)
               } else {
                 Inf
               },
@@ -153,38 +158,38 @@ average_origin_moving_window.mobest_origingrid <- function(
   tibble::new_tibble(., nrow = nrow(.), class = "mobest_movingorigingrid")
 }
 
-se <- function(x) sd(x)/sqrt(length(x))
+se <- function(x) stats::sd(x)/sqrt(length(x))
 
 #' @rdname average_origin
 #' @export
-no_data_windows <- function(moving_origin_grid) {
+no_data_windows <- function(moving_origin_grid, window_step) {
   UseMethod("average_origin_no_data_windows")
 }
 
 #' @rdname average_origin
 #' @export
-no_data_windows.default <- function(moving_origin_grid) {
+no_data_windows.default <- function(moving_origin_grid, window_step) {
   stop("x is not an object of class mobest_movingorigingrid")
 }
 
 #' @rdname average_origin
 #' @export
-no_data_windows.mobest_movingorigingrid <- function(moving_origin_grid) {
+no_data_windows.mobest_movingorigingrid <- function(moving_origin_grid, window_step) {
   moving_origin_grid %>%
-    dplyr::group_by(region_id) %>%
+    dplyr::group_by(.data[["region_id"]]) %>%
     dplyr::mutate(
-      usd = tidyr::replace_na(undirected_mean_spatial_distance, 0),
-      cumsum_undir_dist = cumsum(usd)
+      usd = tidyr::replace_na(.data[["undirected_mean_spatial_distance"]], 0),
+      cumsum_undir_dist = cumsum(.data[["usd"]])
     ) %>%
     dplyr::filter(
-      is.na(undirected_mean_spatial_distance)
+      is.na(.data[["undirected_mean_spatial_distance"]])
     ) %>%
-    dplyr::group_by(region_id, cumsum_undir_dist) %>%
+    dplyr::group_by(.data[["region_id"]], .data[["cumsum_undir_dist"]]) %>%
     dplyr::summarise(
-      min_date_not_covered = min(z) - moving_window_step_resolution,
-      max_date_not_covered = max(z) + moving_window_step_resolution,
+      min_date_not_covered = min(.data[["z"]]) - window_step,
+      max_date_not_covered = max(.data[["z"]]) + window_step,
       .groups = "drop"
     ) %>%
-    dplyr::select(-cumsum_undir_dist) %>%
+    dplyr::select(-.data[["cumsum_undir_dist"]]) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_origingridnodatawindows")
 }

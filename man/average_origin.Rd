@@ -43,20 +43,28 @@ average_origin_moving_window(
   window_step
 )
 
-no_data_windows(moving_origin_grid)
+no_data_windows(moving_origin_grid, window_step)
 
-\method{no_data_windows}{default}(moving_origin_grid)
+\method{no_data_windows}{default}(moving_origin_grid, window_step)
 
-\method{no_data_windows}{mobest_movingorigingrid}(moving_origin_grid)
+\method{no_data_windows}{mobest_movingorigingrid}(moving_origin_grid, window_step)
 }
 \arguments{
 \item{origin_grid}{An object of class \code{mobest_origingrid} as created by
 \link{search_spatial_origin}}
 
+\item{window_start}{Start date of the moving window sequence}
+
+\item{window_stop}{Stop date of the moving window sequence}
+
+\item{window_width}{Width of each individual moving window}
+
+\item{window_step}{Frequency of moving windows. Example:
+If the first window starts at -3500 and extends until -3200, should the next
+one start at -3450 or -3400, so with window_step = 50 or window_step = 100?}
+
 \item{moving_origin_grid}{An object of class \code{mobest_movingorigingrid}
 as created by \link{average_origin_moving_window}}
-
-\item{...}{undefined}
 }
 \value{
 Different data products: \code{mobest_meanorigingrid},
