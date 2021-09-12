@@ -87,11 +87,11 @@ average_origin_moving_window.mobest_origingrid <- function(
       purrr::map2_df(
         # define moving windows and loop through them
         seq(window_start, window_stop - window_width, window_step),
-        seq(window_start + window_width, window_stop, window_width),
+        seq(window_start + window_width, window_stop, window_step),
         function(start, end) {
           # prepare window data subsets
           io <- dplyr::filter(
-            .data[["origin_per_region"]],
+            origin_per_region,
             .data[["search_z"]] >= start,
             .data[["search_z"]] < end
           )
@@ -163,7 +163,7 @@ se <- function(x) stats::sd(x)/sqrt(length(x))
 #' @rdname average_origin
 #' @export
 no_data_windows <- function(moving_origin_grid, window_step) {
-  UseMethod("average_origin_no_data_windows")
+  UseMethod("no_data_windows")
 }
 
 #' @rdname average_origin
