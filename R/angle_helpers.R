@@ -53,9 +53,9 @@ vec2rad <- function(x) {
   atan2(x[1], x[2])
 }
 
-#' Mean angle functions
+#' Angle helper functions
 #'
-#' Functions to calculate the mean of multiple angles.
+#' Functions for different operations on angles.
 #'
 #' @param x Double vector. Angles in degrees
 #'
@@ -66,4 +66,17 @@ vec2rad <- function(x) {
 mean_deg2vec <- function(x) {
   y <- lapply(x, deg2vec)
   Reduce(`+`, y)/length(y)
+}
+
+#' @rdname angle_helpers
+#' @export
+cut_angle_deg <- function(x) {
+  dplyr::case_when(
+    x >= 0   & x <  45  ~ "N",
+    x >= 45  & x <  135 ~ "E",
+    x >= 135 & x <  225 ~ "S",
+    x >= 225 & x <  315 ~ "W",
+    x >= 315 & x <= 360 ~ "N",
+    TRUE ~ NA_character_
+  )
 }

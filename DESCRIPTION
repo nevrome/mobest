@@ -1,6 +1,6 @@
 Package: mobest
 Title: What the Package Does (One Line, Title Case)
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: 
     person(given = "First",
            family = "Last",
@@ -11,7 +11,7 @@ Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Imports:
     laGP,
     checkmate,

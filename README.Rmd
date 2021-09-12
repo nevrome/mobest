@@ -12,6 +12,8 @@ This R package provides a pipeline for spatiotemporal interpolation of human gen
 
 > ..., Estimating human mobility in Holocene Western Eurasia with bulk ancient genetic data, ...
 
+For other applications the code would probably have to be changed significantly. This is not a general-purpose package, but rather a structured collection of functions for said paper.
+
 ## Installation
 
 Install the package from github with the following command in R:
@@ -246,4 +248,8 @@ origin_grid <- mobest::search_spatial_origin(
 ```{r, echo=F}
 origin_grid
 ```
+
+### Summarising mobility estimation
+
+
 

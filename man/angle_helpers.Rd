@@ -2,9 +2,12 @@
 % Please edit documentation in R/angle_helpers.R
 \name{mean_deg2vec}
 \alias{mean_deg2vec}
-\title{Mean angle functions}
+\alias{cut_angle_deg}
+\title{Angle helper functions}
 \usage{
 mean_deg2vec(x)
+
+cut_angle_deg(x)
 }
 \arguments{
 \item{x}{Double vector. Angles in degrees}
@@ -13,5 +16,5 @@ mean_deg2vec(x)
 2 element double vector. Angle as unit vector
 }
 \description{
-Functions to calculate the mean of multiple angles.
+Functions for different operations on angles.
 }
