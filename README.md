@@ -6,14 +6,11 @@
 This R package provides a pipeline for spatiotemporal interpolation of
 human genetic ancestry components and a derived measure for **mob**ility
 **est**imation. The workflow in version 1.0 was specifically developed
-for this research paper:
-
-> …, Estimating human mobility in Holocene Western Eurasia with bulk
-> ancient genetic data, …
-
-For other applications the code would probably have to be changed
-significantly. This is not a general-purpose package, but rather a
-structured collection of functions for said paper.
+to support this research compendium:
+<https://github.com/nevrome/mobest.analysis.2020>. For broader
+applications the code would probably have to be adjusted. This is not
+designed as a general-purpose package, but rather a structured
+collection of functions for said paper.
 
 ## Installation
 
