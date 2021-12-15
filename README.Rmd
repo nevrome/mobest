@@ -27,7 +27,7 @@ The research paper linked above explains the details and background. The followi
 
 ### Basic classes for the input data
 
-`create_spatpos` creates an object of class `mobest_spatiotemporalpositions` which is a `data.frame` that represents spatiotemporal positions.
+`mobest::create_spatpos` creates an object of class `mobest_spatiotemporalpositions` which is a `data.frame` that represents spatiotemporal positions.
 
 ```{r, echo=F}
 set.seed(123)
@@ -46,7 +46,7 @@ positions <- mobest::create_spatpos(
 positions
 ```
 
-`create_spatpos_multi` creates a list of `mobest_spatiotemporalpositions` objects. It's meant to represent positional uncertainty, by providing multiple sets of spatiotemporal coordinates for points with identical IDs.
+`mobest::create_spatpos_multi` creates a list of `mobest_spatiotemporalpositions` objects. It's meant to represent positional uncertainty, by providing multiple sets of spatiotemporal coordinates for points with identical IDs.
 
 ```{r}
 uncertain_positions <- mobest::create_spatpos_multi(
@@ -62,11 +62,11 @@ uncertain_positions <- mobest::create_spatpos_multi(
 uncertain_positions
 ```
 
-`create_obs` creates named lists of observations vectors (class `mobest_observations`) corresponding to the spatiotemporal positions defined above.
+`mobest::create_obs` creates named lists of observations vectors (class `mobest_observations`) corresponding to the spatiotemporal positions defined above.
 
 ```{r}
 observations <- mobest::create_obs(
-  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" for "ancestry component"
+  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" here for "ancestry component"
   ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
 )
 ```
@@ -97,7 +97,7 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
 pairwise_distances
 ```
 
-`mobest::bin_pairwise_distances` bins the pairwaise differences in an object of class `mobest_pairwisedistances` and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
+`mobest::bin_pairwise_distances` bins the pairwise differences in an object of class `mobest_pairwisedistances` and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
 
 ```{r}
 variogram <- mobest::bin_pairwise_distances(
@@ -127,7 +127,7 @@ mleGPsep_out <- mobest::laGP_mle_anisotropic(
 mleGPsep_out
 ```
 
-`mobest::laGP_jmle_anisotropic` wraps around `laGP::mleGPsep` to perform joint maximum likelihood inference for anisotropic (separable) Gaussian lengthscale and nugget parameters.
+`mobest::laGP_jmle_anisotropic` does the same, but for joint maximum likelihood inference.
 
 ```{r}
 jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
@@ -142,7 +142,7 @@ jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
 jmleGPsep_out
 ```
 
-`mobest::laGP_mle_sequence_isotropic_fixed_g` implements a very specific approach where the mle is performed under the assumption of an isotropic system, but with a series of scaling factors for the space-time-relation. The nugget term g is fixed.
+`mobest::laGP_mle_sequence_isotropic_fixed_g` implements a very specific approach, where the mle is performed under the assumption of an isotropic system, but with a series of scaling factors to explore the space-time-relation. The nugget term g is fixed.
 
 ```{r}
 mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
@@ -161,7 +161,7 @@ mle_sequence
 
 #### Crossvalidation
 
-`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it already employs `mobest::create_model_grid` and `mobest::run_model_grid`.
+`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below).
 
 ```{r, message=FALSE}
 interpol_comparison <- mobest::crossvalidate(
@@ -183,7 +183,7 @@ interpol_comparison
 
 ### Spatiotemporal interpolation
 
-The spatiotemporal interpolation workflow consists of the creation of a list of models and then running each element on this list.
+The spatiotemporal interpolation workflow consists of the creation of a list of models and then running each element in this list.
 
 `mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of input elements. Each row equals one complete model definition with all parameters and input data fully defined.
 
@@ -216,7 +216,7 @@ model_grid <- mobest::create_model_grid(
 model_grid
 ```
 
-The helper function `mobest::prediction_grid_for_spatiotemporal_area` can be used to construct a regular, spatiotemporal grid for the `prediction_grid` argument. It uses `sf::st_make_grid` under the hood to create the spatial grid for an input region.
+The helper function `mobest::prediction_grid_for_spatiotemporal_area` can be used to construct a regular, spatiotemporal grid for the `prediction_grid` argument of `create_model_grid`. It uses `sf::st_make_grid` to create the spatial grid for a specified input region.
 
 `mobest::run_model_grid` runs each model and returns an unnested table of interpolation results for each prediction grid point and each model parameter setting.
 
@@ -230,7 +230,7 @@ interpol_grid
 
 ### Mobility estimation
 
-`mobest::search_spatial_origin` takes a number of "search points" (with `independent` and `dependent`) for which the spatial origin search should be performed, as well as a `interpol_grid`, which defines the field in which the origin search should be performed. It returns a data.frame with one row for each search point and interpol_grid setting. Each row contains the specifics of the genetically closest origin point.
+`mobest::search_spatial_origin` takes a number of "search points" (with `independent` and `dependent` variables) for which the spatial origin search should be performed, as well as an `interpol_grid`, which defines the field in which the origin search should be performed. It returns a data.frame with one row for each search point and interpol_grid setting. Each row contains the specifics of the genetically closest origin point.
 
 ```{r}
 origin_grid <- mobest::search_spatial_origin(
@@ -245,4 +245,4 @@ origin_grid <- mobest::search_spatial_origin(
 origin_grid
 ```
 
-From this output multiple data products can be derived for plotting with `average_origin_searchid`, `average_origin_moving_window` and `no_data_windows`.
+From this output multiple data products can be derived (e.g. for plotting) with `mobest::average_origin_searchid`, `mobest::average_origin_moving_window` and `mobest::no_data_windows`.
