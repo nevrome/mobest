@@ -1,13 +1,13 @@
 Package: mobest
-Title: What the Package Does (One Line, Title Case)
+Title: Helper Functions For The Paper
+Description: See <https://github.com/nevrome/mobest.analysis.2022> for more context.
 Version: 0.2.0
 Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    person(given = "Clemens",
+         family = "Schmid",
+         role = c("aut", "cre", "cph"),
+         email = "clemens@nevrome.de",
+         comment = c(ORCID = "0000-0003-3448-5715"))
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
