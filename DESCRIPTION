@@ -1,7 +1,7 @@
 Package: mobest
 Title: Helper Functions For The Paper
 Description: See <https://github.com/nevrome/mobest.analysis.2022> for more context.
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: 
     person(given = "Clemens",
          family = "Schmid",
