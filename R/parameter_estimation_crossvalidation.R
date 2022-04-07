@@ -98,5 +98,9 @@ crossvalidate <- function(
     # calculate differences between estimated and measured values
     dplyr::mutate(
       difference = .data[["mean"]] - .data[["measured"]]
+    ) %>%
+    # remove unnecessary columns
+    dplyr::select(
+      -.data[["pred_grid_id"]]
     )
 }
