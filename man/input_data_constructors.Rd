@@ -22,7 +22,7 @@ create_kernset(...)
 create_kernset_multi(...)
 }
 \arguments{
-\item{...}{vector. Other settings to be added to the output object}
+\item{...}{Different inputs (see examples in README)}
 
 \item{id}{Vector. IDs of the observation points}
 
@@ -32,22 +32,21 @@ create_kernset_multi(...)
 
 \item{z}{Numeric vector. Temporal positions}
 
-\item{it}{vector. Names of the different object iterations}
+\item{it}{V0ector. Names of different object iterations}
 
-\item{dt}{numeric vector. Different kernel lengthscale parameters for the z dimension}
+\item{dsx}{Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more info}
 
-\item{g}{numeric vector. Kernel nugget parameter}
+\item{dsy}{Double. Kernel lengthscale parameter for the y dimension (spatial y-axis)}
 
-\item{on_residuals}{logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?}
+\item{dt}{Double. Kernel lengthscale parameter for the z dimension (temporal axis)}
 
-\item{auto}{logical. In the field calculation down the pipeline:
+\item{g}{Double. Kernel nugget parameter}
+
+\item{on_residuals}{Logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?}
+
+\item{auto}{Logical. In the field calculation down the pipeline:
 Should the lengthscale and nugget values be automatically determined by laGPs
 maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info}
-
-\item{d}{3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info}
-
-\item{ds}{numeric vector. Different kernel lengthscale parameters for the x and y dimension
-(isotropic)}
 }
 \value{
 Different data types for specific applications.

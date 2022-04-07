@@ -7,17 +7,16 @@
 #' @param x Numeric vector. Spatial x-axis coordinates
 #' @param y Numeric vector. Spatial y-axis coordinates
 #' @param z Numeric vector. Temporal positions
-#' @param d 3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info
-#' @param ds numeric vector. Different kernel lengthscale parameters for the x and y dimension
-#' (isotropic)
-#' @param dt numeric vector. Different kernel lengthscale parameters for the z dimension
-#' @param g numeric vector. Kernel nugget parameter
-#' @param on_residuals logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?
-#' @param auto logical. In the field calculation down the pipeline:
+#' @param dsx Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more info
+#' @param dsy Double. Kernel lengthscale parameter for the y dimension (spatial y-axis)
+#' @param dt Double. Kernel lengthscale parameter for the z dimension (temporal axis)
+#' @param g Double. Kernel nugget parameter
+#' @param on_residuals Logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?
+#' @param auto Logical. In the field calculation down the pipeline:
 #' Should the lengthscale and nugget values be automatically determined by laGPs
 #' maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
-#' @param ... vector. Other settings to be added to the output object
-#' @param it vector. Names of the different object iterations
+#' @param ... Different inputs (see examples in README)
+#' @param it V0ector. Names of different object iterations
 #'
 #' @return Different data types for specific applications.
 #'
@@ -119,8 +118,3 @@ create_kernset_multi <- function(...) {
   # compile output data structure
   kernels_multi
 }
-
-ps <- function(x) {
-  suppressWarnings(format(x, scientific = FALSE, decimal.mark = ""))
-}
-
