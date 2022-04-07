@@ -164,14 +164,25 @@ mle_sequence
 `mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below).
 
 ```{r, message=FALSE}
+par2try <- expand.grid(
+  ds = seq(100,200, 50)*1000,
+  dt = seq(100,200, 50)
+)
+
+kernels <- par2try %>% purrr::pmap(function(...) {
+  row <- list(...)
+  mobest::create_kernset(
+    ac1 = create_kernel(row$ds, row$ds, row$dt, 0.065),
+    ac2 = create_kernel(row$ds, row$ds, row$dt, 0.08)
+  )
+}) %>% magrittr::set_names(paste(
+  "kernel", par2try$ds/1000, par2try$dt, sep = "_"
+))
+
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
   dependent = observations,
-  kernel = mobest::create_kernset_cross(
-    ds = seq(100,200, 50)*1000,
-    dt = seq(100,200, 50), 
-    g = 0.1
-  ),
+  kernel = kernels,
   iterations = 2,
   groups = 10
 )
@@ -193,9 +204,14 @@ model_grid <- mobest::create_model_grid(
   independent = uncertain_positions,
   dependent = observations,
   kernel = mobest::create_kernset_multi(
-    d = list(c(100000, 100000, 200)),
-    g = 0.1,
-    it = "kernel_100000_200_01"
+    kernel_1 = mobest::create_kernset(
+      ac1 = create_kernel(1000000, 1000000, 200, 0.1),
+      ac2 = create_kernel(1000000, 1000000, 200, 0.1)
+    ),
+    kernel_2 = mobest::create_kernset(
+      ac1 = create_kernel(1000000, 1000000, 200, 0.1),
+      ac2 = create_kernel(1000000, 1000000, 250, 0.1)
+    )
   ),
   prediction_grid = list(
     pred_grid = expand.grid(

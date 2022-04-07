@@ -4,9 +4,9 @@
 \alias{create_obs}
 \alias{create_spatpos}
 \alias{create_spatpos_multi}
+\alias{create_kernel}
 \alias{create_kernset}
 \alias{create_kernset_multi}
-\alias{create_kernset_cross}
 \title{Input data type constructors}
 \usage{
 create_obs(...)
@@ -15,11 +15,11 @@ create_spatpos(id, x, y, z, ...)
 
 create_spatpos_multi(id, x, y, z, it)
 
-create_kernset(d, g, on_residuals = T, auto = F, ...)
+create_kernel(dsx, dsy, dt, g, on_residuals = T, auto = F)
 
-create_kernset_multi(d, g, on_residuals = T, auto = F, ..., it)
+create_kernset(...)
 
-create_kernset_cross(ds, dt, g, on_residuals = T, auto = F)
+create_kernset_multi(...)
 }
 \arguments{
 \item{...}{vector. Other settings to be added to the output object}
@@ -34,7 +34,7 @@ create_kernset_cross(ds, dt, g, on_residuals = T, auto = F)
 
 \item{it}{vector. Names of the different object iterations}
 
-\item{d}{3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info}
+\item{dt}{numeric vector. Different kernel lengthscale parameters for the z dimension}
 
 \item{g}{numeric vector. Kernel nugget parameter}
 
@@ -44,10 +44,10 @@ create_kernset_cross(ds, dt, g, on_residuals = T, auto = F)
 Should the lengthscale and nugget values be automatically determined by laGPs
 maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info}
 
+\item{d}{3 element numeric vector. Kernel lengthscale parameter for the x, y and z dimension. See \code{?laGP::newGP} for more info}
+
 \item{ds}{numeric vector. Different kernel lengthscale parameters for the x and y dimension
 (isotropic)}
-
-\item{dt}{numeric vector. Different kernel lengthscale parameters for the z dimension}
 }
 \value{
 Different data types for specific applications.

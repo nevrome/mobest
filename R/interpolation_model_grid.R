@@ -49,6 +49,9 @@ create_model_grid <- function(
     prediction_grid, types = "mobest_spatiotemporalpositions",
     any.missing = F, min.len = 1, names = "strict"
   )
+  purrr::walk(kernel, function(one_kernset) {
+      checkmate::assert_true(all(names(one_kernset) == names(dependent)))
+  })
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
@@ -58,9 +61,15 @@ create_model_grid <- function(
     dependent_var = dependent,
     dependent_var_id = factor(names(dependent), levels = names(dependent))
   )
-  kernel_settings <- tibble::tibble(
-    kernel_setting = kernel,
-    kernel_setting_id = factor(names(kernel), levels = names(kernel))
+  kernel_settings <- purrr::map2_dfr(
+    factor(names(kernel), levels = names(kernel)), kernel,
+    function(kernel_name, one_kernel) {
+      tibble::tibble(
+        kernel_setting_id = kernel_name,
+        dependent_var_id = names(one_kernel),
+        kernel_setting = one_kernel[1:length(one_kernel)]
+      )
+    }
   )
   pred_grids <- tibble::tibble(
     pred_grid = prediction_grid,
@@ -82,7 +91,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
   expand.grid(
     independent_table_id = independent_tables[["independent_table_id"]],
     dependent_var_id = dependent_vars[["dependent_var_id"]],
-    kernel_setting_id = kernel_settings[["kernel_setting_id"]],
+    kernel_setting_id = unique(kernel_settings[["kernel_setting_id"]]),
     pred_grid_id = pred_grids[["pred_grid_id"]],
     stringsAsFactors = F
   ) %>%
@@ -93,7 +102,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
       dependent_vars, by = "dependent_var_id"
     ) %>%
     dplyr::left_join(
-      kernel_settings, by = "kernel_setting_id"
+      kernel_settings, by = c("kernel_setting_id", "dependent_var_id")
     ) %>%
     dplyr::left_join(
       pred_grids, by = "pred_grid_id"
@@ -140,7 +149,7 @@ run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
         dependent = model_grid[["dependent_var"]][[i]],
         pred_grid = model_grid[["pred_grid"]][[i]],
         # d has to be squared because of the configuration of the default laGP kernel
-        d = model_grid[["kernel_setting"]][[i]][["d"]]^2,
+        d = as.numeric(model_grid[["kernel_setting"]][[i]][c("dsx", "dsy", "dt")])^2,
         g = model_grid[["kernel_setting"]][[i]][["g"]],
         auto = model_grid[["kernel_setting"]][[i]][["auto"]],
         on_residuals = model_grid[["kernel_setting"]][[i]][["on_residuals"]]
@@ -149,6 +158,12 @@ run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
   )
   # simplify model_grid
   model_grid_simplified <- model_grid %>%
+    dplyr::mutate(
+      kernel_dsx = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsx")),
+      kernel_dsy = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsy")),
+      kernel_dt = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dt")),
+      kernel_g = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("g"))
+    ) %>%
     dplyr::select(
       -.data[["kernel_setting"]],
       -.data[["independent_table"]],

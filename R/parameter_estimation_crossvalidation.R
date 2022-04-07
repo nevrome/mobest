@@ -83,50 +83,20 @@ crossvalidate <- function(
       interpol_grid %>% dplyr::mutate(mixing_iteration = mixing_iteration)
     }
   )
-  # make wide for predicted (by the GPR) mean and sd values
-  crossval_interpol_grid_wide <- crossval_interpol_grid %>% tidyr::pivot_wider(
-    names_from = "dependent_var_id",
-    values_from = c("mean", "sd")
-  )
   # merge with actually measured information
-  crossval_interpol_comparison <- crossval_interpol_grid_wide %>%
+  crossval_interpol_grid %>%
     dplyr::left_join(
       crossval %>% dplyr::select(
         -.data[["x"]], -.data[["y"]], -.data[["z"]]
+      ) %>% tidyr::pivot_longer(
+        cols = tidyselect::matches(names(dependent)),
+        names_to = "dependent_var_id",
+        values_to = "measured"
       ),
-      by = "id"
-    )
-  # calculate differences between estimated and measured values
-  for (dep in names(dependent)) {
-    crossval_interpol_comparison[[paste0(dep, "_dist")]] <-
-      crossval_interpol_comparison[[paste0("mean_", dep)]] -
-      crossval_interpol_comparison[[dep]]
-  }
-  # prepare output dataset
-  crossval_interpol_comparison %>%
-    dplyr::select(
-      .data[["id"]],
-      .data[["mixing_iteration"]],
-      .data[["kernel_setting_id"]],
-      tidyselect::contains("_dist")
+      by = c("id", "dependent_var_id")
     ) %>%
-    tidyr::pivot_longer(
-      cols = tidyselect::contains("_dist"),
-      names_to = "dependent_var",
-      values_to = "difference"
-    ) %>%
-    # turn kernel parameters into distinct columns again
+    # calculate differences between estimated and measured values
     dplyr::mutate(
-      kernel_setting_id = gsub("kernel_", "", .data[["kernel_setting_id"]])
-    ) %>%
-    tidyr::separate(
-      .data[["kernel_setting_id"]],
-      c("ds", "dt", "g"),
-      sep = "_",
-      convert = T,
-      remove = F
-    ) %>%
-    dplyr::select(
-      -.data[["kernel_setting_id"]]
+      difference = .data[["mean"]] - .data[["measured"]]
     )
 }
