@@ -40,6 +40,9 @@ crossvalidate <- function(
     1:iterations, # this counter is only passed here to document the run number in the output df
     crossval_mixed_list,
     function(mixing_iteration, crossval_mixed) {
+      if (!quiet) {
+        message("starting mixing iteration ", mixing_iteration, " of ", iterations)
+      }
       # split crossval into sections
       n <- groups
       nr <- nrow(crossval_mixed)
