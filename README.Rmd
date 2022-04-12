@@ -30,6 +30,7 @@ The research paper linked above explains the details and background. The followi
 `mobest::create_spatpos` creates an object of class `mobest_spatiotemporalpositions` which is a `data.frame` that represents spatiotemporal positions.
 
 ```{r, echo=F}
+library(magrittr)
 set.seed(123)
 ```
 
@@ -172,8 +173,8 @@ par2try <- expand.grid(
 kernels <- par2try %>% purrr::pmap(function(...) {
   row <- list(...)
   mobest::create_kernset(
-    ac1 = create_kernel(row$ds, row$ds, row$dt, 0.065),
-    ac2 = create_kernel(row$ds, row$ds, row$dt, 0.08)
+    ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
+    ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
   )
 }) %>% magrittr::set_names(paste(
   "kernel", par2try$ds/1000, par2try$dt, sep = "_"
@@ -205,12 +206,12 @@ model_grid <- mobest::create_model_grid(
   dependent = observations,
   kernel = mobest::create_kernset_multi(
     kernel_1 = mobest::create_kernset(
-      ac1 = create_kernel(1000000, 1000000, 200, 0.1),
-      ac2 = create_kernel(1000000, 1000000, 200, 0.1)
+      ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+      ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
     ),
     kernel_2 = mobest::create_kernset(
-      ac1 = create_kernel(1000000, 1000000, 200, 0.1),
-      ac2 = create_kernel(1000000, 1000000, 250, 0.1)
+      ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+      ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
     )
   ),
   prediction_grid = list(

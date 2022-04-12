@@ -280,33 +280,46 @@ parameters. Internally it employs `mobest::create_model_grid` and
 `mobest::run_model_grid` (see below).
 
 ``` r
+par2try <- expand.grid(
+  ds = seq(100,200, 50)*1000,
+  dt = seq(100,200, 50)
+)
+
+kernels <- par2try %>% purrr::pmap(function(...) {
+  row <- list(...)
+  mobest::create_kernset(
+    ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
+    ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
+  )
+}) %>% magrittr::set_names(paste(
+  "kernel", par2try$ds/1000, par2try$dt, sep = "_"
+))
+
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
   dependent = observations,
-  kernel = mobest::create_kernset_cross(
-    ds = seq(100,200, 50)*1000,
-    dt = seq(100,200, 50), 
-    g = 0.1
-  ),
+  kernel = kernels,
   iterations = 2,
   groups = 10
 )
 ```
 
-    ## # A tibble: 3,600 × 7
-    ##       id mixing_iteration     ds    dt     g dependent_var difference
-    ##    <int>            <int>  <int> <int> <int> <chr>              <dbl>
-    ##  1    94                1 100000   100     1 ac1_dist         0.0109 
-    ##  2    94                1 100000   100     1 ac2_dist         0.119  
-    ##  3    52                1 100000   100     1 ac1_dist         0.297  
-    ##  4    52                1 100000   100     1 ac2_dist        -0.0214 
-    ##  5    37                1 100000   100     1 ac1_dist         0.512  
-    ##  6    37                1 100000   100     1 ac2_dist         0.187  
-    ##  7    27                1 100000   100     1 ac1_dist         0.256  
-    ##  8    27                1 100000   100     1 ac2_dist         0.136  
-    ##  9    73                1 100000   100     1 ac1_dist         0.00332
-    ## 10    73                1 100000   100     1 ac2_dist        -0.111  
-    ## # … with 3,590 more rows
+    ## # A tibble: 3,600 × 16
+    ##    independent_table_id dependent_var_id kernel_setting_id kernel_dsx kernel_dsy
+    ##    <fct>                <chr>            <fct>                  <dbl>      <dbl>
+    ##  1 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  2 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  3 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  4 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  5 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  6 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  7 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  8 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  9 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ## 10 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ## # … with 3,590 more rows, and 11 more variables: kernel_dt <dbl>,
+    ## #   kernel_g <dbl>, id <int>, x <int>, y <int>, z <int>, mean <dbl>, sd <dbl>,
+    ## #   mixing_iteration <int>, measured <dbl>, difference <dbl>
 
 ### Spatiotemporal interpolation
 
@@ -324,9 +337,14 @@ model_grid <- mobest::create_model_grid(
   independent = uncertain_positions,
   dependent = observations,
   kernel = mobest::create_kernset_multi(
-    d = list(c(100000, 100000, 200)),
-    g = 0.1,
-    it = "kernel_100000_200_01"
+    kernel_1 = mobest::create_kernset(
+      ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+      ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
+    ),
+    kernel_2 = mobest::create_kernset(
+      ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+      ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
+    )
   ),
   prediction_grid = list(
     pred_grid = expand.grid(
@@ -343,13 +361,17 @@ model_grid <- mobest::create_model_grid(
 )
 ```
 
-    ## # A tibble: 4 × 8
-    ##   independent_table_id dependent_var_id kernel_setting_id    pred_grid_id
-    ##   <fct>                <fct>            <fct>                <fct>       
-    ## 1 run_a                ac1              kernel_100000_200_01 pred_grid   
-    ## 2 run_b                ac1              kernel_100000_200_01 pred_grid   
-    ## 3 run_a                ac2              kernel_100000_200_01 pred_grid   
-    ## 4 run_b                ac2              kernel_100000_200_01 pred_grid   
+    ## # A tibble: 8 × 8
+    ##   independent_table_id dependent_var_id kernel_setting_id pred_grid_id
+    ##   <fct>                <chr>            <fct>             <fct>       
+    ## 1 run_a                ac1              kernel_1          pred_grid   
+    ## 2 run_b                ac1              kernel_1          pred_grid   
+    ## 3 run_a                ac2              kernel_1          pred_grid   
+    ## 4 run_b                ac2              kernel_1          pred_grid   
+    ## 5 run_a                ac1              kernel_2          pred_grid   
+    ## 6 run_b                ac1              kernel_2          pred_grid   
+    ## 7 run_a                ac2              kernel_2          pred_grid   
+    ## 8 run_b                ac2              kernel_2          pred_grid   
     ## # … with 4 more variables: independent_table <named list>,
     ## #   dependent_var <mbst_bsr>, kernel_setting <named list>,
     ## #   pred_grid <named list>
@@ -368,21 +390,22 @@ parameter setting.
 interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 ```
 
-    ## # A tibble: 2,400 × 10
-    ##    independent_tabl… dependent_var_id kernel_setting_id pred_grid_id    id     x
-    ##    <fct>             <fct>            <fct>             <fct>        <int> <dbl>
-    ##  1 run_a             ac1              kernel_100000_20… pred_grid        1   1e5
-    ##  2 run_a             ac1              kernel_100000_20… pred_grid        2   2e5
-    ##  3 run_a             ac1              kernel_100000_20… pred_grid        3   3e5
-    ##  4 run_a             ac1              kernel_100000_20… pred_grid        4   4e5
-    ##  5 run_a             ac1              kernel_100000_20… pred_grid        5   5e5
-    ##  6 run_a             ac1              kernel_100000_20… pred_grid        6   6e5
-    ##  7 run_a             ac1              kernel_100000_20… pred_grid        7   7e5
-    ##  8 run_a             ac1              kernel_100000_20… pred_grid        8   8e5
-    ##  9 run_a             ac1              kernel_100000_20… pred_grid        9   9e5
-    ## 10 run_a             ac1              kernel_100000_20… pred_grid       10   1e6
-    ## # … with 2,390 more rows, and 4 more variables: y <dbl>, z <dbl>, mean <dbl>,
-    ## #   sd <dbl>
+    ## # A tibble: 4,800 × 14
+    ##    independent_table_… dependent_var_id kernel_setting_… pred_grid_id kernel_dsx
+    ##    <fct>               <chr>            <fct>            <fct>             <dbl>
+    ##  1 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  2 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  3 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  4 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  5 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  6 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  7 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  8 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  9 run_a               ac1              kernel_1         pred_grid       1000000
+    ## 10 run_a               ac1              kernel_1         pred_grid       1000000
+    ## # … with 4,790 more rows, and 9 more variables: kernel_dsy <dbl>,
+    ## #   kernel_dt <dbl>, kernel_g <dbl>, id <int>, x <dbl>, y <dbl>, z <dbl>,
+    ## #   mean <dbl>, sd <dbl>
 
 ### Mobility estimation
 
@@ -410,19 +433,27 @@ origin_grid <- mobest::search_spatial_origin(
 
     ## running field setting 2 with search points run_b
 
+    ## running field setting 3 with search points run_a
+
+    ## running field setting 3 with search points run_b
+
+    ## running field setting 4 with search points run_a
+
+    ## running field setting 4 with search points run_b
+
     ## # A tibble: 400 × 20
     ##    search_id search_x search_y search_z search_ac1 search_ac2 origin_id origin_x
     ##        <int>    <int>    <int>    <int>      <dbl>      <dbl>     <int>    <dbl>
-    ##  1         1   288941   394406    -4538    0.432       0.122        146   600000
-    ##  2         2   234057   693448    -4274    0.274       0.0218       212   200000
+    ##  1         1   288941   394406    -4538    0.432       0.122        174   400000
+    ##  2         2   234057   693448    -4274    0.274       0.0218       214   400000
     ##  3         3   224021   349221    -4969    0.313       0.286         62   200000
-    ##  4         4   326317   181117    -3909    0.145       0.0652       302   200000
-    ##  5         5   465208   119391    -4215    0.0455      0.122        254   400000
-    ##  6         6   293626   408280    -4249    0.235       0.188        215   500000
+    ##  4         4   326317   181117    -3909    0.145       0.0652       303   300000
+    ##  5         5   465208   119391    -4215    0.0455      0.122        207   700000
+    ##  6         6   293626   408280    -4249    0.235       0.188        217   700000
     ##  7         7   669691   298818    -5001    0.00786     0.189         41   100000
-    ##  8         8   689448   626573    -3772    0.520       0.0985       324   400000
-    ##  9         9   597689   159969    -3570    0.596       0.0417       324   400000
-    ## 10        10   502857   315369    -4907    0.425       0.274        119   900000
+    ##  8         8   689448   626573    -3772    0.520       0.0985       331   100000
+    ##  9         9   597689   159969    -3570    0.596       0.0417       331   100000
+    ## 10        10   502857   315369    -4907    0.425       0.274        192   200000
     ## # … with 390 more rows, and 12 more variables: origin_y <dbl>, origin_z <dbl>,
     ## #   origin_mean_ac1 <dbl>, origin_mean_ac2 <dbl>, origin_sd_ac1 <dbl>,
     ## #   origin_sd_ac2 <dbl>, search_points_id <chr>, field_id <int>,

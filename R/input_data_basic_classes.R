@@ -30,7 +30,7 @@ create_obs <- function(...) {
   purrr::walk(res, checkmate::assert_numeric)
   if (res %>%
       purrr::some(function(x) { length(x) != length(res[[1]]) }))
-  { stop("Each input vector must have identical length") }
+  { stop("Each input vector must be of identical length") }
   # return list
   class(res) <- c("mobest_observations", class(res))
   return(res)
