@@ -16,24 +16,23 @@
 #' Should the lengthscale and nugget values be automatically determined by laGPs
 #' maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
 #' @param ... Different inputs (see examples in README)
-#' @param it V0ector. Names of different object iterations
+#' @param .names Vector. Names of different object iterations
 #'
 #' @return Different data types for specific applications.
 #'
 #' @rdname input_data_constructors
 #' @export
-create_obs <- function(...) {
-  # prepare list
-  res <- list(...)
+create_obs <- function(..., .names = NULL) {
+  obs <- list(...)
+  if (!is.null(.names)) { names(obs) <- .names }
   # check list
-  checkmate::assert_names(names(res), type = "strict")
-  purrr::walk(res, checkmate::assert_numeric)
-  if (res %>%
-      purrr::some(function(x) { length(x) != length(res[[1]]) }))
-  { stop("Each input vector must be of identical length") }
-  # return list
-  class(res) <- c("mobest_observations", class(res))
-  return(res)
+  checkmate::assert_list(obs, types = "numeric", names = "strict")
+  checkmate::assert_true(
+    purrr::map_int(obs, length) %>% unique %>% length %>% `==`(1)
+  )
+  # compile tibble
+  dplyr::bind_cols(obs) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
 }
 
 #' @rdname input_data_constructors
@@ -44,9 +43,9 @@ create_spatpos <- function(id, x, y, z, ...) {
   checkmate::assert_numeric(x)
   checkmate::assert_numeric(y)
   checkmate::assert_numeric(z)
-  if (list(id, x, y, z, ...) %>%
-      purrr::some(function(x) { length(x) != length(id) && length(x) != 1 }))
-  { stop("Each vector input vector must be of identical length") }
+  checkmate::assert_true(
+    purrr::map_int(list(id, x, y, z, ...), length) %>% unique %>% length %>% `==`(1)
+  )
   # compile tibble
   tibble::tibble(id = id, x = x, y = y, z = z, ...) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatiotemporalpositions")
@@ -54,27 +53,19 @@ create_spatpos <- function(id, x, y, z, ...) {
 
 #' @rdname input_data_constructors
 #' @export
-create_spatpos_multi <- function(id, x, y, z, it) {
+create_spatpos_multi <- function(..., .names = NULL) {
+  spatpos <- list(...)
+  if (!is.null(.names)) { names(spatpos) <- .names }
   # input check
-  checkmate::assert_vector(id)
-  checkmate::assert_list(x)
-  checkmate::assert_list(y)
-  checkmate::assert_list(z)
-  checkmate::assert_atomic_vector(it, any.missing = F, unique = T)
-  if (list(x, y, z) %>%
-      purrr::some(function(x) { length(x) != length(it) }))
-    { stop("Each input list must have identical length") }
-  # compile list of tibbles
-  list(
-    id = rep(list(id), length(x)),
-    x = x, y = y, z = z
-  ) %>%
-    purrr::pmap(
-      function(id, x, y, z, it) {
-        create_spatpos(id = id, x = x, y = y, z = z)
-      }
-    ) %>%
-    magrittr::set_names(it)
+  checkmate::assert_list(spatpos, types = "mobest_spatiotemporalpositions", names = "strict")
+  checkmate::assert_true(
+    purrr::map_int(spatpos, nrow) %>% unique %>% length %>% `==`(1)
+  )
+  checkmate::assert_true(
+    purrr::map_lgl(spatpos, function(x) { all(x[["id"]] == spatpos[[1]]$id) }) %>% all()
+  )
+  # compile output data structure
+  spatpos
 }
 
 #' @rdname input_data_constructors
@@ -101,8 +92,9 @@ create_kernel <- function(dsx, dsy, dt, g, on_residuals = T, auto = F) {
 
 #' @rdname input_data_constructors
 #' @export
-create_kernset <- function(...) {
+create_kernset <- function(..., .names = NULL) {
   kernels <- list(...)
+  if (!is.null(.names)) { names(kernels) <- .names }
   # input check
   checkmate::assert_list(kernels, types = "mobest_kernel", names = "strict")
   # compile output data structure
@@ -111,8 +103,9 @@ create_kernset <- function(...) {
 
 #' @rdname input_data_constructors
 #' @export
-create_kernset_multi <- function(...) {
+create_kernset_multi <- function(..., .names = NULL) {
   kernels_multi <- list(...)
+  if (!is.null(.names)) { names(kernels_multi) <- .names }
   # input check
   checkmate::assert_list(kernels_multi, types = "mobest_kernelsetting", names = "strict")
   # compile output data structure

@@ -14,9 +14,8 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T, wi
   # input check and transformation
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   checkmate::assert_class(dependent, "mobest_observations")
-  dependent_df <- dplyr::bind_cols(dependent)
-  if (nrow(independent) != nrow(dependent_df)) {
-    stop("independent and dependent_df must have the same number of rows")
+  if (nrow(independent) != nrow(dependent)) {
+    stop("independent and dependent must have the same number of rows")
   }
   ids <- independent$id
   # geo distance
@@ -24,7 +23,7 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T, wi
   # time distance
   d_time_long <- calculate_time_pairwise_distances(ids, independent)
   # obs total distance
-  d_obs_total <- stats::dist(dependent_df, "euclidean") %>% as.matrix()
+  d_obs_total <- stats::dist(dependent, "euclidean") %>% as.matrix()
   rownames(d_obs_total) <- colnames(d_obs_total) <- ids
   d_obs_total_long <- d_obs_total %>% reshape2::melt(value.name = "obs_dist_total")
   # obs individual distance
@@ -68,18 +67,17 @@ calculate_time_pairwise_distances <- function(ids, independent) {
 #' @export
 calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = F, independent = NULL) {
   if (with_resid & is.null(independent)) { stop("If with_resid, then independent can not be NULL") }
-  dependent_df <- dplyr::bind_cols(dependent)
-  var_names <- names(dependent_df)
+  var_names <- names(dependent)
   var_names %>%
     purrr::map(
       function(var_name) {
         # d_obs
-        d_obs <- stats::dist(dependent_df[[var_name]], "euclidean") %>% as.matrix()
+        d_obs <- stats::dist(dependent[[var_name]], "euclidean") %>% as.matrix()
         rownames(d_obs) <- colnames(d_obs) <- ids
         d_obs_long <- d_obs %>% reshape2::melt(value.name = paste0(var_name, "_dist"))
         # d_obs_resid
         if (with_resid) {
-          model <- stats::lm(dependent_df[[var_name]] ~ independent$x + independent$y + independent$z)
+          model <- stats::lm(dependent[[var_name]] ~ independent$x + independent$y + independent$z)
           model_residuals <- stats::residuals(model)
           d_obs_resid <- as.matrix(stats::dist(model_residuals, "euclidean"))
           rownames(d_obs_resid) <- colnames(d_obs_resid) <- ids

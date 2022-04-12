@@ -9,20 +9,22 @@
 \alias{create_kernset_multi}
 \title{Input data type constructors}
 \usage{
-create_obs(...)
+create_obs(..., .names = NULL)
 
 create_spatpos(id, x, y, z, ...)
 
-create_spatpos_multi(id, x, y, z, it)
+create_spatpos_multi(..., .names = NULL)
 
 create_kernel(dsx, dsy, dt, g, on_residuals = T, auto = F)
 
-create_kernset(...)
+create_kernset(..., .names = NULL)
 
-create_kernset_multi(...)
+create_kernset_multi(..., .names = NULL)
 }
 \arguments{
 \item{...}{Different inputs (see examples in README)}
+
+\item{.names}{Vector. Names of different object iterations}
 
 \item{id}{Vector. IDs of the observation points}
 
@@ -31,8 +33,6 @@ create_kernset_multi(...)
 \item{y}{Numeric vector. Spatial y-axis coordinates}
 
 \item{z}{Numeric vector. Temporal positions}
-
-\item{it}{V0ector. Names of different object iterations}
 
 \item{dsx}{Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more info}
 

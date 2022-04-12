@@ -58,11 +58,11 @@ crossvalidate <- function(
           function(run_id, training, test) {
             mobest::create_model_grid(
               independent = mobest::create_spatpos_multi(
-                id = training$id,
-                x = list(training$x),
-                y = list(training$y),
-                z = list(training$z),
-                it = paste0("ind_crossval_run_", run_id)
+                mobest::create_spatpos(
+                  id = training$id,
+                  x = training$x, y = training$y, z = training$z
+                ),
+                .names = paste0("ind_crossval_run_", run_id)
               ),
               dependent = do.call(
                 mobest::create_obs,
@@ -70,11 +70,11 @@ crossvalidate <- function(
               ),
               kernel = kernel,
               prediction_grid = mobest::create_spatpos_multi(
-                id = test$id,
-                x = list(test$x),
-                y = list(test$y),
-                z = list(test$z),
-                it = paste0("pred_crossval_run_", run_id)
+                mobest::create_spatpos(
+                  id = test$id,
+                  x = test$x, y = test$y, z = test$z
+                ),
+                .names = paste0("pred_crossval_run_", run_id)
               )
             )
           }

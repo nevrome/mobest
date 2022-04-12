@@ -58,7 +58,7 @@ create_model_grid <- function(
     independent_table_id = factor(names(independent), levels = names(independent))
   )
   dependent_vars <- tibble::tibble(
-    dependent_var = dependent,
+    dependent_var = as.list(dependent),
     dependent_var_id = factor(names(dependent), levels = names(dependent))
   )
   kernel_settings <- purrr::map2_dfr(

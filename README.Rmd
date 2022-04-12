@@ -51,11 +51,8 @@ positions
 
 ```{r}
 uncertain_positions <- mobest::create_spatpos_multi(
-  id = 1:100,
-  x = list(positions$x, positions$x),
-  y = list(positions$y, positions$y),
-  z = list(positions$z + sample(-100:100, 100), positions$z + sample(-100:100, 100)),
-  it = c("run_a", "run_b")
+  run_a = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
+  run_b = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
 )
 ```
 
@@ -75,7 +72,7 @@ observations <- mobest::create_obs(
 The first ten observations:
 
 ```{r, echo=F}
-lapply(observations, head, N = 10)
+observations
 ```
 
 ### Parameter estimation
@@ -176,9 +173,7 @@ kernels <- par2try %>% purrr::pmap(function(...) {
     ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
     ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
   )
-}) %>% magrittr::set_names(paste(
-  "kernel", par2try$ds/1000, par2try$dt, sep = "_"
-))
+}) %>% magrittr::set_names(paste("kernel", par2try$ds/1000, par2try$dt, sep = "_"))
 
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
