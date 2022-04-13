@@ -75,11 +75,8 @@ coordinates for points with identical IDs.
 
 ``` r
 uncertain_positions <- mobest::create_spatpos_multi(
-  id = 1:100,
-  x = list(positions$x, positions$x),
-  y = list(positions$y, positions$y),
-  z = list(positions$z + sample(-100:100, 100), positions$z + sample(-100:100, 100)),
-  it = c("run_a", "run_b")
+  run_a = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
+  run_b = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
 )
 ```
 
@@ -128,11 +125,20 @@ observations <- mobest::create_obs(
 
 The first ten observations:
 
-    ## $ac1
-    ## [1] 0.4317524 0.2741321 0.3127586 0.1454742 0.0455165 0.2347771
-    ## 
-    ## $ac2
-    ## [1] 0.12160917 0.02178958 0.28612759 0.06515513 0.12168758 0.18770049
+    ## # A tibble: 100 × 2
+    ##        ac1    ac2
+    ##      <dbl>  <dbl>
+    ##  1 0.432   0.122 
+    ##  2 0.274   0.0218
+    ##  3 0.313   0.286 
+    ##  4 0.145   0.0652
+    ##  5 0.0455  0.122 
+    ##  6 0.235   0.188 
+    ##  7 0.00786 0.189 
+    ##  8 0.520   0.0985
+    ##  9 0.596   0.0417
+    ## 10 0.425   0.274 
+    ## # … with 90 more rows
 
 ### Parameter estimation
 
@@ -291,9 +297,7 @@ kernels <- par2try %>% purrr::pmap(function(...) {
     ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
     ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
   )
-}) %>% magrittr::set_names(paste(
-  "kernel", par2try$ds/1000, par2try$dt, sep = "_"
-))
+}) %>% magrittr::set_names(paste("kernel", par2try$ds/1000, par2try$dt, sep = "_"))
 
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
@@ -373,7 +377,7 @@ model_grid <- mobest::create_model_grid(
     ## 7 run_a                ac2              kernel_2          pred_grid   
     ## 8 run_b                ac2              kernel_2          pred_grid   
     ## # … with 4 more variables: independent_table <named list>,
-    ## #   dependent_var <mbst_bsr>, kernel_setting <named list>,
+    ## #   dependent_var <named list>, kernel_setting <named list>,
     ## #   pred_grid <named list>
 
 The helper function `mobest::prediction_grid_for_spatiotemporal_area`
