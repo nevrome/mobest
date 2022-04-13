@@ -4,8 +4,8 @@
 #' @param dependent An object of class mobest_observations
 #' @param iterations Integer. Number of mle iterations
 #' @param total_scaling_factor Numeric. It turned out that the parameter estimation
-#' works better in certain numeric ranges. This scaling factor affects all three
-#' dimensions
+#' works better in certain (small) numeric ranges. This scaling factor affects all three
+#' dimensions (x/scaling_factor)
 #' @param g Numeric. Fixed value for the nugget term
 #' @param space_time_scaling_factor_sequence Numeric vector. Sequence of space-time
 #' scaling factors
@@ -62,7 +62,7 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
       # combine list to better readable data.frame
       tibble::tibble(
         iteration = i,
-        ancestry_component = cur_dependent_name,
+        dependent_var_id = cur_dependent_name,
         scaling_factor = space_time_scaling_factor_sequence,
         scaling_factor_fractional = fractional::fractional(space_time_scaling_factor_sequence)
       ) %>% dplyr::mutate(
@@ -72,7 +72,7 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
         ),
         d = sqrt(sapply(mleGP_out_list, function(x) { x$d })) * total_scaling_factor,
         l = sapply(mleGP_out_list, function(x) { x$l }),
-        its = sapply(mleGP_out_list, function(x) { x$it })
+        optimizer_iterations = sapply(mleGP_out_list, function(x) { x$it })
       ) %>% dplyr::mutate(
         ds = .data[["d"]],
         dt = .data[["d"]] / .data[["scaling_factor"]]
@@ -125,14 +125,14 @@ laGP_mle_anisotropic <- function(
     purrr::map_dfr(mleGPsep_params, function(x) {
       tibble::tibble(
         mle_method = "mleGPsep",
-        ancestry_component = cur_dependent_name,
-        dx = sqrt(x$theta[1]) * total_scaling_factor,
-        dy = sqrt(x$theta[2]) * total_scaling_factor,
+        dependent_var_id = cur_dependent_name,
+        dsx = sqrt(x$theta[1]) * total_scaling_factor,
+        dsy = sqrt(x$theta[2]) * total_scaling_factor,
         dt = sqrt(x$theta[3]) * total_scaling_factor,
         g = x$theta[4],
-        its = x$its,
-        msg = x$msg,
-        conv = x$conv
+        optimizer_iterations = x$its,
+        message = x$msg,
+        converged = x$conv
       )
     })
   })
@@ -184,14 +184,14 @@ laGP_jmle_anisotropic <- function(
       jmleGPsep_params %>%
         dplyr::transmute(
           mle_method = "jmleGPsep",
-          ancestry_component = cur_dependent_name,
-          dx = sqrt(.data[["d.1"]]) * total_scaling_factor,
-          dy = sqrt(.data[["d.2"]]) * total_scaling_factor,
+          dependent_var_id = cur_dependent_name,
+          dsx = sqrt(.data[["d.1"]]) * total_scaling_factor,
+          dsy = sqrt(.data[["d.2"]]) * total_scaling_factor,
           dt = sqrt(.data[["d.3"]]) * total_scaling_factor,
           g = .data[["g"]],
-          its = .data[["tot.its"]],
-          msg = NA,
-          conv = .data[["dconv"]]
+          optimizer_iterations = .data[["tot.its"]],
+          message = NA_character_,
+          converged = .data[["dconv"]]
         ) %>%
         tibble::as_tibble()
     })

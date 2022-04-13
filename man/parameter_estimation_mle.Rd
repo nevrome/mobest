@@ -40,8 +40,8 @@ laGP_jmle_anisotropic(
 \item{iterations}{Integer. Number of mle iterations}
 
 \item{total_scaling_factor}{Numeric. It turned out that the parameter estimation
-works better in certain numeric ranges. This scaling factor affects all three
-dimensions}
+works better in certain (small) numeric ranges. This scaling factor affects all three
+dimensions (x/scaling_factor)}
 
 \item{g}{Numeric. Fixed value for the nugget term}
 
