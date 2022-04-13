@@ -87,10 +87,6 @@ crossvalidate <- function(
         dplyr::mutate(
           mixing_iteration = mixing_iteration,
           .after = "pred_grid_id"
-        ) %>%
-        # remove unnecessary columns
-        dplyr::select(
-          -.data[["pred_grid_id"]]
         )
     }
   )
