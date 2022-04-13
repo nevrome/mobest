@@ -1,14 +1,16 @@
-#' Prepare an empirical semivariogram
+#' Calculate pairwise distances and prepare an empirical semivariogram
 #'
 #' @param independent An object of class mobest_spatiotemporalpositions
 #' @param dependent An object of class mobest_observations
 #' @param m_to_km Logical. Should distances be transformed from m to km (x/1000)
-#' @param x An object of class mobest_pairwisedistances
+#' @param with_resid Logical. Calculate distances also on the residuals of a spatiotemporal linear model
+#' @param pairwise_distances An object of class mobest_pairwisedistances
 #' @param geo_bin Numeric. Width of the spatial bins
 #' @param time_bin Numeric. Width of the temporal bins
-#' @param with_resid Logical. Calculate distances also on the residuals of a spatiotemporal linear model
+#' @param per_bin_operation Function. Summarising operation that should be applied to each distance.
+#' Default: output = half mean squared input.
 #'
-#' @rdname variogram
+#' @rdname pairwise_distances
 #' @export
 calculate_pairwise_distances <- function(independent, dependent, m_to_km = T, with_resid = T) {
   # input check
@@ -31,7 +33,7 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T, wi
   )
   # join different distances
   purrr::reduce(
-    c(list(d_geo_long, d_time_long, d_obs_total_long), d_obs_long_list),
+    list(d_geo_long, d_time_long, d_obs_total_long, d_obs_long_list),
     function(x, y) {
       dplyr::full_join(
         x, y, by = c("id1", "id2")
@@ -41,7 +43,7 @@ calculate_pairwise_distances <- function(independent, dependent, m_to_km = T, wi
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_pairwisedistances")
 }
 
-#' @rdname variogram
+#' @rdname pairwise_distances
 #' @export
 calculate_geo_pairwise_distances <- function(independent, m_to_km = T) {
   # input checks
@@ -55,10 +57,11 @@ calculate_geo_pairwise_distances <- function(independent, m_to_km = T) {
     dplyr::mutate(
       # m to km
       geo_dist = if (m_to_km) {.data[["geo_dist"]]/1000} else {.data[["geo_dist"]]}
-    )
+    ) %>%
+    tibble::as_tibble()
 }
 
-#' @rdname variogram
+#' @rdname pairwise_distances
 #' @export
 calculate_time_pairwise_distances <- function(independent) {
   # input checks
@@ -68,10 +71,11 @@ calculate_time_pairwise_distances <- function(independent) {
   rownames(d_time) <- colnames(d_time) <- independent[["id"]]
   d_time %>%
     reshape2::melt(value.name = "time_dist") %>%
-    dplyr::rename(id1 = "Var1", id2 = "Var2")
+    dplyr::rename(id1 = "Var1", id2 = "Var2") %>%
+    tibble::as_tibble()
 }
 
-#' @rdname variogram
+#' @rdname pairwise_distances
 #' @export
 calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = F, independent = NULL) {
   # input checks
@@ -79,7 +83,7 @@ calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = 
   if (with_resid & is.null(independent)) { stop("If with_resid, then independent can not be NULL") }
   # calculate distances
   var_names <- names(dependent)
-  var_names %>%
+  d_obs_long_list <- var_names %>%
     purrr::map(
       function(var_name) {
         # d_obs
@@ -100,21 +104,34 @@ calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = 
           # combine
           dplyr::full_join(
             d_obs_long, d_obs_resid_long, by = c("id1", "id2")
-          )
+          ) %>% tibble::as_tibble()
         } else {
-          d_obs_long
+          d_obs_long %>% tibble::as_tibble()
         }
       }
     )
+  purrr::reduce(
+    d_obs_long_list,
+    function(x, y) {
+      dplyr::full_join(
+        x, y, by = c("id1", "id2")
+      )
+    }
+  )
 }
 
-#' @rdname variogram
+#' @rdname pairwise_distances
 #' @export
-bin_pairwise_distances <- function(x, geo_bin = 100, time_bin = 100) {
+bin_pairwise_distances <- function(
+    pairwise_distances,
+    geo_bin = 100,
+    time_bin = 100,
+    per_bin_operation = function(x) { 0.5*mean(x^2, na.rm = T) }
+) {
   # input check
-  checkmate::assert_class(x, "mobest_pairwisedistances")
+  checkmate::assert_class(pairwise_distances, "mobest_pairwisedistances")
   # perform binning
-  x %>%
+  pairwise_distances %>%
     dplyr::mutate(
       geo_dist_cut = (cut(
         .data[["geo_dist"]],
@@ -131,7 +148,7 @@ bin_pairwise_distances <- function(x, geo_bin = 100, time_bin = 100) {
     dplyr::summarise(
       dplyr::across(
         -tidyselect::any_of(c("id1", "id2", "geo_dist", "time_dist")),
-        function(x) { 0.5*mean(x^2, na.rm = T) }
+        per_bin_operation
       ),
       n = dplyr::n(),
       .groups	= "drop"
