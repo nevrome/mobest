@@ -11,44 +11,47 @@
 #' @rdname variogram
 #' @export
 calculate_pairwise_distances <- function(independent, dependent, m_to_km = T, with_resid = T) {
-  # input check and transformation
-  checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
-  checkmate::assert_class(dependent, "mobest_observations")
+  # input check
   if (nrow(independent) != nrow(dependent)) {
     stop("independent and dependent must have the same number of rows")
   }
-  ids <- independent$id
   # geo distance
-  d_geo_long <- calculate_geo_pairwise_distances(ids, independent, m_to_km = m_to_km)
+  d_geo_long <- calculate_geo_pairwise_distances(independent, m_to_km = m_to_km)
   # time distance
-  d_time_long <- calculate_time_pairwise_distances(ids, independent)
+  d_time_long <- calculate_time_pairwise_distances(independent)
   # obs total distance
   d_obs_total <- stats::dist(dependent, "euclidean") %>% as.matrix()
-  rownames(d_obs_total) <- colnames(d_obs_total) <- ids
-  d_obs_total_long <- d_obs_total %>% reshape2::melt(value.name = "obs_dist_total")
+  rownames(d_obs_total) <- colnames(d_obs_total) <- independent[["id"]]
+  d_obs_total_long <- d_obs_total %>%
+    reshape2::melt(value.name = "obs_dist_total") %>%
+    dplyr::rename(id1 = "Var1", id2 = "Var2")
   # obs individual distance
-  d_obs_long_list <- calculate_dependent_pairwise_distances(ids, dependent, with_resid = with_resid, independent)
+  d_obs_long_list <- calculate_dependent_pairwise_distances(
+    independent[["id"]], dependent, with_resid = with_resid, independent
+  )
   # join different distances
   purrr::reduce(
     c(list(d_geo_long, d_time_long, d_obs_total_long), d_obs_long_list),
     function(x, y) {
       dplyr::full_join(
-        x, y, by = c("Var1", "Var2")
+        x, y, by = c("id1", "id2")
       )
     }
   ) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_pairwisedistances")
 }
 
-#' @param ids Character vector. Identifier for the observations
-#'
 #' @rdname variogram
 #' @export
-calculate_geo_pairwise_distances <- function(ids, independent, m_to_km = T) {
+calculate_geo_pairwise_distances <- function(independent, m_to_km = T) {
+  # input checks
+  checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
+  # calculate distances
   d_geo <- stats::dist(independent %>% dplyr::select(.data[["x"]], .data[["y"]]), "euclidean") %>% as.matrix()
-  rownames(d_geo) <- colnames(d_geo) <- ids
+  rownames(d_geo) <- colnames(d_geo) <- independent[["id"]]
   d_geo %>%
     reshape2::melt(value.name = "geo_dist") %>%
+    dplyr::rename(id1 = "Var1", id2 = "Var2") %>%
     dplyr::mutate(
       # m to km
       geo_dist = if (m_to_km) {.data[["geo_dist"]]/1000} else {.data[["geo_dist"]]}
@@ -57,16 +60,24 @@ calculate_geo_pairwise_distances <- function(ids, independent, m_to_km = T) {
 
 #' @rdname variogram
 #' @export
-calculate_time_pairwise_distances <- function(ids, independent) {
+calculate_time_pairwise_distances <- function(independent) {
+  # input checks
+  checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
+  # calculate distances
   d_time <- stats::dist(independent %>% dplyr::select(.data[["z"]]), "euclidean") %>% as.matrix()
-  rownames(d_time) <- colnames(d_time) <- ids
-  d_time %>% reshape2::melt(value.name = "time_dist")
+  rownames(d_time) <- colnames(d_time) <- independent[["id"]]
+  d_time %>%
+    reshape2::melt(value.name = "time_dist") %>%
+    dplyr::rename(id1 = "Var1", id2 = "Var2")
 }
 
 #' @rdname variogram
 #' @export
 calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = F, independent = NULL) {
+  # input checks
+  checkmate::assert_class(dependent, "mobest_observations")
   if (with_resid & is.null(independent)) { stop("If with_resid, then independent can not be NULL") }
+  # calculate distances
   var_names <- names(dependent)
   var_names %>%
     purrr::map(
@@ -74,17 +85,21 @@ calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = 
         # d_obs
         d_obs <- stats::dist(dependent[[var_name]], "euclidean") %>% as.matrix()
         rownames(d_obs) <- colnames(d_obs) <- ids
-        d_obs_long <- d_obs %>% reshape2::melt(value.name = paste0(var_name, "_dist"))
+        d_obs_long <- d_obs %>%
+          reshape2::melt(value.name = paste0(var_name, "_dist")) %>%
+          dplyr::rename(id1 = "Var1", id2 = "Var2")
         # d_obs_resid
         if (with_resid) {
           model <- stats::lm(dependent[[var_name]] ~ independent$x + independent$y + independent$z)
           model_residuals <- stats::residuals(model)
           d_obs_resid <- as.matrix(stats::dist(model_residuals, "euclidean"))
           rownames(d_obs_resid) <- colnames(d_obs_resid) <- ids
-          d_obs_resid_long <- d_obs_resid %>% reshape2::melt(value.name = paste0(var_name, "_dist_resid"))
+          d_obs_resid_long <- d_obs_resid %>%
+            reshape2::melt(value.name = paste0(var_name, "_dist_resid")) %>%
+            dplyr::rename(id1 = "Var1", id2 = "Var2")
           # combine
           dplyr::full_join(
-            d_obs_long, d_obs_resid_long, by = c("Var1", "Var2")
+            d_obs_long, d_obs_resid_long, by = c("id1", "id2")
           )
         } else {
           d_obs_long
@@ -115,7 +130,7 @@ bin_pairwise_distances <- function(x, geo_bin = 100, time_bin = 100) {
     dplyr::group_by(.data[["geo_dist_cut"]], .data[["time_dist_cut"]]) %>%
     dplyr::summarise(
       dplyr::across(
-        -tidyselect::any_of(c("Var1", "Var2", "geo_dist", "time_dist")),
+        -tidyselect::any_of(c("id1", "id2", "geo_dist", "time_dist")),
         function(x) { 0.5*mean(x^2, na.rm = T) }
       ),
       n = dplyr::n(),
