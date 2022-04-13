@@ -10,7 +10,7 @@ crossvalidate(
   kernel,
   iterations,
   groups = 10,
-  quiet = T
+  quiet = F
 )
 }
 \arguments{

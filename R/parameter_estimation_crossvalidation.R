@@ -18,7 +18,7 @@ crossvalidate <- function(
   kernel,
   iterations,
   groups = 10,
-  quiet = T
+  quiet = F
 ) {
   # input check
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
