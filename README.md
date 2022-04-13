@@ -75,12 +75,12 @@ coordinates for points with identical IDs.
 
 ``` r
 uncertain_positions <- mobest::create_spatpos_multi(
-  run_a = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
-  run_b = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
+  dating_1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
+  dating_2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
 )
 ```
 
-    ## $run_a
+    ## $dating_1
     ## # A tibble: 100 × 4
     ##       id      x      y     z
     ##    <int>  <int>  <int> <int>
@@ -96,7 +96,7 @@ uncertain_positions <- mobest::create_spatpos_multi(
     ## 10    10 502857 315369 -4907
     ## # … with 90 more rows
     ## 
-    ## $run_b
+    ## $dating_2
     ## # A tibble: 100 × 4
     ##       id      x      y     z
     ##    <int>  <int>  <int> <int>
@@ -112,7 +112,7 @@ uncertain_positions <- mobest::create_spatpos_multi(
     ## 10    10 502857 315369 -4710
     ## # … with 90 more rows
 
-`mobest::create_obs` creates named lists of observations vectors (class
+`mobest::create_obs` creates a `data.frame` of observations (class
 `mobest_observations`) corresponding to the spatiotemporal positions
 defined above.
 
@@ -122,8 +122,6 @@ observations <- mobest::create_obs(
   ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
 )
 ```
-
-The first ten observations:
 
     ## # A tibble: 100 × 2
     ##        ac1    ac2
@@ -162,7 +160,7 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
 ```
 
     ## # A tibble: 10,000 × 9
-    ##     Var1  Var2 geo_dist time_dist obs_dist_total ac1_dist ac1_dist_resid
+    ##      id1   id2 geo_dist time_dist obs_dist_total ac1_dist ac1_dist_resid
     ##    <int> <int>    <dbl>     <dbl>          <dbl>    <dbl>          <dbl>
     ##  1     1     1      0           0         0       0               0     
     ##  2     2     1    304.        332         0.187   0.158           0.270 
@@ -176,6 +174,15 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
     ## 10    10     1    228.        231         0.153   0.00644         0.0340
     ## # … with 9,990 more rows, and 2 more variables: ac2_dist <dbl>,
     ## #   ac2_dist_resid <dbl>
+
+Helper functions are available to calculate the individual components of
+this table:
+
+``` r
+geo_dist <- mobest::calculate_geo_pairwise_distances(positions)
+time_dist <- mobest::calculate_time_pairwise_distances(positions)
+obs_dist <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
+```
 
 `mobest::bin_pairwise_distances` bins the pairwise differences in an
 object of class `mobest_pairwisedistances` and calculates an empirical
@@ -219,12 +226,13 @@ mleGPsep_out <- mobest::laGP_mle_anisotropic(
 ```
 
     ## # A tibble: 4 × 9
-    ##   mle_method ancestry_component    dx    dy    dt      g   its msg          conv
-    ##   <chr>      <chr>              <dbl> <dbl> <dbl>  <dbl> <int> <chr>       <int>
-    ## 1 mleGPsep   ac1                 989. 1444. 1822. 0.0648    42 CONVERGENC…     0
-    ## 2 mleGPsep   ac1                 989. 1444. 1822. 0.0648    42 CONVERGENC…     0
-    ## 3 mleGPsep   ac2                1042. 1211. 1377. 0.0803    32 CONVERGENC…     0
-    ## 4 mleGPsep   ac2                1042. 1211. 1377. 0.0803    32 CONVERGENC…     0
+    ##   mle_method dependent_var_id   dsx   dsy    dt      g optimizer_iterat… message
+    ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>             <int> <chr>  
+    ## 1 mleGPsep   ac1               989. 1444. 1822. 0.0648                42 CONVER…
+    ## 2 mleGPsep   ac1               989. 1444. 1822. 0.0648                42 CONVER…
+    ## 3 mleGPsep   ac2              1042. 1211. 1377. 0.0803                32 CONVER…
+    ## 4 mleGPsep   ac2              1042. 1211. 1377. 0.0803                32 CONVER…
+    ## # … with 1 more variable: converged <int>
 
 `mobest::laGP_jmle_anisotropic` does the same, but for joint maximum
 likelihood inference.
@@ -239,12 +247,13 @@ jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
 ```
 
     ## # A tibble: 4 × 9
-    ##   mle_method ancestry_component    dx    dy    dt      g   its msg    conv
-    ##   <chr>      <chr>              <dbl> <dbl> <dbl>  <dbl> <int> <lgl> <int>
-    ## 1 jmleGPsep  ac1                 989. 1444. 1822. 0.0648    87 NA        0
-    ## 2 jmleGPsep  ac1                 989. 1444. 1822. 0.0648    87 NA        0
-    ## 3 jmleGPsep  ac2                1041. 1211. 1377. 0.0803    69 NA        0
-    ## 4 jmleGPsep  ac2                1041. 1211. 1377. 0.0803    69 NA        0
+    ##   mle_method dependent_var_id   dsx   dsy    dt      g optimizer_iterat… message
+    ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>             <int> <chr>  
+    ## 1 jmleGPsep  ac1               989. 1444. 1822. 0.0648                87 <NA>   
+    ## 2 jmleGPsep  ac1               989. 1444. 1822. 0.0648                87 <NA>   
+    ## 3 jmleGPsep  ac2              1041. 1211. 1377. 0.0803                69 <NA>   
+    ## 4 jmleGPsep  ac2              1041. 1211. 1377. 0.0803                69 <NA>   
+    ## # … with 1 more variable: converged <int>
 
 `mobest::laGP_mle_sequence_isotropic_fixed_g` implements a very specific
 approach, where the mle is performed under the assumption of an
@@ -257,26 +266,26 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
   dependent = observations,
   iterations = 2,
   g = 0.1,
-  space_time_scaling_factor_sequence = c(seq(0.1, 0.9, 0.1), 1, seq(2, 10, 1)),
+  space_time_scaling_factor_sequence = seq(0.1, 2, 0.1),
   verb = 0
 )
 ```
 
-    ## # A tibble: 76 × 10
-    ##    iteration ancestry_component scaling_factor scaling_factor_… scaling_factor_…
-    ##        <int> <chr>                       <dbl> <fractinl>       <fct>           
-    ##  1         1 ac1                           0.1 0.1              1/10            
-    ##  2         1 ac1                           0.2 0.2              1/5             
-    ##  3         1 ac1                           0.3 0.3              3/10            
-    ##  4         1 ac1                           0.4 0.4              2/5             
-    ##  5         1 ac1                           0.5 0.5              1/2             
-    ##  6         1 ac1                           0.6 0.6              3/5             
-    ##  7         1 ac1                           0.7 0.7              7/10            
-    ##  8         1 ac1                           0.8 0.8              4/5             
-    ##  9         1 ac1                           0.9 0.9              9/10            
-    ## 10         1 ac1                           1   1.0              1               
-    ## # … with 66 more rows, and 5 more variables: d <dbl>, l <dbl>, its <int>,
-    ## #   ds <dbl>, dt <dbl>
+    ## # A tibble: 80 × 10
+    ##    iteration dependent_var_id scaling_factor scaling_factor_fr… scaling_factor_…
+    ##        <int> <chr>                     <dbl> <fractinl>         <fct>           
+    ##  1         1 ac1                         0.1 0.1                1/10            
+    ##  2         1 ac1                         0.2 0.2                1/5             
+    ##  3         1 ac1                         0.3 0.3                3/10            
+    ##  4         1 ac1                         0.4 0.4                2/5             
+    ##  5         1 ac1                         0.5 0.5                1/2             
+    ##  6         1 ac1                         0.6 0.6                3/5             
+    ##  7         1 ac1                         0.7 0.7                7/10            
+    ##  8         1 ac1                         0.8 0.8                4/5             
+    ##  9         1 ac1                         0.9 0.9                9/10            
+    ## 10         1 ac1                         1   1.0                1               
+    ## # … with 70 more rows, and 5 more variables: d <dbl>, l <dbl>,
+    ## #   optimizer_iterations <int>, ds <dbl>, dt <dbl>
 
 #### Crossvalidation
 
@@ -286,41 +295,41 @@ parameters. Internally it employs `mobest::create_model_grid` and
 `mobest::run_model_grid` (see below).
 
 ``` r
-par2try <- expand.grid(
+kernels <- expand.grid(
   ds = seq(100,200, 50)*1000,
   dt = seq(100,200, 50)
-)
-
-kernels <- par2try %>% purrr::pmap(function(...) {
-  row <- list(...)
-  mobest::create_kernset(
-    ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
-    ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
-  )
-}) %>% magrittr::set_names(paste("kernel", par2try$ds/1000, par2try$dt, sep = "_"))
+) %>% purrr::pmap(function(...) {
+    row <- list(...)
+    mobest::create_kernset(
+      ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
+      ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
+    )
+  }) %>% 
+  magrittr::set_names(paste("kernel", 1:length(.), sep = "_"))
 
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
   dependent = observations,
   kernel = kernels,
   iterations = 2,
-  groups = 10
+  groups = 10,
+  quiet = T
 )
 ```
 
     ## # A tibble: 3,600 × 16
     ##    independent_table_id dependent_var_id kernel_setting_id kernel_dsx kernel_dsy
     ##    <fct>                <chr>            <fct>                  <dbl>      <dbl>
-    ##  1 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  2 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  3 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  4 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  5 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  6 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  7 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  8 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ##  9 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
-    ## 10 ind_crossval_run_1   ac1              kernel_100_100        100000     100000
+    ##  1 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  2 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  3 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  4 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  5 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  6 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  7 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  8 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ##  9 ind_crossval_run_1   ac1              kernel_1              100000     100000
+    ## 10 ind_crossval_run_1   ac1              kernel_1              100000     100000
     ## # … with 3,590 more rows, and 11 more variables: kernel_dt <dbl>,
     ## #   kernel_g <dbl>, id <int>, x <int>, y <int>, z <int>, mean <dbl>, sd <dbl>,
     ## #   mixing_iteration <int>, measured <dbl>, difference <dbl>
@@ -350,17 +359,12 @@ model_grid <- mobest::create_model_grid(
       ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
     )
   ),
-  prediction_grid = list(
-    pred_grid = expand.grid(
-      x = seq(100000, 1000000, 100000),
+  prediction_grid = mobest::create_spatpos_multi(
+    pred_grid_1 = expand.grid(
+      x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000),
       z = seq(-5500, -3000, 500)
-    ) %>% {mobest::create_spatpos(
-      id = 1:nrow(.),
-      x = .$x,
-      y = .$y,
-      z = .$z
-    )}
+    ) %>% { mobest::create_spatpos(id = 1:nrow(.), x = .$x, y = .$y, z = .$z) }
   )
 )
 ```
@@ -368,14 +372,14 @@ model_grid <- mobest::create_model_grid(
     ## # A tibble: 8 × 8
     ##   independent_table_id dependent_var_id kernel_setting_id pred_grid_id
     ##   <fct>                <chr>            <fct>             <fct>       
-    ## 1 run_a                ac1              kernel_1          pred_grid   
-    ## 2 run_b                ac1              kernel_1          pred_grid   
-    ## 3 run_a                ac2              kernel_1          pred_grid   
-    ## 4 run_b                ac2              kernel_1          pred_grid   
-    ## 5 run_a                ac1              kernel_2          pred_grid   
-    ## 6 run_b                ac1              kernel_2          pred_grid   
-    ## 7 run_a                ac2              kernel_2          pred_grid   
-    ## 8 run_b                ac2              kernel_2          pred_grid   
+    ## 1 dating_1             ac1              kernel_1          pred_grid_1 
+    ## 2 dating_2             ac1              kernel_1          pred_grid_1 
+    ## 3 dating_1             ac2              kernel_1          pred_grid_1 
+    ## 4 dating_2             ac2              kernel_1          pred_grid_1 
+    ## 5 dating_1             ac1              kernel_2          pred_grid_1 
+    ## 6 dating_2             ac1              kernel_2          pred_grid_1 
+    ## 7 dating_1             ac2              kernel_2          pred_grid_1 
+    ## 8 dating_2             ac2              kernel_2          pred_grid_1 
     ## # … with 4 more variables: independent_table <named list>,
     ## #   dependent_var <named list>, kernel_setting <named list>,
     ## #   pred_grid <named list>
@@ -397,16 +401,16 @@ interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
     ## # A tibble: 4,800 × 14
     ##    independent_table_… dependent_var_id kernel_setting_… pred_grid_id kernel_dsx
     ##    <fct>               <chr>            <fct>            <fct>             <dbl>
-    ##  1 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  2 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  3 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  4 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  5 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  6 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  7 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  8 run_a               ac1              kernel_1         pred_grid       1000000
-    ##  9 run_a               ac1              kernel_1         pred_grid       1000000
-    ## 10 run_a               ac1              kernel_1         pred_grid       1000000
+    ##  1 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  2 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  3 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  4 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  5 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  6 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  7 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  8 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ##  9 dating_1            ac1              kernel_1         pred_grid_1     1000000
+    ## 10 dating_1            ac1              kernel_1         pred_grid_1     1000000
     ## # … with 4,790 more rows, and 9 more variables: kernel_dsy <dbl>,
     ## #   kernel_dt <dbl>, kernel_g <dbl>, id <int>, x <dbl>, y <dbl>, z <dbl>,
     ## #   mean <dbl>, sd <dbl>
@@ -425,25 +429,10 @@ origin_grid <- mobest::search_spatial_origin(
   independent = uncertain_positions,
   dependent = observations,
   interpol_grid = interpol_grid,
-  rearview_distance = 300
+  rearview_distance = 300,
+  quiet = T
 )
 ```
-
-    ## running field setting 1 with search points run_a
-
-    ## running field setting 1 with search points run_b
-
-    ## running field setting 2 with search points run_a
-
-    ## running field setting 2 with search points run_b
-
-    ## running field setting 3 with search points run_a
-
-    ## running field setting 3 with search points run_b
-
-    ## running field setting 4 with search points run_a
-
-    ## running field setting 4 with search points run_b
 
     ## # A tibble: 400 × 20
     ##    search_id search_x search_y search_z search_ac1 search_ac2 origin_id origin_x

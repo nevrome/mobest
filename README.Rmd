@@ -51,8 +51,8 @@ positions
 
 ```{r}
 uncertain_positions <- mobest::create_spatpos_multi(
-  run_a = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
-  run_b = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
+  dating_1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
+  dating_2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
 )
 ```
 
@@ -60,7 +60,7 @@ uncertain_positions <- mobest::create_spatpos_multi(
 uncertain_positions
 ```
 
-`mobest::create_obs` creates named lists of observations vectors (class `mobest_observations`) corresponding to the spatiotemporal positions defined above.
+`mobest::create_obs` creates a `data.frame` of observations (class `mobest_observations`) corresponding to the spatiotemporal positions defined above.
 
 ```{r}
 observations <- mobest::create_obs(
@@ -68,8 +68,6 @@ observations <- mobest::create_obs(
   ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
 )
 ```
-
-The first ten observations:
 
 ```{r, echo=F}
 observations
@@ -93,6 +91,14 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
 
 ```{r, echo=F}
 pairwise_distances
+```
+
+Helper functions are available to calculate the individual components of this table:
+
+```{r}
+geo_dist <- mobest::calculate_geo_pairwise_distances(positions)
+time_dist <- mobest::calculate_time_pairwise_distances(positions)
+obs_dist <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
 ```
 
 `mobest::bin_pairwise_distances` bins the pairwise differences in an object of class `mobest_pairwisedistances` and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
@@ -148,7 +154,7 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
   dependent = observations,
   iterations = 2,
   g = 0.1,
-  space_time_scaling_factor_sequence = c(seq(0.1, 0.9, 0.1), 1, seq(2, 10, 1)),
+  space_time_scaling_factor_sequence = seq(0.1, 2, 0.1),
   verb = 0
 )
 ```
@@ -162,25 +168,25 @@ mle_sequence
 `mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below).
 
 ```{r, message=FALSE}
-par2try <- expand.grid(
+kernels <- expand.grid(
   ds = seq(100,200, 50)*1000,
   dt = seq(100,200, 50)
-)
-
-kernels <- par2try %>% purrr::pmap(function(...) {
-  row <- list(...)
-  mobest::create_kernset(
-    ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
-    ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
-  )
-}) %>% magrittr::set_names(paste("kernel", par2try$ds/1000, par2try$dt, sep = "_"))
+) %>% purrr::pmap(function(...) {
+    row <- list(...)
+    mobest::create_kernset(
+      ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
+      ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
+    )
+  }) %>% 
+  magrittr::set_names(paste("kernel", 1:length(.), sep = "_"))
 
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
   dependent = observations,
   kernel = kernels,
   iterations = 2,
-  groups = 10
+  groups = 10,
+  quiet = T
 )
 ```
 
@@ -209,17 +215,12 @@ model_grid <- mobest::create_model_grid(
       ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
     )
   ),
-  prediction_grid = list(
-    pred_grid = expand.grid(
-      x = seq(100000, 1000000, 100000),
+  prediction_grid = mobest::create_spatpos_multi(
+    pred_grid_1 = expand.grid(
+      x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000),
       z = seq(-5500, -3000, 500)
-    ) %>% {mobest::create_spatpos(
-      id = 1:nrow(.),
-      x = .$x,
-      y = .$y,
-      z = .$z
-    )}
+    ) %>% { mobest::create_spatpos(id = 1:nrow(.), x = .$x, y = .$y, z = .$z) }
   )
 )
 ```
@@ -249,7 +250,8 @@ origin_grid <- mobest::search_spatial_origin(
   independent = uncertain_positions,
   dependent = observations,
   interpol_grid = interpol_grid,
-  rearview_distance = 300
+  rearview_distance = 300,
+  quiet = T
 )
 ```
 
