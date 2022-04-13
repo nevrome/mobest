@@ -6,8 +6,7 @@ search_origin <- function(
   kernel,
   search_independent,
   search_dependent,
-  search_area,
-  search_resolution,
+  search_space_grid,
   rearview_distance = 0,
   quiet = F
 ) {
@@ -22,35 +21,61 @@ search_origin <- function(
         dplyr::mutate(search_z = z - rearview_distance)
     }
   )
-
-  search_points$z %>% unique() %>% length()
-  prediction_grid_for_spatiotemporal_area(
-
-  )
-
+  search_field <- search_points$z %>% unique() %>%
+    purrr::map_dfr(
+      function(time_slice) {
+        search_space_grid %>% dplyr::mutate(z = time_slice)
+      }
+    )
   model_grid <- mobest::create_model_grid(
-    independent = uncertain_positions,
-    dependent = observations,
-    kernel = mobest::create_kernset_multi(
-      kernel_1 = mobest::create_kernset(
-        ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
-        ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
+    independent = independent,
+    dependent = dependent,
+    kernel = kernel,
+    prediction_grid = create_spatpos_multi(
+      full_search_field = search_field
+    )
+  )
+  interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
+
+  full_search_table <- dplyr::left_join(
+    search_points %>%
+      tidyr::pivot_longer(
+        cols = tidyselect::all_of(names(dependent)),
+        names_to = "dependent_var_id",
+        values_to = "measured"
       ),
-      kernel_2 = mobest::create_kernset(
-        ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
-        ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
-      )
-    ),
-    prediction_grid = mobest::create_spatpos_multi(
-      pred_grid_1 = expand.grid(
-        x = seq(100000, 1000000, 100000),
-        y = seq(100000, 1000000, 100000),
-        z = seq(-5500, -3000, 500)
-      ) %>% { mobest::create_spatpos(id = 1:nrow(.), x = .$x, y = .$y, z = .$z) }
+    interpol_grid %>%
+      magrittr::set_colnames(paste0("field_", colnames(interpol_grid))),
+    by = c(
+      "dependent_var_id" = "field_dependent_var_id",
+      "search_z" = "field_z"
     )
   )
 
+  hu <- full_search_table %>%
+    dplyr::mutate(
+      position_probability = dnorm(
+        x = measured,
+        mean = field_mean,
+        sd = field_sd
+      )
+    )
 
-  search_points <- search_independent
+  gu <- hu %>%
+    dplyr::filter(
+      independent_table_id == "dating_1",
+      id == 3,
+      dependent_var_id == "ac1",
+      field_independent_table_id == "dating_1",
+      field_kernel_setting_id == "kernel_1"
+    )
+
+  library(ggplot2)
+  gu %>%
+    ggplot() +
+    geom_raster(
+      aes(x = field_x, y = field_y, fill = position_probability)
+    )
+
 
 }
