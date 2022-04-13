@@ -82,8 +82,16 @@ crossvalidate <- function(
       )
       # run interpolation on model grid
       interpol_grid <- mobest::run_model_grid(model_grid, quiet = quiet)
-      # add mixing iteration column
-      interpol_grid %>% dplyr::mutate(mixing_iteration = mixing_iteration)
+      interpol_grid %>%
+        # add mixing iteration column
+        dplyr::mutate(
+          mixing_iteration = mixing_iteration,
+          .after = "pred_grid_id"
+        ) %>%
+        # remove unnecessary columns
+        dplyr::select(
+          -.data[["pred_grid_id"]]
+        )
     }
   )
   # merge with actually measured information
@@ -100,10 +108,10 @@ crossvalidate <- function(
     ) %>%
     # calculate differences between estimated and measured values
     dplyr::mutate(
+      dependent_var_id = factor(
+        dependent_var_id,
+        levels = levels(crossval_interpol_grid$dependent_var_id)
+      ),
       difference = .data[["mean"]] - .data[["measured"]]
-    ) %>%
-    # remove unnecessary columns
-    dplyr::select(
-      -.data[["pred_grid_id"]]
     )
 }

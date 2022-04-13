@@ -66,7 +66,7 @@ create_model_grid <- function(
     function(kernel_name, one_kernel) {
       tibble::tibble(
         kernel_setting_id = kernel_name,
-        dependent_var_id = names(one_kernel),
+        dependent_var_id = factor(names(one_kernel), levels = names(dependent)),
         kernel_setting = one_kernel[1:length(one_kernel)]
       )
     }
@@ -159,10 +159,10 @@ run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
   # simplify model_grid
   model_grid_simplified <- model_grid %>%
     dplyr::mutate(
-      kernel_dsx = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsx")),
-      kernel_dsy = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsy")),
-      kernel_dt = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dt")),
-      kernel_g = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("g"))
+      dsx = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsx")),
+      dsy = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsy")),
+      dt = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dt")),
+      g = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("g"))
     ) %>%
     dplyr::select(
       -.data[["kernel_setting"]],
