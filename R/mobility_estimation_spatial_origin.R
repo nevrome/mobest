@@ -63,12 +63,7 @@ search_spatial_origin <- function(
     names_from = "dependent_var_id",
     values_from = c("mean", "sd")
   )
-  search_points <- purrr::map(
-    independent,
-    function(x) {
-      cbind(x, dependent)
-    }
-  )
+  search_points <- purrr::map(independent, function(x) { cbind(x, dependent) } )
   # split interpol_grid by parameters into different two-variable-fields
   fields <- interpol_grid_wide %>% dplyr::group_split(
     .data[["independent_table_id"]],
