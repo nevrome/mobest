@@ -2,6 +2,8 @@
 % Please edit documentation in R/input_data_basic_classes.R
 \name{create_obs}
 \alias{create_obs}
+\alias{create_geopos}
+\alias{create_geopos_multi}
 \alias{create_spatpos}
 \alias{create_spatpos_multi}
 \alias{create_kernel}
@@ -10,6 +12,10 @@
 \title{Input data type constructors}
 \usage{
 create_obs(..., .names = NULL)
+
+create_geopos(id, x, y, ...)
+
+create_geopos_multi(..., .names = NULL)
 
 create_spatpos(id, x, y, z, ...)
 

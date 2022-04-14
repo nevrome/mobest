@@ -1,7 +1,4 @@
-#' Create a spatiotemporal point grid
-#'
-#' Creates a prediction grid that can be used in the \link{create_model_grid} +
-#' \link{run_model_grid} interpolation workflow
+#' Create a spatial point grid
 #'
 #' @param area An object of class \code{sf}. Polygons where the spatial grid should
 #' be constructed
@@ -9,13 +6,13 @@
 #' \code{area}. See \code{?sf::st_make_grid} for more info
 #' @param temporal_layers Numeric vector. Temporal layers of the requested spatiotemporal grid
 #'
-#' @return Dataframe with columns x, y and z (spatiotemporal coordinates) and a
-#' point identifier column id
+#' @return An object of class \code{mobest_spatialpositions}
 #'
 #' @export
-prediction_grid_for_spatiotemporal_area <- function(
-  area, spatial_cell_size, temporal_layers) {
-
+create_prediction_grid <- function(area, spatial_cell_size) {
+  # input checks
+  checkmate::assert_class(classes = "sf")
+  # prepare grid
   space_grid <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
     sf::st_sf() %>%
@@ -25,21 +22,11 @@ prediction_grid_for_spatiotemporal_area <- function(
       y = sf::st_coordinates(.)[,2]
     ) %>%
     sf::st_drop_geometry() %>%
-    dplyr::select(
-      .data[["x"]], .data[["y"]]
-    )
-
-  time_grid <- tibble::tibble(
-    z = temporal_layers
-  )
-
-  pred_grid <- space_grid %>%
-    tidyr::crossing(time_grid)
-
-  mobest::create_spatpos(
-    id = 1:nrow(pred_grid),
-    x = pred_grid$x,
-    y = pred_grid$y,
-    z = pred_grid$z
+    dplyr::select(.data[["x"]], .data[["y"]])
+  # compile output
+  mobest::create_geopos(
+    id = 1:nrow(space_grid),
+    x = space_grid$x,
+    y = space_grid$y
   )
 }

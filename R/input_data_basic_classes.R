@@ -28,11 +28,61 @@ create_obs <- function(..., .names = NULL) {
   # check list
   checkmate::assert_list(obs, types = "numeric", names = "strict")
   checkmate::assert_true(
-    purrr::map_int(obs, length) %>% unique %>% length %>% `==`(1)
+    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
   )
   # compile tibble
   dplyr::bind_cols(obs) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_geopos <- function(id, x, y, ...) {
+  # input check
+  checkmate::assert_atomic_vector(id, any.missing = F, unique = T)
+  checkmate::assert_numeric(x)
+  checkmate::assert_numeric(y)
+  checkmate::assert_true(
+    purrr::map_int(list(id, x, y, ...), length) %>% unique %>% length %>% magrittr::equals(1)
+  )
+  # compile tibble
+  tibble::tibble(id = id, x = x, y = y, ...) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatialpositions")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_geopos_multi <- function(..., .names = NULL) {
+  geopos <- list(...)
+  if (!is.null(.names)) { names(geopos) <- .names }
+  # input check
+  checkmate::assert_list(geopos, types = "mobest_spatialpositions", names = "strict")
+  checkmate::assert_true(
+    purrr::map_int(geopos, nrow) %>% unique %>% length %>% magrittr::equals(1)
+  )
+  checkmate::assert_true(
+    purrr::map_lgl(geopos, function(x) { all(x[["id"]] == geopos[[1]]$id) }) %>% all()
+  )
+  # compile output data structure
+  geopos
+}
+
+geopos_to_spatpos <- function(geopos, z) {
+  # input check
+  checkmate::assert_class(geopos, classes = "mobest_spatialpositions")
+  checkmate::assert_numeric(z)
+  # expand grid
+  spatpos <- geopos %>%
+    tidyr::crossing(tibble::tibble(z = z))
+  # compile output
+  mobest::create_spatpos(
+    id = 1:nrow(spatpos),
+    x = spatpos$x,
+    y = spatpos$y,
+    z = spatpos$z,
+    geo_id = spatpos$id
+  ) %>%
+    dplyr::bind_cols(spatpos %>% dplyr::select(-id, -x, -y, -z))
 }
 
 #' @rdname input_data_constructors
@@ -44,7 +94,7 @@ create_spatpos <- function(id, x, y, z, ...) {
   checkmate::assert_numeric(y)
   checkmate::assert_numeric(z)
   checkmate::assert_true(
-    purrr::map_int(list(id, x, y, z, ...), length) %>% unique %>% length %>% `==`(1)
+    purrr::map_int(list(id, x, y, z, ...), length) %>% unique %>% length %>% magrittr::equals(1)
   )
   # compile tibble
   tibble::tibble(id = id, x = x, y = y, z = z, ...) %>%
@@ -59,7 +109,7 @@ create_spatpos_multi <- function(..., .names = NULL) {
   # input check
   checkmate::assert_list(spatpos, types = "mobest_spatiotemporalpositions", names = "strict")
   checkmate::assert_true(
-    purrr::map_int(spatpos, nrow) %>% unique %>% length %>% `==`(1)
+    purrr::map_int(spatpos, nrow) %>% unique %>% length %>% magrittr::equals(1)
   )
   checkmate::assert_true(
     purrr::map_lgl(spatpos, function(x) { all(x[["id"]] == spatpos[[1]]$id) }) %>% all()

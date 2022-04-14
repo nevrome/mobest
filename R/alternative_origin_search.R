@@ -11,7 +11,25 @@ search_origin <- function(
   quiet = F
 ) {
   # input checks
-
+  checkmate::assert_list(
+    independent, types = "mobest_spatiotemporalpositions",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_class(
+    dependent, classes = "mobest_observations"
+  )
+  checkmate::assert_list(
+    kernel, types = "mobest_kernelsetting",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_list(
+    search_independent, types = "mobest_spatiotemporalpositions",
+    any.missing = F, min.len = 1, names = "strict"
+  )
+  checkmate::assert_class(
+    search_dependent, classes = "mobest_observations"
+  )
+  # ...
   # prepare data
   search_points <- purrr::map2_dfr(
     names(search_independent), search_independent,
@@ -21,12 +39,14 @@ search_origin <- function(
         dplyr::mutate(search_z = z - rearview_distance)
     }
   )
-  search_field <- search_points$z %>% unique() %>%
+  search_field <- search_points$search_z %>% unique() %>%
     purrr::map_dfr(
       function(time_slice) {
-        search_space_grid %>% dplyr::mutate(z = time_slice)
+        search_space_grid %>%
+          geopos_to_spatpos(z = time_slice)
       }
     )
+  # construct and run model grid to construct the fields
   model_grid <- mobest::create_model_grid(
     independent = independent,
     dependent = dependent,
@@ -35,8 +55,8 @@ search_origin <- function(
       full_search_field = search_field
     )
   )
-  interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
-
+  interpol_grid <- mobest::run_model_grid(model_grid, quiet = quiet)
+  # join search points and fields
   full_search_table <- dplyr::left_join(
     search_points %>%
       tidyr::pivot_longer(
@@ -51,31 +71,15 @@ search_origin <- function(
       "search_z" = "field_z"
     )
   )
-
-  hu <- full_search_table %>%
+  # calculate overlap probability
+  full_search_table_prob <- full_search_table %>%
     dplyr::mutate(
-      position_probability = dnorm(
+      probability = dnorm(
         x = measured,
         mean = field_mean,
         sd = field_sd
       )
     )
-
-  gu <- hu %>%
-    dplyr::filter(
-      independent_table_id == "dating_1",
-      id == 3,
-      dependent_var_id == "ac1",
-      field_independent_table_id == "dating_1",
-      field_kernel_setting_id == "kernel_1"
-    )
-
-  library(ggplot2)
-  gu %>%
-    ggplot() +
-    geom_raster(
-      aes(x = field_x, y = field_y, fill = position_probability)
-    )
-
-
+  # output
+  return(full_search_table_prob)
 }
