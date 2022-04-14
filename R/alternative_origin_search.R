@@ -11,6 +11,8 @@ search_origin <- function(
   quiet = F
 ) {
   # input checks
+  # (we don't need to assert properties that are already covered by
+  # create_model_grid below)
   checkmate::assert_list(
     independent, types = "mobest_spatiotemporalpositions",
     any.missing = F, min.len = 1, names = "strict"
@@ -29,7 +31,7 @@ search_origin <- function(
   checkmate::assert_class(
     search_dependent, classes = "mobest_observations"
   )
-  # ...
+  checkmate::assert_true(all(names(dependent) == names(search_dependent)))
   # prepare data
   search_points <- purrr::map2_dfr(
     names(search_independent), search_independent,
@@ -47,7 +49,7 @@ search_origin <- function(
       }
     )
   # construct and run model grid to construct the fields
-  model_grid <- mobest::create_model_grid(
+  model_grid <- create_model_grid(
     independent = independent,
     dependent = dependent,
     kernel = kernel,
@@ -55,7 +57,7 @@ search_origin <- function(
       full_search_field = search_field
     )
   )
-  interpol_grid <- mobest::run_model_grid(model_grid, quiet = quiet)
+  interpol_grid <- run_model_grid(model_grid, quiet = quiet)
   # join search points and fields
   full_search_table <- dplyr::left_join(
     search_points %>%

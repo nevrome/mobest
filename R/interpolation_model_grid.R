@@ -50,7 +50,10 @@ create_model_grid <- function(
     any.missing = F, min.len = 1, names = "strict"
   )
   purrr::walk(kernel, function(one_kernset) {
-      checkmate::assert_true(all(names(one_kernset) == names(dependent)))
+    checkmate::assert_true(all(names(one_kernset) == names(dependent)))
+  })
+  purrr::walk(independent, function(one_independent) {
+    checkmate::assert_true(nrow(one_independent) == nrow(dependent))
   })
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
