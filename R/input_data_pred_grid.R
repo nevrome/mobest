@@ -11,7 +11,7 @@
 #' @export
 create_prediction_grid <- function(area, spatial_cell_size) {
   # input checks
-  checkmate::assert_class(classes = "sf")
+  checkmate::assert_class(area, classes = "sf")
   # prepare grid
   space_grid <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
