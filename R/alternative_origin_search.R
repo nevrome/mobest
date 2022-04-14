@@ -41,7 +41,7 @@ search_origin <- function(
         dplyr::mutate(search_z = z - rearview_distance)
     }
   )
-  search_field <- search_points$search_z %>% unique() %>%
+  full_search_field <- search_points$search_z %>% unique() %>%
     purrr::map_dfr(
       function(time_slice) {
         search_space_grid %>%
@@ -54,11 +54,13 @@ search_origin <- function(
     dependent = dependent,
     kernel = kernel,
     prediction_grid = create_spatpos_multi(
-      full_search_field = search_field
+      full_search_field = full_search_field
     )
   )
+  if (!quiet) { message("Constructing search fields") }
   interpol_grid <- run_model_grid(model_grid, quiet = quiet)
   # join search points and fields
+  if (!quiet) { message("Compiling full search table") }
   full_search_table <- dplyr::left_join(
     search_points %>%
       tidyr::pivot_longer(
@@ -74,6 +76,7 @@ search_origin <- function(
     )
   )
   # calculate overlap probability
+  if (!quiet) { message("Calculating probabilities") }
   full_search_table_prob <- full_search_table %>%
     dplyr::mutate(
       probability = dnorm(
