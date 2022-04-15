@@ -7,7 +7,7 @@ search_origin <- function(
   search_independent,
   search_dependent,
   search_space_grid,
-  rearview_distance = 0,
+  search_time_distance = 0,
   quiet = F
 ) {
   # input checks
@@ -31,6 +31,10 @@ search_origin <- function(
   checkmate::assert_class(
     search_dependent, classes = "mobest_observations"
   )
+  checkmate::assert_numeric(
+    search_time_distance,
+    finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
+  )
   checkmate::assert_true(all(names(dependent) == names(search_dependent)))
   # prepare data
   search_points <- purrr::map2_dfr(
@@ -38,24 +42,22 @@ search_origin <- function(
     function(name, x) {
       dplyr::bind_cols(x, search_dependent) %>%
         dplyr::mutate(independent_table_id = name, .before = "id") %>%
-        dplyr::mutate(search_z = z - rearview_distance)
+        tidyr::crossing(tibble::tibble(time_distance = search_time_distance)) %>%
+        dplyr::mutate(search_z = .data[["z"]] + .data[["time_distance"]])
     }
   )
-  full_search_field <- search_points$search_z %>% unique() %>%
-    purrr::map_dfr(
-      function(time_slice) {
-        search_space_grid %>%
-          geopos_to_spatpos(z = time_slice)
-      }
-    )
+  search_fields <- purrr::map(
+    search_points$search_z %>% unique(),
+    function(time_slice) {
+      search_space_grid %>% geopos_to_spatpos(z = time_slice)
+    }
+  ) %>% magrittr::set_names(., paste("time_slice", 1:length(.), sep = "_"))
   # construct and run model grid to construct the fields
   model_grid <- create_model_grid(
     independent = independent,
     dependent = dependent,
     kernel = kernel,
-    prediction_grid = create_spatpos_multi(
-      full_search_field = full_search_field
-    )
+    prediction_grid = do.call(create_spatpos_multi, search_fields)
   )
   if (!quiet) { message("Constructing search fields") }
   interpol_grid <- run_model_grid(model_grid, quiet = quiet)

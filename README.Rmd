@@ -265,7 +265,7 @@ search_origin(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
     ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
-  rearview_distance = 30,
+  search_time_distance = c(-35, -30, 0),
   quiet = F
 )
 
