@@ -7,7 +7,8 @@ locate <- function(
   search_independent,
   search_dependent,
   search_space_grid,
-  search_time_distance = 0,
+  search_time = 0,
+  search_time_mode = "relative",
   quiet = F
 ) {
   # input checks
@@ -32,8 +33,11 @@ locate <- function(
     search_dependent, classes = "mobest_observations"
   )
   checkmate::assert_numeric(
-    search_time_distance,
+    search_time,
     finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
+  )
+  checkmate::assert_choice(
+    search_time_mode, choices = c("relative", "absolute")
   )
   checkmate::assert_true(all(names(dependent) == names(search_dependent)))
   # prepare data
@@ -42,8 +46,16 @@ locate <- function(
     function(name, x) {
       dplyr::bind_cols(x, search_dependent) %>%
         dplyr::mutate(independent_table_id = name, .before = "id") %>%
-        tidyr::crossing(tibble::tibble(time_distance = search_time_distance)) %>%
-        dplyr::mutate(search_z = .data[["z"]] + .data[["time_distance"]])
+        tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
+        dplyr::mutate(
+          search_z =
+            if (search_time_mode == "relative") {
+              .data[["z"]] + .data[["search_time"]]
+            } else if (search_time_mode == "absolute") {
+              .data[["search_time"]]
+            }
+        ) %>%
+        dplyr::select(-.data[["search_time"]])
     }
   )
   search_fields <- purrr::map(

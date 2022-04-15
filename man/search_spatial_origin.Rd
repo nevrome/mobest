@@ -14,7 +14,8 @@ locate(
   search_independent,
   search_dependent,
   search_space_grid,
-  search_time_distance = 0,
+  search_time = 0,
+  search_time_mode = "relative",
   quiet = F
 )
 
