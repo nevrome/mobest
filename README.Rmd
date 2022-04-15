@@ -247,6 +247,7 @@ interpol_grid
 # todo:
 # - locate_simple(interface that works without _multi)
 # - make locate full multi-compatible (?): dependent & search_space_grid are assumed to be simple
+# - option to weight different dimensions in the multiplication in multiply_dependent_probabilities?
 
 locate_overview <- mobest::locate(
   independent = uncertain_positions,
