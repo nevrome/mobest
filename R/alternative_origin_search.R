@@ -11,6 +11,37 @@ locate <- function(
   search_time_mode = "relative",
   quiet = F
 ) {
+  locate_multi(
+    independent = create_spatpos_multi(i = independent),
+    dependent = dependent,
+    kernel = create_kernset_multi(k = kernel),
+    search_independent = create_spatpos_multi(si = search_independent),
+    search_dependent = search_dependent,
+    search_space_grid = search_space_grid,
+    search_time = search_time,
+    search_time_mode = search_time_mode,
+    quiet = F
+  ) %>%
+    dplyr::select(
+      -.data[["independent_table_id"]],
+      -.data[["field_independent_table_id"]],
+      -.data[["field_kernel_setting_id"]]
+    )
+}
+
+#' @rdname search_spatial_origin
+#' @export
+locate_multi <- function(
+  independent,
+  dependent,
+  kernel,
+  search_independent,
+  search_dependent,
+  search_space_grid,
+  search_time = 0,
+  search_time_mode = "relative",
+  quiet = F
+) {
   # input checks
   # (we don't need to assert properties that are already covered by
   # create_model_grid below)

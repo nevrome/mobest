@@ -3,11 +3,24 @@
 %   R/mobility_estimation_spatial_origin.R
 \name{locate}
 \alias{locate}
+\alias{locate_multi}
 \alias{multiply_dependent_probabilities}
 \alias{search_spatial_origin}
 \title{Search for a past point of "origin" in a prediction grid}
 \usage{
 locate(
+  independent,
+  dependent,
+  kernel,
+  search_independent,
+  search_dependent,
+  search_space_grid,
+  search_time = 0,
+  search_time_mode = "relative",
+  quiet = F
+)
+
+locate_multi(
   independent,
   dependent,
   kernel,

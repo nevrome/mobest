@@ -245,11 +245,30 @@ interpol_grid
 
 ```{r}
 # todo:
-# - locate_simple(interface that works without _multi)
-# - make locate full multi-compatible (?): dependent & search_space_grid are assumed to be simple
+# - make locate_multi full multi-compatible (?): dependent & search_space_grid are assumed to be simple
 # - option to weight different dimensions in the multiplication in multiply_dependent_probabilities?
+# - sum function to combine all the other setting permutations: "sum_permutation_probabilities" (maybe mean instead of sum? And even sd?)
 
-locate_overview <- mobest::locate(
+locate_simple <- locate(
+  independent = positions,
+  dependent = observations,
+  kernel = mobest::create_kernset(
+    ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+    ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
+  ),
+  search_independent = positions[1:4,],
+  search_dependent = observations[1:4,],
+  search_space_grid = expand.grid(
+      x = seq(100000, 1000000, 100000), 
+      y = seq(100000, 1000000, 100000)
+    ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
+  search_time = c(-35, -30, 0),
+  quiet = F
+) 
+
+multiply_dependent_probabilities(locate_simple)
+
+locate_overview <- mobest::locate_multi(
   independent = uncertain_positions,
   dependent = observations,
   kernel = mobest::create_kernset_multi(
