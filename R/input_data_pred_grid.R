@@ -13,10 +13,13 @@ create_prediction_grid <- function(area, spatial_cell_size) {
   # input checks
   checkmate::assert_class(area, classes = "sf")
   # prepare grid
-  space_grid <- area %>%
+  sf::st_agr(area) <- "constant"
+  space_grid_rect_sf <- area %>%
     sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
-    sf::st_sf() %>%
-    sf::st_intersection(area) %>%
+    sf::st_sf()
+  sf::st_agr(space_grid_rect_sf) <- "constant"
+  space_grid_sf <- sf::st_intersection(space_grid_rect_sf, area)
+  space_grid <- space_grid_sf %>%
     dplyr::mutate(
       x = sf::st_coordinates(.)[,1],
       y = sf::st_coordinates(.)[,2]
