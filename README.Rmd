@@ -244,7 +244,11 @@ interpol_grid
 ### Origin search
 
 ```{r}
-search_origin(
+# todo:
+# - locate_simple(interface that works without _multi)
+# - make locate full multi-compatible (?): dependent & search_space_grid are assumed to be simple
+
+locate_overview <- mobest::locate(
   independent = uncertain_positions,
   dependent = observations,
   kernel = mobest::create_kernset_multi(
@@ -268,6 +272,8 @@ search_origin(
   search_time_distance = c(-35, -30, 0),
   quiet = F
 )
+
+multiply_dependent_probabilities(locate_overview)
 
 ```
 

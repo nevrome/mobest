@@ -1,6 +1,6 @@
 #' @rdname search_spatial_origin
 #' @export
-search_origin <- function(
+locate <- function(
   independent,
   dependent,
   kernel,
@@ -88,5 +88,42 @@ search_origin <- function(
       )
     )
   # output
-  return(full_search_table_prob)
+  full_search_table_prob %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview") %>%
+    return()
+}
+
+#' @rdname search_spatial_origin
+#' @export
+multiply_dependent_probabilities <- function(locate_overview, omit_dependent_details = T) {
+  # input checks
+  checkmate::assert_class(locate_overview, classes = "mobest_locateoverview")
+  # data transformation
+  locate_summary <- locate_overview %>%
+    tidyr::pivot_wider(
+      names_from = "dependent_var_id",
+      values_from = c(
+        "measured",
+        "field_dsx", "field_dsy", "field_dt", "field_g",
+        "field_mean", "field_sd",
+        "probability",
+      )
+    ) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      probability_product = purrr::reduce(
+        dplyr::c_across(tidyselect::starts_with("probability")),
+        function(x, y) { x*y }
+      )
+    ) %>%
+    dplyr::ungroup()
+  # prepare output
+  if (omit_dependent_details) {
+    locate_summary %>%
+      dplyr::select(-tidyselect::ends_with(
+        locate_overview$dependent_var_id %>% unique
+      ))
+  } else {
+    locate_summary
+  }
 }
