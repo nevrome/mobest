@@ -67,6 +67,8 @@ create_geopos_multi <- function(..., .names = NULL) {
   geopos
 }
 
+#' @rdname input_data_constructors
+#' @export
 geopos_to_spatpos <- function(geopos, z) {
   # input check
   checkmate::assert_class(geopos, classes = "mobest_spatialpositions")

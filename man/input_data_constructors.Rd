@@ -4,6 +4,7 @@
 \alias{create_obs}
 \alias{create_geopos}
 \alias{create_geopos_multi}
+\alias{geopos_to_spatpos}
 \alias{create_spatpos}
 \alias{create_spatpos_multi}
 \alias{create_kernel}
@@ -16,6 +17,8 @@ create_obs(..., .names = NULL)
 create_geopos(id, x, y, ...)
 
 create_geopos_multi(..., .names = NULL)
+
+geopos_to_spatpos(geopos, z)
 
 create_spatpos(id, x, y, z, ...)
 
