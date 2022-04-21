@@ -152,14 +152,11 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
         "probability",
       )
     ) %>%
-    dplyr::rowwise() %>%
     dplyr::mutate(
-      probability_product = purrr::reduce(
-        dplyr::c_across(tidyselect::starts_with("probability")),
-        function(x, y) { x*y }
-      )
-    ) %>%
-    dplyr::ungroup()
+      probability_product = dplyr::select(., tidyselect::starts_with("probability")) %>%
+        as.matrix() %>%
+        apply(1, prod)
+    )
   # prepare output
   if (omit_dependent_details) {
     locate_summary %>%
