@@ -37,6 +37,7 @@ locate_multi <- function(
   kernel,
   search_independent,
   search_dependent,
+  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -63,6 +64,12 @@ locate_multi <- function(
   checkmate::assert_class(
     search_dependent, classes = "mobest_observations"
   )
+  checkmate::assert(
+    checkmate::check_null(search_dependent_error),
+    checkmate::check_class(
+      search_dependent_error, classes = "mobest_observations_error"
+    )
+  )
   checkmate::assert_numeric(
     search_time,
     finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
@@ -75,7 +82,9 @@ locate_multi <- function(
   search_points <- purrr::map2_dfr(
     names(search_independent), search_independent,
     function(name, x) {
-      dplyr::bind_cols(x, search_dependent) %>%
+      x %>%
+        dplyr::bind_cols(search_dependent) %>%
+        {if (!is.null(search_dependent_error)) dplyr::bind_cols(., search_dependent_error) else .} %>%
         dplyr::mutate(independent_table_id = name, .before = "id") %>%
         tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
         dplyr::mutate(
@@ -109,9 +118,20 @@ locate_multi <- function(
   full_search_table <- dplyr::left_join(
     search_points %>%
       tidyr::pivot_longer(
-        cols = tidyselect::all_of(names(dependent)),
+        cols = tidyselect::any_of(c(names(dependent), paste0(names(dependent), "_sd"))),
         names_to = "dependent_var_id",
-        values_to = "measured"
+        values_to = "intermediate_value"
+      ) %>%
+      tidyr::separate(
+        col = "dependent_var_id",
+        into = c("dependent_var_id", "dep_var_type"),
+        sep = "_",
+        fill = "right"
+      ) %>%
+      dplyr::mutate(dep_var_type = tidyr::replace_na(dep_var_type, "measured")) %>%
+      tidyr::pivot_wider(
+        names_from = "dep_var_type",
+        values_from = "intermediate_value"
       ),
     interpol_grid %>%
       magrittr::set_colnames(paste0("field_", colnames(interpol_grid))),
@@ -122,14 +142,26 @@ locate_multi <- function(
   )
   # calculate overlap probability
   if (!quiet) { message("Calculating probabilities") }
-  full_search_table_prob <- full_search_table %>%
-    dplyr::mutate(
-      probability = dnorm(
-        x = measured,
-        mean = field_mean,
-        sd = field_sd
+  if (is.null(search_dependent_error)) {
+    full_search_table_prob <- full_search_table %>%
+      dplyr::mutate(
+        probability = dnorm(
+          x = measured,
+          mean = field_mean,
+          sd = field_sd
+        )
       )
-    )
+  } else {
+    full_search_table_prob <- full_search_table %>%
+      dplyr::mutate(
+        probability = dnorm(
+          x = measured,
+          mean = field_mean,
+          sd = field_sd
+        )
+      )
+    #plot(seq(-3,3,0.01), dnorm(seq(-3,3,0.01)) * dnorm(seq(-3,3,0.01), 5, 1))
+  }
   # output
   full_search_table_prob %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview") %>%
