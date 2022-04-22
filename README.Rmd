@@ -258,6 +258,7 @@ locate_simple <- locate(
   ),
   search_independent = positions[1:4,],
   search_dependent = observations[1:4,],
+  search_dependent_error = (observations[1:4,] * 2) %>% magrittr::set_names(c("ac1_sd", "ac2_sd")),
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
