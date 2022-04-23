@@ -249,7 +249,7 @@ interpol_grid
 # - option to weight different dimensions in the multiplication in multiply_dependent_probabilities?
 # - sum function to combine all the other setting permutations: "sum_permutation_probabilities" (maybe mean instead of sum? And even sd?)
 
-locate_simple <- locate(
+locate_simple <- mobest::locate(
   independent = positions,
   dependent = observations,
   kernel = mobest::create_kernset(
@@ -258,16 +258,19 @@ locate_simple <- locate(
   ),
   search_independent = positions[1:4,],
   search_dependent = observations[1:4,],
-  search_dependent_error = (observations[1:4,] * 2) %>% magrittr::set_names(c("ac1_sd", "ac2_sd")),
+  search_dependent_error = mobest::create_obs_error(
+    ac1_sd = runif(4),
+    ac2_sd = runif(4)
+  ),
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
     ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
   search_time = c(-35, -30, 0),
   quiet = F
-) 
+)
 
-multiply_dependent_probabilities(locate_simple)
+multiply_dependent_probabilities(locate_simple, omit_dependent_details = F)
 
 locate_overview <- mobest::locate_multi(
   independent = uncertain_positions,

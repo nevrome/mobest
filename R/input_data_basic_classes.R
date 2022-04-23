@@ -42,7 +42,7 @@ create_obs_error <- function(..., .names = NULL) {
   if (!is.null(.names)) { names(obs) <- .names }
   # check list
   checkmate::assert_list(obs, types = "numeric", names = "strict")
-  checkmate::assert_true(all(grepl(names("_sd", obs))))
+  checkmate::assert_true(all(grepl("_sd", names(obs))))
   checkmate::assert_true(
     purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
   )
