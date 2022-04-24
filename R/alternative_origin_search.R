@@ -170,11 +170,10 @@ locate_multi <- function(
       f2 <- dnorm(x, mean = mu2, sd = sd2)
       pmin(f1, f2)
     }
-    future::plan(future::multisession)
     full_search_table_prob <- full_search_table %>%
       dplyr::mutate(
         .,
-        probability = furrr::future_pmap_dbl(
+        probability = purrr::pmap_dbl(
           list(.data[["measured"]], .data[["field_mean"]], .data[["sd"]], .data[["field_sd"]]),
           function(mu1, mu2, sd1, sd2) {
             res <- try(
