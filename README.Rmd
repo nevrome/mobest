@@ -204,7 +204,9 @@ The spatiotemporal interpolation workflow consists of the creation of a list of 
 library(magrittr)
 model_grid <- mobest::create_model_grid(
   independent = uncertain_positions,
-  dependent = observations,
+  dependent = mobest:::create_obs_multi(
+    obs1 = observations
+  ),
   kernel = mobest::create_kernset_multi(
     kernel_1 = mobest::create_kernset(
       ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
@@ -274,7 +276,9 @@ multiply_dependent_probabilities(locate_simple, omit_dependent_details = F)
 
 locate_overview <- mobest::locate_multi(
   independent = uncertain_positions,
-  dependent = observations,
+  dependent = mobest:::create_obs_multi(
+    obs1 = observations
+  ),
   kernel = mobest::create_kernset_multi(
     kernel_1 = mobest::create_kernset(
       ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),

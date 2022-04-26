@@ -34,36 +34,35 @@ create_model_grid <- function(
   prediction_grid
 ) {
   # input check
-  checkmate::assert_list(
-    independent, types = "mobest_spatiotemporalpositions",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_class(
-    dependent, classes = "mobest_observations"
-  )
-  checkmate::assert_list(
-    kernel, types = "mobest_kernelsetting",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_list(
-    prediction_grid, types = "mobest_spatiotemporalpositions",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  purrr::walk(kernel, function(one_kernset) {
-    checkmate::assert_true(all(names(one_kernset) == names(dependent)))
-  })
-  purrr::walk(independent, function(one_independent) {
-    checkmate::assert_true(nrow(one_independent) == nrow(dependent))
-  })
+  checkmate::assert_class(independent, "mobest_spatiotemporalpositions_multi")
+  checkmate::assert_class(dependent, "mobest_observations_multi")
+  checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
+  checkmate::assert_class(prediction_grid, "mobest_spatiotemporalpositions_multi")
+  ###
+  check_compatible_multi(kernel, dependent, check_names_equal)
+  check_compatible_multi(independent, dependent, check_df_nrow_equal)
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
     independent_table_id = factor(names(independent), levels = names(independent))
   )
   dependent_vars <- tibble::tibble(
-    dependent_var = as.list(dependent),
+    dependent_var = dependent,
     dependent_var_id = factor(names(dependent), levels = names(dependent))
   )
+  dependent_vars <- purrr::map2_dfr(
+    factor(names(dependent), levels = names(dependent)), dependent,
+    function(dependent_name, one_dependent) {
+      tibble::tibble(
+        dependent_setting_id = dependent_name,
+        dependent_var_id = names(one_dependent),#Needs solution for factor: factor(names(one_dependent), levels = names(dependent)),
+        dependent_var = as.list(one_dependent)
+      )
+    }
+  )
+
+  #### TODO ####
+
   kernel_settings <- purrr::map2_dfr(
     factor(names(kernel), levels = names(kernel)), kernel,
     function(kernel_name, one_kernel) {
@@ -195,4 +194,41 @@ run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
   } else {
     return(model_grid_simplified)
   }
+}
+
+#### helper functions ####
+
+check_compatible_multi <- function(x, y, comp_f) {
+    purrr::pwalk(
+      get_permutations(x, y),
+      function(i1, i2) {
+        comp_f(
+          x[[i1]],
+          y[[i2]],
+          names(x)[i1],
+          names(y)[i2]
+        )
+      }
+    )
+}
+
+check_df_nrow_equal <- function(x, y, name_x, name_y) {
+  if (nrow(x) != nrow(y)) {
+    stop(name_x, " and ", name_y, ": Not the same number of lines")
+  }
+}
+
+check_names_equal <- function(x, y, name_x, name_y) {
+  if (!setequal(names(x), names(y))) {
+    stop(name_x, " and ", name_y, ": Not the same names")
+  }
+}
+
+get_permutations <- function(x, y, include.equals = FALSE) {
+  expand.grid(seq_along(x), seq_along(y)) %>%
+    as.data.frame() %>%
+    magrittr::set_names(c("i1", "i2")) %>%
+    dplyr::filter(
+      .data[["i1"]] >= .data[["i2"]]
+    )
 }

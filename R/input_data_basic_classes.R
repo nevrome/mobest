@@ -207,7 +207,11 @@ tibble_multi_function_factory <- function(single_type, multi_type, is_df = F, ha
     multi <- list(...)
     if (!is.null(.names)) { names(multi) <- .names }
     # input check
-    checkmate::assert_list(multi, types = single_type, names = "strict")
+    checkmate::assert_list(
+      multi, types = single_type,
+      any.missing = F, min.len = 1,
+      names = "strict"
+    )
     if (is_df) {
       checkmate::assert_true(
         purrr::map_int(multi, nrow) %>% unique %>% length %>% magrittr::equals(1)
