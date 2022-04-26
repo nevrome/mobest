@@ -6,6 +6,7 @@ locate <- function(
   kernel,
   search_independent,
   search_dependent,
+  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -17,6 +18,7 @@ locate <- function(
     kernel = create_kernset_multi(k = kernel),
     search_independent = create_spatpos_multi(si = search_independent),
     search_dependent = search_dependent,
+    search_dependent_error = search_dependent_error,
     search_space_grid = search_space_grid,
     search_time = search_time,
     search_time_mode = search_time_mode,
@@ -37,6 +39,7 @@ locate_multi <- function(
   kernel,
   search_independent,
   search_dependent,
+  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -63,6 +66,17 @@ locate_multi <- function(
   checkmate::assert_class(
     search_dependent, classes = "mobest_observations"
   )
+  checkmate::assert(
+    checkmate::check_null(search_dependent_error),
+    checkmate::check_class(
+      search_dependent_error, classes = "mobest_observations_error"
+    )
+  )
+  if (!is.null(search_dependent_error)) {
+    checkmate::assert_true(
+      all(names(search_dependent_error) == paste0(names(search_dependent), "_sd"))
+    )
+  }
   checkmate::assert_numeric(
     search_time,
     finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
@@ -75,7 +89,9 @@ locate_multi <- function(
   search_points <- purrr::map2_dfr(
     names(search_independent), search_independent,
     function(name, x) {
-      dplyr::bind_cols(x, search_dependent) %>%
+      x %>%
+        dplyr::bind_cols(search_dependent) %>%
+        {if (!is.null(search_dependent_error)) dplyr::bind_cols(., search_dependent_error) else .} %>%
         dplyr::mutate(independent_table_id = name, .before = "id") %>%
         tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
         dplyr::mutate(
@@ -109,9 +125,21 @@ locate_multi <- function(
   full_search_table <- dplyr::left_join(
     search_points %>%
       tidyr::pivot_longer(
-        cols = tidyselect::all_of(names(dependent)),
+        cols = tidyselect::any_of(c(names(dependent), paste0(names(dependent), "_sd"))),
         names_to = "dependent_var_id",
-        values_to = "measured"
+        values_to = "intermediate_value"
+      ) %>%
+      tidyr::separate(
+        col = "dependent_var_id",
+        into = c("dependent_var_id", "dep_var_type"),
+        sep = "_(?=sd$)", # only split, if the string ends with "_sd"
+        extra = "merge",
+        fill = "right"
+      ) %>%
+      dplyr::mutate(dep_var_type = tidyr::replace_na(dep_var_type, "measured")) %>%
+      tidyr::pivot_wider(
+        names_from = "dep_var_type",
+        values_from = "intermediate_value"
       ),
     interpol_grid %>%
       magrittr::set_colnames(paste0("field_", colnames(interpol_grid))),
@@ -122,14 +150,50 @@ locate_multi <- function(
   )
   # calculate overlap probability
   if (!quiet) { message("Calculating probabilities") }
-  full_search_table_prob <- full_search_table %>%
-    dplyr::mutate(
-      probability = dnorm(
-        x = measured,
-        mean = field_mean,
-        sd = field_sd
+  #return(full_search_table)
+  if (is.null(search_dependent_error)) {
+    full_search_table_prob <- full_search_table %>%
+      dplyr::mutate(
+        probability = dnorm(
+          x = .data[["measured"]],
+          mean = .data[["field_mean"]],
+          sd = .data[["field_sd"]]
+        )
+      ) %>%
+      dplyr::mutate(
+        sd = NA_real_,
+        .after = "measured"
       )
-    )
+  } else {
+    int_f <- function(x, mu1, mu2, sd1, sd2) {
+      f1 <- dnorm(x, mean = mu1, sd = sd1)
+      f2 <- dnorm(x, mean = mu2, sd = sd2)
+      pmin(f1, f2)
+    }
+    full_search_table_prob <- full_search_table %>%
+      dplyr::mutate(
+        .,
+        probability = purrr::pmap_dbl(
+          list(.data[["measured"]], .data[["field_mean"]], .data[["sd"]], .data[["field_sd"]]),
+          function(mu1, mu2, sd1, sd2) {
+            res <- try(
+              integrate(
+                int_f, -Inf, Inf,
+                mu1 = mu1, mu2 = mu2, sd1 = sd1, sd2 = sd2#,
+                #rel.tol = 1e-10
+              ),
+              silent = TRUE
+            )
+            if(inherits(res ,'try-error')){
+              #warning(as.vector(res))
+              return(0)
+            } else {
+              return(res$value)
+            }
+          }
+        )
+      )
+  }
   # output
   full_search_table_prob %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview") %>%
@@ -146,7 +210,7 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
     tidyr::pivot_wider(
       names_from = "dependent_var_id",
       values_from = c(
-        "measured",
+        "measured", "sd",
         "field_dsx", "field_dsy", "field_dt", "field_g",
         "field_mean", "field_sd",
         "probability",

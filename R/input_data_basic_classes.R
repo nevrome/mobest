@@ -37,6 +37,22 @@ create_obs <- function(..., .names = NULL) {
 
 #' @rdname input_data_constructors
 #' @export
+create_obs_error <- function(..., .names = NULL) {
+  obs <- list(...)
+  if (!is.null(.names)) { names(obs) <- .names }
+  # check list
+  checkmate::assert_list(obs, types = "numeric", names = "strict")
+  checkmate::assert_true(all(grepl("_sd", names(obs))))
+  checkmate::assert_true(
+    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
+  )
+  # compile tibble
+  dplyr::bind_cols(obs) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
+}
+
+#' @rdname input_data_constructors
+#' @export
 create_geopos <- function(id, x, y, ...) {
   # input check
   checkmate::assert_atomic_vector(id, any.missing = F, unique = T)
