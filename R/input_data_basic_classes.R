@@ -37,7 +37,7 @@ create_obs <- function(..., .names = NULL) {
 
 #' @rdname input_data_constructors
 #' @export
-create_obs_error <- function(..., .names = NULL) {
+create_obserror <- function(..., .names = NULL) {
   obs <- list(...)
   if (!is.null(.names)) { names(obs) <- .names }
   # check list
@@ -49,6 +49,41 @@ create_obs_error <- function(..., .names = NULL) {
   # compile tibble
   dplyr::bind_cols(obs) %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obs_obserror <- function(obs, obserror) {
+  # input check
+  checkmate::assert_class(obs, "mobest_observations")
+  checkmate::assert_class(obserror, "mobest_observations_error")
+  checkmate::assert_true(
+    all(names(obserror) == paste0(names(obs), "_sd"))
+  )
+  checkmate::assert_true(nrow(obs) == nrow(obserror))
+  # compile tibble
+  dplyr::bind_cols(obs, obserror) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_with_error")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obs_multi <- function(..., .names = NULL) {
+  tibble_multi_function_factory(
+    "mobest_observations",
+    "mobest_observations_multi",
+    T,F
+  )(..., .names = .names)
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obs_obserror_multi <- function(..., .names = NULL) {
+  tibble_multi_function_factory(
+    "mobest_observations_with_error",
+    "mobest_observations_with_error_multi",
+    T,F
+  )(..., .names = .names)
 }
 
 #' @rdname input_data_constructors
@@ -69,18 +104,11 @@ create_geopos <- function(id, x, y, ...) {
 #' @rdname input_data_constructors
 #' @export
 create_geopos_multi <- function(..., .names = NULL) {
-  geopos <- list(...)
-  if (!is.null(.names)) { names(geopos) <- .names }
-  # input check
-  checkmate::assert_list(geopos, types = "mobest_spatialpositions", names = "strict")
-  checkmate::assert_true(
-    purrr::map_int(geopos, nrow) %>% unique %>% length %>% magrittr::equals(1)
-  )
-  checkmate::assert_true(
-    purrr::map_lgl(geopos, function(x) { all(x[["id"]] == geopos[[1]]$id) }) %>% all()
-  )
-  # compile output data structure
-  geopos
+  tibble_multi_function_factory(
+    "mobest_spatialpositions",
+    "mobest_spatialpositions_multi",
+    T,T
+  )(..., .names = .names)
 }
 
 #' @rdname input_data_constructors
@@ -122,18 +150,11 @@ create_spatpos <- function(id, x, y, z, ...) {
 #' @rdname input_data_constructors
 #' @export
 create_spatpos_multi <- function(..., .names = NULL) {
-  spatpos <- list(...)
-  if (!is.null(.names)) { names(spatpos) <- .names }
-  # input check
-  checkmate::assert_list(spatpos, types = "mobest_spatiotemporalpositions", names = "strict")
-  checkmate::assert_true(
-    purrr::map_int(spatpos, nrow) %>% unique %>% length %>% magrittr::equals(1)
-  )
-  checkmate::assert_true(
-    purrr::map_lgl(spatpos, function(x) { all(x[["id"]] == spatpos[[1]]$id) }) %>% all()
-  )
-  # compile output data structure
-  spatpos
+  tibble_multi_function_factory(
+    "mobest_spatiotemporalpositions",
+    "mobest_spatiotemporalpositions_multi",
+    T,T
+  )(..., .names = .names)
 }
 
 #' @rdname input_data_constructors
@@ -161,21 +182,43 @@ create_kernel <- function(dsx, dsy, dt, g, on_residuals = T, auto = F) {
 #' @rdname input_data_constructors
 #' @export
 create_kernset <- function(..., .names = NULL) {
-  kernels <- list(...)
-  if (!is.null(.names)) { names(kernels) <- .names }
-  # input check
-  checkmate::assert_list(kernels, types = "mobest_kernel", names = "strict")
-  # compile output data structure
-  kernels %>% magrittr::set_class("mobest_kernelsetting")
+  tibble_multi_function_factory(
+    "mobest_kernel",
+    "mobest_kernelsetting",
+    F,F
+  )(..., .names = .names)
 }
 
 #' @rdname input_data_constructors
 #' @export
 create_kernset_multi <- function(..., .names = NULL) {
-  kernels_multi <- list(...)
-  if (!is.null(.names)) { names(kernels_multi) <- .names }
-  # input check
-  checkmate::assert_list(kernels_multi, types = "mobest_kernelsetting", names = "strict")
-  # compile output data structure
-  kernels_multi
+  tibble_multi_function_factory(
+    "mobest_kernelsetting",
+    "mobest_kernelsetting_multi",
+    F,F
+  )(..., .names = .names)
+}
+
+#### helper functions ####
+
+# this function produces other constructor functions
+tibble_multi_function_factory <- function(single_type, multi_type, is_df = F, has_id = F) {
+  function(..., .names = NULL) {
+    multi <- list(...)
+    if (!is.null(.names)) { names(multi) <- .names }
+    # input check
+    checkmate::assert_list(multi, types = single_type, names = "strict")
+    if (is_df) {
+      checkmate::assert_true(
+        purrr::map_int(multi, nrow) %>% unique %>% length %>% magrittr::equals(1)
+      )
+    }
+    if (has_id) {
+      checkmate::assert_true(
+        purrr::map_lgl(multi, function(x) { all(x[["id"]] == multi[[1]]$id) }) %>% all()
+      )
+    }
+    # compile output data structure
+    multi %>% magrittr::set_class(c(multi_type, "list"))
+  }
 }

@@ -2,7 +2,10 @@
 % Please edit documentation in R/input_data_basic_classes.R
 \name{create_obs}
 \alias{create_obs}
-\alias{create_obs_error}
+\alias{create_obserror}
+\alias{create_obs_obserror}
+\alias{create_obs_multi}
+\alias{create_obs_obserror_multi}
 \alias{create_geopos}
 \alias{create_geopos_multi}
 \alias{geopos_to_spatpos}
@@ -15,7 +18,13 @@
 \usage{
 create_obs(..., .names = NULL)
 
-create_obs_error(..., .names = NULL)
+create_obserror(..., .names = NULL)
+
+create_obs_obserror(obs, obserror)
+
+create_obs_multi(..., .names = NULL)
+
+create_obs_obserror_multi(..., .names = NULL)
 
 create_geopos(id, x, y, ...)
 

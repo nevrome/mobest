@@ -258,7 +258,7 @@ locate_simple <- mobest::locate(
   ),
   search_independent = positions[1:4,],
   search_dependent = observations[1:4,],
-  search_dependent_error = mobest::create_obs_error(
+  search_dependent_error = mobest::create_obserror(
     ac1_sd = runif(4),
     ac2_sd = runif(4)
   ),
