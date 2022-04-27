@@ -121,18 +121,8 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
 #' @rdname run_model_grid
 #' @export
 run_model_grid <- function(model_grid, unnest = T, quiet = F) {
-  UseMethod("run_model_grid")
-}
-
-#' @rdname run_model_grid
-#' @export
-run_model_grid.default <- function(model_grid, unnest = T, quiet = F) {
-  stop("x is not an object of class mobest_modelgrid")
-}
-
-#' @rdname run_model_grid
-#' @export
-run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
+  # input check
+  checkmate::assert_class(model_grid, "mobest_modelgrid")
   # run interpolation for each entry in the model_grid
   prediction <- purrr::map(
     1:nrow(model_grid), function(i) {
