@@ -39,7 +39,6 @@ locate_multi <- function(
   kernel,
   search_independent,
   search_dependent,
-  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -48,35 +47,16 @@ locate_multi <- function(
   # input checks
   # (we don't need to assert properties that are already covered by
   # create_model_grid below)
-  checkmate::assert_list(
-    independent, types = "mobest_spatiotemporalpositions",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_class(
-    dependent, classes = "mobest_observations"
-  )
-  checkmate::assert_list(
-    kernel, types = "mobest_kernelsetting",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_list(
-    search_independent, types = "mobest_spatiotemporalpositions",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_class(
-    search_dependent, classes = "mobest_observations"
-  )
+  checkmate::assert_class(search_independent, "mobest_spatiotemporalpositions_multi")
   checkmate::assert(
-    checkmate::check_null(search_dependent_error),
     checkmate::check_class(
-      search_dependent_error, classes = "mobest_observations_error"
+      search_dependent, classes = "mobest_observations_multi"
+    ),
+    checkmate::check_class(
+      search_dependent, classes = "mobest_observations_with_error_multi"
     )
   )
-  if (!is.null(search_dependent_error)) {
-    checkmate::assert_true(
-      all(names(search_dependent_error) == paste0(names(search_dependent), "_sd"))
-    )
-  }
+  checkmate::assert_class(search_space_grid, "mobest_spatialpositions")
   checkmate::assert_numeric(
     search_time,
     finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
@@ -84,27 +64,29 @@ locate_multi <- function(
   checkmate::assert_choice(
     search_time_mode, choices = c("relative", "absolute")
   )
-  checkmate::assert_true(all(names(dependent) == names(search_dependent)))
+  check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
+  check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
+  checkmate::assert_true(setequal(names(independent), names(search_independent)))
+  checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   # prepare data
-  search_points <- purrr::map2_dfr(
-    names(search_independent), search_independent,
-    function(name, x) {
-      x %>%
-        dplyr::bind_cols(search_dependent) %>%
-        {if (!is.null(search_dependent_error)) dplyr::bind_cols(., search_dependent_error) else .} %>%
-        dplyr::mutate(independent_table_id = name, .before = "id") %>%
-        tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
-        dplyr::mutate(
-          search_z =
-            if (search_time_mode == "relative") {
-              .data[["z"]] + .data[["search_time"]]
-            } else if (search_time_mode == "absolute") {
-              .data[["search_time"]]
-            }
-        ) %>%
-        dplyr::select(-.data[["search_time"]])
-    }
-  )
+  search_points <- tidyr::crossing(
+    search_independent = search_independent %>%
+      purrr::map2(names(.), ., function(n, x) { x$independent_table_id <- n; x}),
+    search_dependent = search_dependent %>%
+      purrr::map2(names(.), ., function(n, x) { x$dependent_setting_id <- n; x})
+  ) %>% tidyr::unnest(
+    cols = c("search_independent", "search_dependent")
+  ) %>%
+    tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
+    dplyr::mutate(
+      search_z =
+        if (search_time_mode == "relative") {
+          .data[["z"]] + .data[["search_time"]]
+        } else if (search_time_mode == "absolute") {
+          .data[["search_time"]]
+        }
+    ) %>%
+    dplyr::select(-.data[["search_time"]])
   search_fields <- purrr::map(
     search_points$search_z %>% unique(),
     function(time_slice) {
@@ -125,7 +107,9 @@ locate_multi <- function(
   full_search_table <- dplyr::left_join(
     search_points %>%
       tidyr::pivot_longer(
-        cols = tidyselect::any_of(c(names(dependent), paste0(names(dependent), "_sd"))),
+        cols = -c(
+          "id", "x", "y", "z", "independent_table_id", "dependent_setting_id", "search_z"
+        ),
         names_to = "dependent_var_id",
         values_to = "intermediate_value"
       ) %>%

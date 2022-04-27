@@ -264,10 +264,12 @@ locate_simple <- mobest::locate(
     ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
   ),
   search_independent = positions[1:4,],
-  search_dependent = observations[1:4,],
-  search_dependent_error = mobest::create_obserror(
-    ac1_sd = runif(4),
-    ac2_sd = runif(4)
+  search_dependent = mobest::create_obs_obserror(
+    observations[1:4,],
+    mobest::create_obserror(
+      ac1_sd = runif(4),
+      ac2_sd = runif(4)
+    )
   ),
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
@@ -280,9 +282,13 @@ locate_simple <- mobest::locate(
 multiply_dependent_probabilities(locate_simple, omit_dependent_details = F)
 
 locate_overview <- mobest::locate_multi(
-  independent = uncertain_positions,
+  independent = mobest::create_spatpos_multi(
+    dating1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
+    dating2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
+  ),
   dependent = mobest:::create_obs_multi(
-    obs1 = observations
+    obs1 = observations,
+    obs2 = observations
   ),
   kernel = mobest::create_kernset_multi(
     kernel_1 = mobest::create_kernset(
@@ -295,14 +301,31 @@ locate_overview <- mobest::locate_multi(
     )
   ),
   search_independent = mobest::create_spatpos_multi(
-    search_batch_1 = positions[1:4,]
+    dating1 = positions[1:4,],
+    dating2 = positions[1:4,]
   ),
-  search_dependent = observations[1:4,],
+  search_dependent = mobest:::create_obs_obserror_multi(
+    obs1 = mobest::create_obs_obserror(
+      observations[1:4,],
+      mobest::create_obserror(
+        ac1_sd = runif(4),
+        ac2_sd = runif(4)
+      )
+    ),
+    obs2 = mobest::create_obs_obserror(
+      observations[1:4,],
+      mobest::create_obserror(
+        ac1_sd = runif(4),
+        ac2_sd = runif(4)
+      )
+    )
+  ),
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
     ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
   search_time = c(-35, -30, 0),
+  search_time_mode = "relative",
   quiet = F
 )
 

@@ -181,7 +181,7 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
 
 #### helper functions ####
 
-check_compatible_multi <- function(x, y, comp_f) {
+check_compatible_multi <- function(x, y, comp_f, ...) {
     purrr::pwalk(
       get_permutations(x, y),
       function(i1, i2) {
@@ -189,7 +189,8 @@ check_compatible_multi <- function(x, y, comp_f) {
           x[[i1]],
           y[[i2]],
           names(x)[i1],
-          names(y)[i2]
+          names(y)[i2],
+          ...
         )
       }
     )
@@ -201,8 +202,14 @@ check_df_nrow_equal <- function(x, y, name_x, name_y) {
   }
 }
 
-check_names_equal <- function(x, y, name_x, name_y) {
-  if (!setequal(names(x), names(y))) {
+check_names_equal <- function(x, y, name_x, name_y, ignore_sd_cols = F) {
+  names_x <- names(x)
+  names_y <- names(y)
+  if (ignore_sd_cols) {
+    names_x <- names_x[!grepl("\\_sd$", names_x)]
+    names_y <- names_y[!grepl("\\_sd$", names_y)]
+  }
+  if (!setequal(names_x, names_y)) {
     stop(name_x, " and ", name_y, ": Not the same names")
   }
 }
