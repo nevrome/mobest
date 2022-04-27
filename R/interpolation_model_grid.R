@@ -38,17 +38,12 @@ create_model_grid <- function(
   checkmate::assert_class(dependent, "mobest_observations_multi")
   checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
   checkmate::assert_class(prediction_grid, "mobest_spatiotemporalpositions_multi")
-  ###
   check_compatible_multi(kernel, dependent, check_names_equal)
   check_compatible_multi(independent, dependent, check_df_nrow_equal)
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
     independent_table_id = factor(names(independent), levels = names(independent))
-  )
-  dependent_vars <- tibble::tibble(
-    dependent_var = dependent,
-    dependent_var_id = factor(names(dependent), levels = names(dependent))
   )
   dependent_vars <- purrr::map2_dfr(
     factor(names(dependent), levels = names(dependent)), dependent,
@@ -60,15 +55,12 @@ create_model_grid <- function(
       )
     }
   )
-
-  #### TODO ####
-
   kernel_settings <- purrr::map2_dfr(
     factor(names(kernel), levels = names(kernel)), kernel,
     function(kernel_name, one_kernel) {
       tibble::tibble(
         kernel_setting_id = kernel_name,
-        dependent_var_id = factor(names(one_kernel), levels = names(dependent)),
+        dependent_var_id = names(one_kernel),
         kernel_setting = one_kernel[1:length(one_kernel)]
       )
     }
@@ -91,17 +83,18 @@ create_model_grid <- function(
 
 create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
   expand.grid(
-    independent_table_id = independent_tables[["independent_table_id"]],
-    dependent_var_id = dependent_vars[["dependent_var_id"]],
+    independent_table_id = unique(independent_tables[["independent_table_id"]]),
+    dependent_setting_id = unique(dependent_vars[["dependent_setting_id"]]),
+    dependent_var_id = unique(dependent_vars[["dependent_var_id"]]),
     kernel_setting_id = unique(kernel_settings[["kernel_setting_id"]]),
-    pred_grid_id = pred_grids[["pred_grid_id"]],
+    pred_grid_id = unique(pred_grids[["pred_grid_id"]]),
     stringsAsFactors = F
   ) %>%
     dplyr::left_join(
       independent_tables, by = "independent_table_id"
     ) %>%
     dplyr::left_join(
-      dependent_vars, by = "dependent_var_id"
+      dependent_vars, by = c("dependent_setting_id", "dependent_var_id")
     ) %>%
     dplyr::left_join(
       kernel_settings, by = c("kernel_setting_id", "dependent_var_id")

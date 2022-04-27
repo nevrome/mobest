@@ -205,7 +205,8 @@ library(magrittr)
 model_grid <- mobest::create_model_grid(
   independent = uncertain_positions,
   dependent = mobest:::create_obs_multi(
-    obs1 = observations
+    obs1 = observations,
+    obs2 = observations
   ),
   kernel = mobest::create_kernset_multi(
     kernel_1 = mobest::create_kernset(
@@ -219,6 +220,11 @@ model_grid <- mobest::create_model_grid(
   ),
   prediction_grid = mobest::create_spatpos_multi(
     pred_grid_1 = expand.grid(
+      x = seq(100000, 1000000, 100000), 
+      y = seq(100000, 1000000, 100000),
+      z = seq(-5500, -3000, 500)
+    ) %>% { mobest::create_spatpos(id = 1:nrow(.), x = .$x, y = .$y, z = .$z) },
+    pred_grid_2 = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000),
       z = seq(-5500, -3000, 500)
