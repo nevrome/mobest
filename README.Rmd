@@ -279,7 +279,7 @@ locate_simple <- mobest::locate(
   quiet = F
 )
 
-multiply_dependent_probabilities(locate_simple, omit_dependent_details = F)
+mul <- multiply_dependent_probabilities(locate_simple, omit_dependent_details = F)
 
 locate_overview <- mobest::locate_multi(
   independent = mobest::create_spatpos_multi(
@@ -304,22 +304,26 @@ locate_overview <- mobest::locate_multi(
     dating1 = positions[1:4,],
     dating2 = positions[1:4,]
   ),
-  search_dependent = mobest:::create_obs_obserror_multi(
-    obs1 = mobest::create_obs_obserror(
-      observations[1:4,],
-      mobest::create_obserror(
-        ac1_sd = runif(4),
-        ac2_sd = runif(4)
-      )
-    ),
-    obs2 = mobest::create_obs_obserror(
-      observations[1:4,],
-      mobest::create_obserror(
-        ac1_sd = runif(4),
-        ac2_sd = runif(4)
-      )
-    )
+  search_dependent = mobest:::create_obs_multi(
+    obs1 = observations[1:4,],
+    obs2 = observations[1:4,]
   ),
+  # search_dependent = mobest:::create_obs_obserror_multi(
+  #   obs1 = mobest::create_obs_obserror(
+  #     observations[1:4,],
+  #     mobest::create_obserror(
+  #       ac1_sd = runif(4),
+  #       ac2_sd = runif(4)
+  #     )
+  #   ),
+  #   obs2 = mobest::create_obs_obserror(
+  #     observations[1:4,],
+  #     mobest::create_obserror(
+  #       ac1_sd = runif(4),
+  #       ac2_sd = runif(4)
+  #     )
+  #   )
+  # ),
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
@@ -329,7 +333,8 @@ locate_overview <- mobest::locate_multi(
   quiet = F
 )
 
-multiply_dependent_probabilities(locate_overview)
+mul <- multiply_dependent_probabilities(locate_overview)
+sums <- sum_probabilities_per_group(mul, dependent_setting_id)
 
 ```
 

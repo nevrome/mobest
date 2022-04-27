@@ -204,17 +204,46 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
       )
     ) %>%
     dplyr::mutate(
-      probability_product = dplyr::select(., tidyselect::starts_with("probability")) %>%
+      probability = dplyr::select(., tidyselect::starts_with("probability")) %>%
         as.matrix() %>%
         apply(1, prod)
     )
   # prepare output
   if (omit_dependent_details) {
-    locate_summary %>%
+    losum <- locate_summary %>%
       dplyr::select(-tidyselect::ends_with(
         locate_overview$dependent_var_id %>% unique
       ))
   } else {
-    locate_summary
+    losum <- locate_summary
   }
+  losum %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview_product")
+}
+
+#' @rdname search_spatial_origin
+#' @export
+sum_probabilities_per_group <- function(locate_overview, ...) {
+  .grouping_var <- rlang::ensyms(...)
+  # input checks
+  checkmate::assert_class(locate_overview, classes = "mobest_locateoverview_product")
+  # data transformation
+  locate_summary <- locate_overview %>%
+    dplyr::group_by(
+      !!!.grouping_var,
+      .data[["id"]],
+      .data[["field_id"]],
+      .data[["search_z"]],
+    ) %>%
+    dplyr::summarise(
+      x = dplyr::first(x),
+      y = dplyr::first(y),
+      z = dplyr::first(z),
+      field_x = dplyr::first(field_x),
+      field_y = dplyr::first(field_y),
+      probability = sum(probability, na.rm = T)
+    )
+  # prepare output
+  locate_summary %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview_sum")
 }
