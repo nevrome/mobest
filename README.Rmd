@@ -253,7 +253,6 @@ interpol_grid
 
 ```{r}
 # todo:
-# - make locate_multi full multi-compatible (?): dependent & search_space_grid are assumed to be simple
 # - option to weight different dimensions in the multiplication in multiply_dependent_probabilities?
 # - sum function to combine all the other setting permutations: "sum_permutation_probabilities" (maybe mean instead of sum? And even sd?)
 
