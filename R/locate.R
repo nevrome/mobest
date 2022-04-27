@@ -6,7 +6,6 @@ locate <- function(
   kernel,
   search_independent,
   search_dependent,
-  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -14,11 +13,14 @@ locate <- function(
 ) {
   locate_multi(
     independent = create_spatpos_multi(i = independent),
-    dependent = dependent,
+    dependent = mobest:::create_obs_multi(d = dependent),
     kernel = create_kernset_multi(k = kernel),
-    search_independent = create_spatpos_multi(si = search_independent),
-    search_dependent = search_dependent,
-    search_dependent_error = search_dependent_error,
+    search_independent = create_spatpos_multi(i = search_independent),
+    search_dependent = if ("mobest_observations" %in% class(search_dependent)) {
+      create_obs_multi(d = search_dependent)
+    } else if ("mobest_observations_with_error" %in% class(search_dependent)) {
+      create_obs_obserror_multi(d = search_dependent)
+    },
     search_space_grid = search_space_grid,
     search_time = search_time,
     search_time_mode = search_time_mode,
@@ -26,6 +28,7 @@ locate <- function(
   ) %>%
     dplyr::select(
       -.data[["independent_table_id"]],
+      -.data[["dependent_setting_id"]],
       -.data[["field_independent_table_id"]],
       -.data[["field_kernel_setting_id"]]
     )
@@ -135,7 +138,7 @@ locate_multi <- function(
   # calculate overlap probability
   if (!quiet) { message("Calculating probabilities") }
   #return(full_search_table)
-  if (is.null(search_dependent_error)) {
+  if ("mobest_observations_multi" %in% class(search_dependent)) {
     full_search_table_prob <- full_search_table %>%
       dplyr::mutate(
         probability = dnorm(
@@ -148,7 +151,7 @@ locate_multi <- function(
         sd = NA_real_,
         .after = "measured"
       )
-  } else {
+  } else if ("mobest_observations_with_error_multi" %in% class(search_dependent)) {
     int_f <- function(x, mu1, mu2, sd1, sd2) {
       f1 <- dnorm(x, mean = mu1, sd = sd1)
       f2 <- dnorm(x, mean = mu2, sd = sd2)
