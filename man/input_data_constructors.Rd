@@ -80,9 +80,6 @@ Should a linear model take over the main trends before the kriging interpolation
 Should the lengthscale and nugget values be automatically determined by laGPs
 maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info}
 }
-\value{
-Different data types
-}
 \description{
 Functions to create the main input data types for the mobest package.
 }

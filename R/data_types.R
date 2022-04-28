@@ -22,8 +22,6 @@
 #' @param ... Different inputs - usually individual elements to be merged in a list type
 #' @param .names Vector. Names of different object iterations
 #'
-#' @return Different data types
-#'
 #' @name input_data_constructors
 NULL
 

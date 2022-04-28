@@ -1,23 +1,27 @@
-#' Create a kriging model grid
+#' Create and run a kriging model grid
 #'
-#' Constructs a model grid with all combinations of the different input parameter
+#' Constructs and run a model grid with all combinations of the different input parameter
 #' configurations for the kriging model.
 #'
-#' @param independent Named list of mobest_spatiotemporalpositions objects.
-#' Spatiotemporal input point positions
-#' @param dependent Named list of mobest_observations objects.
-#' Dependent variables that should be interpolated. Each vector should have one
-#' entry for each row in the \code{independent} list dataframes
-#' @param kernel Named list of mobest_kernelsetting objects.
-#' Kernel parameter settings. See \code{?interpolate_laGP} for more information#'
-#' @param prediction_grid Named list of dataframes.
+#' @param independent An object of class \code{mobest_spatiotemporalpositions_multi}
+#' as created by \link{create_spatpos_multi}. Spatiotemporal input point positions.
+#' @param dependent An object of class \code{mobest_observations_multi}
+#' as created by \link{create_obs_multi}. Dependent variables that should be interpolated.
+#' @param kernel An object of class \code{mobest_kernelsetting_multi}
+#' as created by \link{create_kernset_multi}. Kernel parameter settings.
+#' @param prediction_grid An object of class \code{mobest_spatiotemporalpositions_multi}
+#' as for example created by \link{create_prediction_grid}.
 #' Prediction grid positions for the interpolation.
+#' @param model_grid An object of class \code{mobest_modelgrid}
+#' as created by \link{create_model_grid}.
+#' @param unnest Logical. Should the kriging result be unnested to return a
+#' prediction point-wise table of class \code{mobest_interpolgrid}?
+#' @param quiet Logical. Should a progress indication be printed?
 #'
-#' See \code{?prediction_grid_for_spatiotemporal_area} for a function to create grid for a certain
-#' spatial region
-#'
-#' @return An object of class \code{mobest_modelgrid} which inherits from tibble
-#'
+#' @name interpolation
+NULL
+
+#' @rdname interpolation
 #' @export
 create_model_grid <- function(
   independent,
@@ -96,21 +100,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
     )
 }
 
-#' Run kriging interpolation on model grid
-#'
-#' Calculate kriging interpolation for all entries in a model grid.
-#'
-#' @param model_grid An object of class \code{mobest_modelgrid} as created by
-#' \link{create_model_grid}
-#' @param unnest Logical. Should the kriging result be unnested to return a
-#' prediction point-wise table of class \code{mobest_interpolgrid}?
-#' @param quiet Logical. Should a progress indication be printed?
-#'
-#' @return If \code{unnest = T } then an object of class \code{mobest_interpolgrid},
-#' otherwise a tibble with a list column \code{prediction} that contains the
-#' kriging results for each model grid row
-#'
-#' @rdname run_model_grid
+#' @rdname interpolation
 #' @export
 run_model_grid <- function(model_grid, unnest = T, quiet = F) {
   # input check
@@ -191,21 +181,17 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
 #' to handle the main trends independently?
 #' @return Output of \code{?laGP::predGPsep}
 #'
-#' @export
 interpolate <- function(independent, dependent, pred_grid, d = NA, g = NA, auto = F, on_residuals = T) {
-
   # check input
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   checkmate::assert_numeric(dependent, len = nrow(independent))
   checkmate::assert_class(pred_grid, "mobest_spatiotemporalpositions")
-
   if (on_residuals) {
     # linear fit
     combined <- independent %>% dplyr::mutate(d = dependent)
     model <- stats::lm(d ~ x + y + z, data = combined)
     dependent <- model[["residuals"]]
   }
-
   # priors for the global GP
   if ((is.na(d) && is.na(g)) || auto) {
     da <- laGP::darg(list(mle = TRUE, max = 10), independent)
@@ -213,10 +199,8 @@ interpolate <- function(independent, dependent, pred_grid, d = NA, g = NA, auto 
     d <- da$start
     g <- ga$start
   }
-
   # fit the global GP
   gp <- laGP::newGPsep(X = independent[, c("x", "y", "z")], Z = dependent, d = d, g = g)
-
   # optimise fit automatically
   if (auto) {
     laGP::mleGPsep(
@@ -226,18 +210,14 @@ interpolate <- function(independent, dependent, pred_grid, d = NA, g = NA, auto 
       maxit = 200
     )
   }
-
   # predictions from the global GP on the prediction
   pred <- laGP::predGPsep(gp, XX = pred_grid[, c("x", "y", "z")], lite = T)
-
   # delete GP object
   laGP::deleteGPsep(gp)
-
   if (on_residuals) {
     # add predictions from linear model again
     pred$mean <- pred$mean + stats::predict(model, pred_grid[c("x", "y", "z")])
   }
-
   # return result
   return(pred)
 }

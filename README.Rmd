@@ -331,24 +331,6 @@ interpol_comparison
 
 ### Spatiotemporal interpolation
 
-#### One field
-
-```{r}
-mobest::interpolate(
-  independent = positions,
-  dependent = observations$ac1,
-  pred_grid = expand.grid(
-    x = seq(100000, 1000000, 100000), 
-    y = seq(100000, 1000000, 100000)
-  ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) } %>%
-    mobest::geopos_to_spatpos(-5000),
-  d = c(1000000, 1000000, 200)^2,
-  g = 0.1
-)
-```
-
-#### The model grid
-
 The spatiotemporal interpolation workflow consists of the creation of a list of models and then running each element in this list.
 
 `mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of input elements. Each row equals one complete model definition with all parameters and input data fully defined.
