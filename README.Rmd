@@ -18,6 +18,7 @@ This R package provides types and functions for spatiotemporal interpolation of 
 Here is a simple, artificial example how 2. can be used:
 
 ```{r}
+library(magrittr)
 set.seed(144)
 
 # a function to calculate the similarity probability for one particular sample
@@ -94,17 +95,53 @@ remotes::install_github('nevrome/mobest')
 
 The following guide briefly lists the functions in the order you would usually call them and introduces the interface from a technical point of view.
 
-### Basic classes for the input data
+### Basic data types
 
-`mobest::create_spatpos` creates an object of class `mobest_spatiotemporalpositions` which is a `data.frame` that represents spatiotemporal positions.
+#### Spatial coordinates
 
-```{r, echo=F}
-library(magrittr)
-set.seed(123)
-```
+`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a cartesian space. For real world coordinates that means they have to be transformed to a projected coordinate system (e.g. with `?sf::st_transform`).
 
 ```{r}
-positions <- mobest::create_spatpos(
+spatial_positions <- mobest::create_geopos(
+  id = 1:100,
+  x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
+  y = c(sample(100000:700000, 50), sample(300000:1000000, 50))
+)
+```
+
+```{r, echo=F}
+spatial_positions
+```
+
+For the interpolation fields we often want regular, spatial rasters covering a specific spatial area. These can be constructed with `mobest::create_prediction_grid`, which takes an object of class `sf` with polygons in a projected coordinate system and also yields an objects of class `mobest_spatialpositions`.
+
+Here is an example for the landmass of Europe:
+
+```{r, warning=FALSE}
+rnaturalearthdata::countries50 %>%
+  sf::st_as_sf() %>%
+  sf::st_make_valid() %>%
+  sf::st_crop(xmin = -10.8, ymin = 33.6, xmax = 34.5, ymax = 61.3) %>%
+  sf::st_transform(3857) %>%
+  mobest::create_prediction_grid(150000) %>%
+  ggplot() + geom_raster(aes(x, y)) + coord_fixed()
+```
+
+#### Spatiotemporal coordinates
+
+`mobest_spatialpositions` can be transformed to `mobest_spatiotemporalpositions` with `mobest::geopos_to_spatpos`, which calculates the permutations of all spatial positions with a new, implicitly temporal dimension `z`:
+
+```{r}
+mobest::geopos_to_spatpos(
+  spatial_positions,
+  c(-5000, -4900, -4800)
+)
+```
+
+`mobest::create_spatpos` directly creates an object of class `mobest_spatiotemporalpositions` to represent spatiotemporal positions.
+
+```{r}
+spatiotemporal_positions <- mobest::create_spatpos(
   id = 1:100,
   x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
   y = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
@@ -113,8 +150,31 @@ positions <- mobest::create_spatpos(
 ```
 
 ```{r, echo=F}
-positions
+spatiotemporal_positions
 ```
+
+#### Genetic coordinates ####
+
+`mobest::create_obs` creates `mobest_observations`, which is a `tibble` with genetic coordinates.
+
+```{r}
+observations <- mobest::create_obs(
+  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" here for "ancestry component"
+  ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
+)
+```
+
+```{r, echo=F}
+observations
+```
+
+Under specific circumstances, these observations in genetic space come with an error bar. To represent these errors an object of class `mobest_observations_error` can be constructed with `mobest::create_obserror`, which, in turn, can be combined with an object of class `mobest_observations` using `mobest::create_obs_obserror`.
+
+#### Kernel parameter settings
+
+
+
+#### Variability and permutations
 
 `mobest::create_spatpos_multi` creates a list of `mobest_spatiotemporalpositions` objects. It's meant to represent positional uncertainty, by providing multiple sets of spatiotemporal coordinates for points with identical IDs.
 
@@ -127,19 +187,6 @@ uncertain_positions <- mobest::create_spatpos_multi(
 
 ```{r, echo=F}
 uncertain_positions
-```
-
-`mobest::create_obs` creates a `data.frame` of observations (class `mobest_observations`) corresponding to the spatiotemporal positions defined above.
-
-```{r}
-observations <- mobest::create_obs(
-  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" here for "ancestry component"
-  ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
-)
-```
-
-```{r, echo=F}
-observations
 ```
 
 ### Parameter estimation
