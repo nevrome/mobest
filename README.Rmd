@@ -8,7 +8,78 @@ editor_options:
 
 # mobest
 
-This R package provides a pipeline for spatiotemporal interpolation of human genetic ancestry components and a derived measure for **mob**ility **est**imation. The workflow in version 1.0 was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>. For broader applications the code would probably have to be adjusted. This is not designed as a general-purpose package, but rather a structured collection of functions for said paper.
+This R package provides types and functions for spatiotemporal interpolation of human genetic ancestry components and a derived measure for **mob**ility **est**imation. The workflow in version 1.0 was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>.
+
+0. `mobest` assumes you have a set of genetic samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a PCA or MDS space).
+1. `mobest` then provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided. 
+2. `mobest` then allows to derive a similarity probability for samples of interest within the interpolated field, which -- under certain circumstances -- can be interpreted as an origin probability. 
+3. `mobest` finally introduces functions to estimate a measure of mobility for the samples of interest, based on the similarity probability field.
+
+Here is a simple, artificial example how 2. can be used:
+
+```{r}
+set.seed(144)
+
+# a function to calculate the similarity probability for one particular sample
+locate_simple <- mobest::locate(
+  # spatiotemporal coordinates of the reference samples that inform the ancestry field
+  independent = mobest::create_spatpos(
+    id = 1:100,
+    x = c(sample(100000:700000, 50), sample(300000:1000000, 50)), # space x
+    y = c(sample(100000:700000, 50), sample(300000:1000000, 50)), # space y
+    z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))       # time
+  ),
+  # genetic coordinates of the reference samples
+  dependent = observations <- mobest::create_obs(
+    ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # PCA coordinate 1
+    ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))  # PCA coordinate 2
+  ),
+  # field properties for each ancestry component
+  kernel = mobest::create_kernset(
+    ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+    ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
+  ),
+  # spatiotemporal coordinates of the sample of interest
+  search_independent = mobest::create_spatpos(
+    id = 1,
+    x = sample(100000:1000000, 1), # space x
+    y = sample(100000:1000000, 1), # space y
+    z = sample(-5000:-3000, 1)     # time
+  ),
+  # genetic coordinates of the sample of interest
+  search_dependent = mobest::create_obs(
+    ac1 = runif(1, 0, 0.6), # PCA coordinate 1
+    ac2 = runif(1, 0, 0.5)  # PCA coordinate 2
+  ),
+  # spatial search grid: Where to search
+  search_space_grid = expand.grid(
+      x = seq(100000, 1000000, 100000), 
+      y = seq(100000, 1000000, 100000)
+    ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
+  # search time: When to search
+  search_time = -500,
+  quiet = T
+)
+
+# multiply probabilities for PCA coordinate 1 and PCA coordinate 2
+locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
+
+# plot the resulting probability surface
+library(ggplot2)
+locate_product %>%
+  ggplot() +
+  geom_raster(
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  geom_point(
+    mapping = aes(x = x, y = y), colour = "red"
+  ) +
+  coord_fixed() +
+  ggtitle(paste0(
+    "t for sample of interest = ", unique(locate_product$z), "\n",
+    "t field time slice = ", unique(locate_product$search_z)
+  ))
+```
 
 ## Installation
 
@@ -19,11 +90,9 @@ if(!require('remotes')) install.packages('remotes')
 remotes::install_github('nevrome/mobest')
 ```
 
-## Workflow
+## Overview
 
-`mobest` assumes you have a set of ancient DNA samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a multidimensional scaling space). This package now provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided. `mobest` then allows to estimate a point-wise measure of mobility based on a search for “ancestry origin” positions with similar genetic make-up in the respective past.
-
-The research paper linked above explains the details and background. The following guide just briefly lists the functions in the order you would usually call them and introduces the interface from a technical point of view.
+The following guide briefly lists the functions in the order you would usually call them and introduces the interface from a technical point of view.
 
 ### Basic classes for the input data
 

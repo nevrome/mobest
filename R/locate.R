@@ -24,7 +24,7 @@ locate <- function(
     search_space_grid = search_space_grid,
     search_time = search_time,
     search_time_mode = search_time_mode,
-    quiet = F
+    quiet = quiet
   ) %>%
     dplyr::select(
       -.data[["independent_table_id"]],
