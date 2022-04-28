@@ -1,55 +1,33 @@
 #' Input data type constructors
 #'
 #' Functions to create the main input data types for the mobest package.
-#' See the README for example code.
 #'
-#' @param id Vector. IDs of the observation points
+#' @param id Vector. Identifiers of the individual data points
 #' @param x Numeric vector. Spatial x-axis coordinates
 #' @param y Numeric vector. Spatial y-axis coordinates
 #' @param z Numeric vector. Temporal positions
-#' @param dsx Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more info
+#' @param area An object of class \code{sf}. Polygons where the spatial grid should
+#' be constructed
+#' @param spatial_cell_size Numeric. Size of the output spatial grid cells in the unit of
+#' \code{area}. See \code{?sf::st_make_grid} for more info
+#' @param dsx Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more information
 #' @param dsy Double. Kernel lengthscale parameter for the y dimension (spatial y-axis)
 #' @param dt Double. Kernel lengthscale parameter for the z dimension (temporal axis)
 #' @param g Double. Kernel nugget parameter
-#' @param on_residuals Logical. In the field calculation down the pipeline: Should a linear model take out the main trends before the kriging interpolation?
-#' @param auto Logical. In the field calculation down the pipeline:
+#' @param on_residuals Logical. In the field calculation:
+#' Should a linear model take over the main trends before the kriging interpolation?
+#' @param auto Logical. In the field calculation:
 #' Should the lengthscale and nugget values be automatically determined by laGPs
 #' maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
-#' @param ... Different inputs (see examples in README)
+#' @param ... Different inputs - usually individual elements to be merged in a list type
 #' @param .names Vector. Names of different object iterations
 #'
-#' @return Different data types for specific applications.
+#' @return Different data types
 #'
-#' @rdname input_data_constructors
-#' @export
-create_obs <- function(..., .names = NULL) {
-  obs <- list(...)
-  if (!is.null(.names)) { names(obs) <- .names }
-  # check list
-  checkmate::assert_list(obs, types = "numeric", names = "strict")
-  checkmate::assert_true(
-    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
-  )
-  # compile tibble
-  dplyr::bind_cols(obs) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
-}
+#' @name input_data_constructors
+NULL
 
-#' @rdname input_data_constructors
-#' @export
-create_obs_error <- function(..., .names = NULL) {
-  obs <- list(...)
-  if (!is.null(.names)) { names(obs) <- .names }
-  # check list
-  checkmate::assert_list(obs, types = "numeric", names = "strict")
-  checkmate::assert_true(all(grepl("_sd", names(obs))))
-  checkmate::assert_true(
-    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
-  )
-  # compile tibble
-  dplyr::bind_cols(obs) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
-}
+#### spatial coordinates ####
 
 #' @rdname input_data_constructors
 #' @export
@@ -68,20 +46,44 @@ create_geopos <- function(id, x, y, ...) {
 
 #' @rdname input_data_constructors
 #' @export
-create_geopos_multi <- function(..., .names = NULL) {
-  geopos <- list(...)
-  if (!is.null(.names)) { names(geopos) <- .names }
-  # input check
-  checkmate::assert_list(geopos, types = "mobest_spatialpositions", names = "strict")
-  checkmate::assert_true(
-    purrr::map_int(geopos, nrow) %>% unique %>% length %>% magrittr::equals(1)
+create_prediction_grid <- function(area, spatial_cell_size) {
+  # dependency check
+  check_if_packages_are_available("sf")
+  # input checks
+  checkmate::assert_class(area, classes = "sf")
+  # prepare grid
+  sf::st_agr(area) <- "constant"
+  space_grid_rect_sf <- area %>%
+    sf::st_make_grid(cellsize = spatial_cell_size, what = "centers") %>%
+    sf::st_sf()
+  sf::st_agr(space_grid_rect_sf) <- "constant"
+  space_grid_sf <- sf::st_intersection(space_grid_rect_sf, area)
+  space_grid <- space_grid_sf %>%
+    dplyr::mutate(
+      x = sf::st_coordinates(.)[,1],
+      y = sf::st_coordinates(.)[,2]
+    ) %>%
+    sf::st_drop_geometry() %>%
+    dplyr::select(.data[["x"]], .data[["y"]])
+  # compile output
+  mobest::create_geopos(
+    id = 1:nrow(space_grid),
+    x = space_grid$x,
+    y = space_grid$y
   )
-  checkmate::assert_true(
-    purrr::map_lgl(geopos, function(x) { all(x[["id"]] == geopos[[1]]$id) }) %>% all()
-  )
-  # compile output data structure
-  geopos
 }
+
+#' @rdname input_data_constructors
+#' @export
+create_geopos_multi <- function(..., .names = NULL) {
+  tibble_multi_function_factory(
+    "mobest_spatialpositions",
+    "mobest_spatialpositions_multi",
+    T,T
+  )(..., .names = .names)
+}
+
+#### spatiotemporal coordinates ####
 
 #' @rdname input_data_constructors
 #' @export
@@ -122,19 +124,82 @@ create_spatpos <- function(id, x, y, z, ...) {
 #' @rdname input_data_constructors
 #' @export
 create_spatpos_multi <- function(..., .names = NULL) {
-  spatpos <- list(...)
-  if (!is.null(.names)) { names(spatpos) <- .names }
-  # input check
-  checkmate::assert_list(spatpos, types = "mobest_spatiotemporalpositions", names = "strict")
-  checkmate::assert_true(
-    purrr::map_int(spatpos, nrow) %>% unique %>% length %>% magrittr::equals(1)
-  )
-  checkmate::assert_true(
-    purrr::map_lgl(spatpos, function(x) { all(x[["id"]] == spatpos[[1]]$id) }) %>% all()
-  )
-  # compile output data structure
-  spatpos
+  tibble_multi_function_factory(
+    "mobest_spatiotemporalpositions",
+    "mobest_spatiotemporalpositions_multi",
+    T,T
+  )(..., .names = .names)
 }
+
+#### genetic coordinates ####
+
+#' @rdname input_data_constructors
+#' @export
+create_obs <- function(..., .names = NULL) {
+  obs <- list(...)
+  if (!is.null(.names)) { names(obs) <- .names }
+  # check list
+  checkmate::assert_list(obs, types = "numeric", names = "strict")
+  checkmate::assert_true(
+    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
+  )
+  # compile tibble
+  dplyr::bind_cols(obs) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obserror <- function(..., .names = NULL) {
+  obs <- list(...)
+  if (!is.null(.names)) { names(obs) <- .names }
+  # check list
+  checkmate::assert_list(obs, types = "numeric", names = "strict")
+  checkmate::assert_true(all(grepl("_sd", names(obs))))
+  checkmate::assert_true(
+    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
+  )
+  # compile tibble
+  dplyr::bind_cols(obs) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obs_obserror <- function(obs, obserror) {
+  # input check
+  checkmate::assert_class(obs, "mobest_observations")
+  checkmate::assert_class(obserror, "mobest_observations_error")
+  checkmate::assert_true(
+    all(names(obserror) == paste0(names(obs), "_sd"))
+  )
+  checkmate::assert_true(nrow(obs) == nrow(obserror))
+  # compile tibble
+  dplyr::bind_cols(obs, obserror) %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_with_error")
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obs_multi <- function(..., .names = NULL) {
+  tibble_multi_function_factory(
+    "mobest_observations",
+    "mobest_observations_multi",
+    T,F
+  )(..., .names = .names)
+}
+
+#' @rdname input_data_constructors
+#' @export
+create_obs_obserror_multi <- function(..., .names = NULL) {
+  tibble_multi_function_factory(
+    "mobest_observations_with_error",
+    "mobest_observations_with_error_multi",
+    T,F
+  )(..., .names = .names)
+}
+
+#### kernel settings ####
 
 #' @rdname input_data_constructors
 #' @export
@@ -161,21 +226,47 @@ create_kernel <- function(dsx, dsy, dt, g, on_residuals = T, auto = F) {
 #' @rdname input_data_constructors
 #' @export
 create_kernset <- function(..., .names = NULL) {
-  kernels <- list(...)
-  if (!is.null(.names)) { names(kernels) <- .names }
-  # input check
-  checkmate::assert_list(kernels, types = "mobest_kernel", names = "strict")
-  # compile output data structure
-  kernels %>% magrittr::set_class("mobest_kernelsetting")
+  tibble_multi_function_factory(
+    "mobest_kernel",
+    "mobest_kernelsetting",
+    F,F
+  )(..., .names = .names)
 }
 
 #' @rdname input_data_constructors
 #' @export
 create_kernset_multi <- function(..., .names = NULL) {
-  kernels_multi <- list(...)
-  if (!is.null(.names)) { names(kernels_multi) <- .names }
-  # input check
-  checkmate::assert_list(kernels_multi, types = "mobest_kernelsetting", names = "strict")
-  # compile output data structure
-  kernels_multi
+  tibble_multi_function_factory(
+    "mobest_kernelsetting",
+    "mobest_kernelsetting_multi",
+    F,F
+  )(..., .names = .names)
+}
+
+#### helper functions ####
+
+# this function produces other constructor functions
+tibble_multi_function_factory <- function(single_type, multi_type, is_df = F, has_id = F) {
+  function(..., .names = NULL) {
+    multi <- list(...)
+    if (!is.null(.names)) { names(multi) <- .names }
+    # input check
+    checkmate::assert_list(
+      multi, types = single_type,
+      any.missing = F, min.len = 1,
+      names = "strict"
+    )
+    if (is_df) {
+      checkmate::assert_true(
+        purrr::map_int(multi, nrow) %>% unique %>% length %>% magrittr::equals(1)
+      )
+    }
+    if (has_id) {
+      checkmate::assert_true(
+        purrr::map_lgl(multi, function(x) { all(x[["id"]] == multi[[1]]$id) }) %>% all()
+      )
+    }
+    # compile output data structure
+    multi %>% magrittr::set_class(c(multi_type, "list"))
+  }
 }

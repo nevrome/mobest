@@ -34,42 +34,33 @@ create_model_grid <- function(
   prediction_grid
 ) {
   # input check
-  checkmate::assert_list(
-    independent, types = "mobest_spatiotemporalpositions",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_class(
-    dependent, classes = "mobest_observations"
-  )
-  checkmate::assert_list(
-    kernel, types = "mobest_kernelsetting",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  checkmate::assert_list(
-    prediction_grid, types = "mobest_spatiotemporalpositions",
-    any.missing = F, min.len = 1, names = "strict"
-  )
-  purrr::walk(kernel, function(one_kernset) {
-    checkmate::assert_true(all(names(one_kernset) == names(dependent)))
-  })
-  purrr::walk(independent, function(one_independent) {
-    checkmate::assert_true(nrow(one_independent) == nrow(dependent))
-  })
+  checkmate::assert_class(independent, "mobest_spatiotemporalpositions_multi")
+  checkmate::assert_class(dependent, "mobest_observations_multi")
+  checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
+  checkmate::assert_class(prediction_grid, "mobest_spatiotemporalpositions_multi")
+  check_compatible_multi(kernel, dependent, check_names_equal)
+  check_compatible_multi(independent, dependent, check_df_nrow_equal)
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
     independent_table_id = factor(names(independent), levels = names(independent))
   )
-  dependent_vars <- tibble::tibble(
-    dependent_var = as.list(dependent),
-    dependent_var_id = factor(names(dependent), levels = names(dependent))
+  dependent_vars <- purrr::map2_dfr(
+    factor(names(dependent), levels = names(dependent)), dependent,
+    function(dependent_name, one_dependent) {
+      tibble::tibble(
+        dependent_setting_id = dependent_name,
+        dependent_var_id = names(one_dependent),#Needs solution for factor: factor(names(one_dependent), levels = names(dependent)),
+        dependent_var = as.list(one_dependent)
+      )
+    }
   )
   kernel_settings <- purrr::map2_dfr(
     factor(names(kernel), levels = names(kernel)), kernel,
     function(kernel_name, one_kernel) {
       tibble::tibble(
         kernel_setting_id = kernel_name,
-        dependent_var_id = factor(names(one_kernel), levels = names(dependent)),
+        dependent_var_id = names(one_kernel),
         kernel_setting = one_kernel[1:length(one_kernel)]
       )
     }
@@ -92,17 +83,18 @@ create_model_grid <- function(
 
 create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_settings, pred_grids) {
   expand.grid(
-    independent_table_id = independent_tables[["independent_table_id"]],
-    dependent_var_id = dependent_vars[["dependent_var_id"]],
+    independent_table_id = unique(independent_tables[["independent_table_id"]]),
+    dependent_setting_id = unique(dependent_vars[["dependent_setting_id"]]),
+    dependent_var_id = unique(dependent_vars[["dependent_var_id"]]),
     kernel_setting_id = unique(kernel_settings[["kernel_setting_id"]]),
-    pred_grid_id = pred_grids[["pred_grid_id"]],
+    pred_grid_id = unique(pred_grids[["pred_grid_id"]]),
     stringsAsFactors = F
   ) %>%
     dplyr::left_join(
       independent_tables, by = "independent_table_id"
     ) %>%
     dplyr::left_join(
-      dependent_vars, by = "dependent_var_id"
+      dependent_vars, by = c("dependent_setting_id", "dependent_var_id")
     ) %>%
     dplyr::left_join(
       kernel_settings, by = c("kernel_setting_id", "dependent_var_id")
@@ -129,18 +121,8 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
 #' @rdname run_model_grid
 #' @export
 run_model_grid <- function(model_grid, unnest = T, quiet = F) {
-  UseMethod("run_model_grid")
-}
-
-#' @rdname run_model_grid
-#' @export
-run_model_grid.default <- function(model_grid, unnest = T, quiet = F) {
-  stop("x is not an object of class mobest_modelgrid")
-}
-
-#' @rdname run_model_grid
-#' @export
-run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
+  # input check
+  checkmate::assert_class(model_grid, "mobest_modelgrid")
   # run interpolation for each entry in the model_grid
   prediction <- purrr::map(
     1:nrow(model_grid), function(i) {
@@ -195,4 +177,48 @@ run_model_grid.mobest_modelgrid <- function(model_grid, unnest = T, quiet = F) {
   } else {
     return(model_grid_simplified)
   }
+}
+
+#### helper functions ####
+
+check_compatible_multi <- function(x, y, comp_f, ...) {
+    purrr::pwalk(
+      get_permutations(x, y),
+      function(i1, i2) {
+        comp_f(
+          x[[i1]],
+          y[[i2]],
+          names(x)[i1],
+          names(y)[i2],
+          ...
+        )
+      }
+    )
+}
+
+check_df_nrow_equal <- function(x, y, name_x, name_y) {
+  if (nrow(x) != nrow(y)) {
+    stop(name_x, " and ", name_y, ": Not the same number of lines")
+  }
+}
+
+check_names_equal <- function(x, y, name_x, name_y, ignore_sd_cols = F) {
+  names_x <- names(x)
+  names_y <- names(y)
+  if (ignore_sd_cols) {
+    names_x <- names_x[!grepl("\\_sd$", names_x)]
+    names_y <- names_y[!grepl("\\_sd$", names_y)]
+  }
+  if (!setequal(names_x, names_y)) {
+    stop(name_x, " and ", name_y, ": Not the same names")
+  }
+}
+
+get_permutations <- function(x, y, include.equals = FALSE) {
+  expand.grid(seq_along(x), seq_along(y)) %>%
+    as.data.frame() %>%
+    magrittr::set_names(c("i1", "i2")) %>%
+    dplyr::filter(
+      .data[["i1"]] >= .data[["i2"]]
+    )
 }
