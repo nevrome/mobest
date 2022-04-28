@@ -23,10 +23,7 @@ crossvalidate <- function(
   # input check
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   checkmate::assert_class(dependent, "mobest_observations")
-  checkmate::assert_list(
-    kernel, types = "mobest_kernelsetting",
-    any.missing = F, min.len = 1, names = "strict"
-  )
+  checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
   checkmate::assert_count(iterations)
   checkmate::assert_count(groups)
   # create crossvalidation dataset
@@ -64,9 +61,12 @@ crossvalidate <- function(
                 ),
                 .names = paste0("ind_crossval_run_", run_id)
               ),
-              dependent = do.call(
-                mobest::create_obs,
-                training[, names(dependent)]
+              dependent = mobest::create_obs_multi(
+                do.call(
+                  mobest::create_obs,
+                  training[, names(dependent)]
+                ),
+                .names = paste0("obs_crossval_run_", run_id)
               ),
               kernel = kernel,
               prediction_grid = mobest::create_spatpos_multi(
@@ -96,7 +96,7 @@ crossvalidate <- function(
       crossval %>% dplyr::select(
         -.data[["x"]], -.data[["y"]], -.data[["z"]]
       ) %>% tidyr::pivot_longer(
-        cols = tidyselect::matches(names(dependent)),
+        cols = -"id",
         names_to = "dependent_var_id",
         values_to = "measured"
       ),
