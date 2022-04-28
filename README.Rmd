@@ -102,15 +102,11 @@ The following guide briefly lists the functions in the order you would usually c
 `mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a cartesian space. For real world coordinates that means they have to be transformed to a projected coordinate system (e.g. with `?sf::st_transform`).
 
 ```{r}
-spatial_positions <- mobest::create_geopos(
+mobest::create_geopos(
   id = 1:100,
   x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
   y = c(sample(100000:700000, 50), sample(300000:1000000, 50))
 )
-```
-
-```{r, echo=F}
-spatial_positions
 ```
 
 For the interpolation fields we often want regular, spatial rasters covering a specific spatial area. These can be constructed with `mobest::create_prediction_grid`, which takes an object of class `sf` with polygons in a projected coordinate system and also yields an objects of class `mobest_spatialpositions`.
@@ -133,7 +129,11 @@ rnaturalearthdata::countries50 %>%
 
 ```{r}
 mobest::geopos_to_spatpos(
-  spatial_positions,
+  mobest::create_geopos(
+    id = 1:100,
+    x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
+    y = c(sample(100000:700000, 50), sample(300000:1000000, 50))
+  ),
   c(-5000, -4900, -4800)
 )
 ```
@@ -141,7 +141,7 @@ mobest::geopos_to_spatpos(
 `mobest::create_spatpos` directly creates an object of class `mobest_spatiotemporalpositions` to represent spatiotemporal positions.
 
 ```{r}
-spatiotemporal_positions <- mobest::create_spatpos(
+positions <- mobest::create_spatpos(
   id = 1:100,
   x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
   y = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
@@ -150,7 +150,7 @@ spatiotemporal_positions <- mobest::create_spatpos(
 ```
 
 ```{r, echo=F}
-spatiotemporal_positions
+positions
 ```
 
 #### Genetic coordinates ####
@@ -172,26 +172,44 @@ Under specific circumstances, these observations in genetic space come with an e
 
 #### Kernel parameter settings
 
-
-
-#### Variability and permutations
-
-`mobest::create_spatpos_multi` creates a list of `mobest_spatiotemporalpositions` objects. It's meant to represent positional uncertainty, by providing multiple sets of spatiotemporal coordinates for points with identical IDs.
+Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific genetic coordinate. Given that an analysis typically involves multiple genetic coordinates (see `mobest_observations`) `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly:
 
 ```{r}
-uncertain_positions <- mobest::create_spatpos_multi(
-  dating_1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
-  dating_2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
+mobest::create_kernset(
+  ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+  ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
 )
 ```
 
-```{r, echo=F}
-uncertain_positions
+#### Variability and permutations
+
+When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions. To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that can work with permutatations of these input lists.
+
+Available are:
+- `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
+- `mobest_spatiotemporalpositions_multi` (`mobest::create_spatpos_multi`)
+- `mobest_observations_multi` (`mobest::create_obs_multi`)
+- `mobest_observations_with_error_multi` (`mobest::create_obs_obserror_multi`)
+- `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
+
+And here is how they can be filled with named arguments:
+
+```{r}
+multiple_kernel_settings <- mobest::create_kernset_multi(
+  kernel_1 = mobest::create_kernset(
+    ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+    ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
+  ),
+  kernel_2 = mobest::create_kernset(
+    ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
+    ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
+  )
+)
 ```
 
 ### Parameter estimation
 
-Gaussian process regression requires a parametrized covariance function (a "kernel"). `mobest` provides helper functions to estimate the relevant parameters from the input data.
+`mobest` provides helper functions to estimate the kernel settings for the Gaussian process regression.
 
 #### Variogram calculation
 
