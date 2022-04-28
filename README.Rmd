@@ -338,7 +338,10 @@ The spatiotemporal interpolation workflow consists of the creation of a list of 
 ```{r}
 library(magrittr)
 model_grid <- mobest::create_model_grid(
-  independent = uncertain_positions,
+  independent = mobest:::create_spatpos_multi(
+    dating_1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
+    dating_2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
+  ),
   dependent = mobest:::create_obs_multi(
     obs1 = observations,
     obs2 = observations
