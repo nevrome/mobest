@@ -104,10 +104,6 @@ crossvalidate <- function(
     ) %>%
     # calculate differences between estimated and measured values
     dplyr::mutate(
-      dependent_var_id = factor(
-        dependent_var_id,
-        levels = levels(crossval_interpol_grid$dependent_var_id)
-      ),
       difference = .data[["mean"]] - .data[["measured"]]
     )
 }
