@@ -19,14 +19,6 @@ Kernel parameter settings. See \code{?interpolate_laGP} for more information#'}
 
 \item{prediction_grid}{Named list of dataframes.
 Prediction grid positions for the interpolation.
-Each dataframe should have three numeric columns x, y and z and a point id column:
-
-\itemize{
- \item{point_id: }{Unique point id}
- \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
- \item{y: }{Spatial coordinate in y-axis direction}
- \item{z: }{Temporal position (age)}
-}
 
 See \code{?prediction_grid_for_spatiotemporal_area} for a function to create grid for a certain
 spatial region}

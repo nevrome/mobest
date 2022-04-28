@@ -12,14 +12,6 @@
 #' Kernel parameter settings. See \code{?interpolate_laGP} for more information#'
 #' @param prediction_grid Named list of dataframes.
 #' Prediction grid positions for the interpolation.
-#' Each dataframe should have three numeric columns x, y and z and a point id column:
-#'
-#' \itemize{
-#'  \item{point_id: }{Unique point id}
-#'  \item{x: }{Spatial coordinate in x-axis direction (in a cartesian grid)}
-#'  \item{y: }{Spatial coordinate in y-axis direction}
-#'  \item{z: }{Temporal position (age)}
-#' }
 #'
 #' See \code{?prediction_grid_for_spatiotemporal_area} for a function to create grid for a certain
 #' spatial region
@@ -76,8 +68,8 @@ create_model_grid <- function(
     kernel_settings = kernel_settings,
     pred_grids = pred_grids
   ) %>%
-  # make subclass of tibble
-  tibble::new_tibble(., nrow = nrow(.), class = "mobest_modelgrid")
+    # make subclass of tibble
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_modelgrid")
   return(model_grid)
 }
 
@@ -129,7 +121,7 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
       if (!quiet) {
         message("running model ", i, " of ", nrow(model_grid))
       }
-      interpolate_laGP(
+      interpolate(
         independent = model_grid[["independent_table"]][[i]],
         dependent = model_grid[["dependent_var"]][[i]],
         pred_grid = model_grid[["pred_grid"]][[i]],
@@ -179,101 +171,33 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
   }
 }
 
-#### helper functions ####
-
-check_compatible_multi <- function(x, y, comp_f, ...) {
-    purrr::pwalk(
-      get_permutations(x, y),
-      function(i1, i2) {
-        comp_f(
-          x[[i1]],
-          y[[i2]],
-          names(x)[i1],
-          names(y)[i2],
-          ...
-        )
-      }
-    )
-}
-
-check_df_nrow_equal <- function(x, y, name_x, name_y) {
-  if (nrow(x) != nrow(y)) {
-    stop(name_x, " and ", name_y, ": Not the same number of lines")
-  }
-}
-
-check_names_equal <- function(x, y, name_x, name_y, ignore_sd_cols = F) {
-  names_x <- names(x)
-  names_y <- names(y)
-  if (ignore_sd_cols) {
-    names_x <- names_x[!grepl("\\_sd$", names_x)]
-    names_y <- names_y[!grepl("\\_sd$", names_y)]
-  }
-  if (!setequal(names_x, names_y)) {
-    stop(name_x, " and ", name_y, ": Not the same names")
-  }
-}
-
-get_permutations <- function(x, y, include.equals = FALSE) {
-  expand.grid(seq_along(x), seq_along(y)) %>%
-    as.data.frame() %>%
-    magrittr::set_names(c("i1", "i2")) %>%
-    dplyr::filter(
-      .data[["i1"]] >= .data[["i2"]]
-    )
-}
-
 #' 3D interpolation with laGP
 #'
 #' Performs kriging with laGPs gaussian process prediction. See
-#' \code{?laGP::predGPsep} for more information. If \code{on_residuals = T} a linear model
-#' is wrapped around the kriging model to handle the main trends independently.
+#' \code{?laGP::predGPsep} for more information.
 #'
-#' @param independent Dataframe with input point position coordinates x, y and z
-#' @param dependent Vector with input point values
-#' @param pred_grid Dataframe with output point position coordinates x, y and z
-#' @param d Numeric vector. Lengthscale parameter. See \code{?laGP::newGP} for more info
+#' @param independent An object of class mobest_spatiotemporalpositions.
+#' Spatiotemporal input point positions
+#' @param dependent Numeric vector.
+#' Dependent variable that should be interpolated
+#' @param pred_grid An object of class mobest_spatiotemporalpositions.
+#' Prediction grid positions for the interpolation
+#' @param d Numeric vector. Lengthscale parameter.
+#' See \code{?laGP::newGP} for more info
 #' @param g Numeric. Nugget parameter
 #' @param auto Should the lengthscale and nugget values be automatically determined
 #' by laGPs maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
-#' @param on_residuals Should a linear model take out the main trends before the kriging interpolation?
+#' @param on_residuals Should a linear model be wrapped around the kriging model
+#' to handle the main trends independently?
 #' @return Output of \code{?laGP::predGPsep}
 #'
-#' @examples
-#' \donttest{
-#' independent <- tibble::tribble(
-#'   ~x, ~y, ~z,
-#'   0,0,0,
-#'   1,0,0,
-#'   0,1,0,
-#'   0,0,1,
-#'   10,10,10,
-#'   9,10,10,
-#'   10,9,10,
-#'   10,10,9
-#' )
-#'
-#' dependent <- c(1,1,1,1,10,10,10,10)
-#'
-#' pred_grid <- tibble::as_tibble(expand.grid(x = 0:10, y = 0:10, z = 0:10))
-#'
-#' pred <- interpolate_laGP(
-#'   independent, dependent, pred_grid, auto = FALSE, d = c(3, 3, 3)^2,
-#'   g = 0.01, on_residuals = TRUE
-#' )
-#'
-#' pred_grid$pred_mean <- pred$mean
-#'
-#' #library(ggplot2)
-#' #ggplot(data = pred_grid) +
-#' # geom_raster(aes(x, y, fill = pred_mean)) +
-#' # facet_wrap(~z) +
-#' # scale_fill_viridis_c()
-#'
-#' }
-#'
 #' @export
-interpolate_laGP <- function(independent, dependent, pred_grid, d, g, auto = F, on_residuals = T) {
+interpolate <- function(independent, dependent, pred_grid, d = NA, g = NA, auto = F, on_residuals = T) {
+
+  # check input
+  checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
+  checkmate::assert_numeric(dependent, len = nrow(independent))
+  checkmate::assert_class(pred_grid, "mobest_spatiotemporalpositions")
 
   if (on_residuals) {
     # linear fit
@@ -283,7 +207,7 @@ interpolate_laGP <- function(independent, dependent, pred_grid, d, g, auto = F, 
   }
 
   # priors for the global GP
-  if (auto) {
+  if ((is.na(d) && is.na(g)) || auto) {
     da <- laGP::darg(list(mle = TRUE, max = 10), independent)
     ga <- laGP::garg(list(mle = TRUE, max = 10), dependent)
     d <- da$start
@@ -318,3 +242,46 @@ interpolate_laGP <- function(independent, dependent, pred_grid, d, g, auto = F, 
   return(pred)
 }
 
+#### helper functions ####
+
+check_compatible_multi <- function(x, y, comp_f, ...) {
+  purrr::pwalk(
+    get_permutations(x, y),
+    function(i1, i2) {
+      comp_f(
+        x[[i1]],
+        y[[i2]],
+        names(x)[i1],
+        names(y)[i2],
+        ...
+      )
+    }
+  )
+}
+
+check_df_nrow_equal <- function(x, y, name_x, name_y) {
+  if (nrow(x) != nrow(y)) {
+    stop(name_x, " and ", name_y, ": Not the same number of lines")
+  }
+}
+
+check_names_equal <- function(x, y, name_x, name_y, ignore_sd_cols = F) {
+  names_x <- names(x)
+  names_y <- names(y)
+  if (ignore_sd_cols) {
+    names_x <- names_x[!grepl("\\_sd$", names_x)]
+    names_y <- names_y[!grepl("\\_sd$", names_y)]
+  }
+  if (!setequal(names_x, names_y)) {
+    stop(name_x, " and ", name_y, ": Not the same names")
+  }
+}
+
+get_permutations <- function(x, y, include.equals = FALSE) {
+  expand.grid(seq_along(x), seq_along(y)) %>%
+    as.data.frame() %>%
+    magrittr::set_names(c("i1", "i2")) %>%
+    dplyr::filter(
+      .data[["i1"]] >= .data[["i2"]]
+    )
+}

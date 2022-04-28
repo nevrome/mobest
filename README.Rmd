@@ -333,7 +333,19 @@ interpol_comparison
 
 #### One field
 
-
+```{r}
+mobest::interpolate(
+  independent = positions,
+  dependent = observations$ac1,
+  pred_grid = expand.grid(
+    x = seq(100000, 1000000, 100000), 
+    y = seq(100000, 1000000, 100000)
+  ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) } %>%
+    mobest::geopos_to_spatpos(-5000),
+  d = c(1000000, 1000000, 200)^2,
+  g = 0.1
+)
+```
 
 #### The model grid
 
