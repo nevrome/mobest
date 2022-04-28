@@ -5,6 +5,7 @@
 \alias{locate}
 \alias{locate_multi}
 \alias{multiply_dependent_probabilities}
+\alias{sum_probabilities_per_group}
 \alias{search_spatial_origin}
 \title{Search for a past point of "origin" in a prediction grid}
 \usage{
@@ -14,7 +15,6 @@ locate(
   kernel,
   search_independent,
   search_dependent,
-  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -27,7 +27,6 @@ locate_multi(
   kernel,
   search_independent,
   search_dependent,
-  search_dependent_error = NULL,
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
@@ -35,6 +34,8 @@ locate_multi(
 )
 
 multiply_dependent_probabilities(locate_overview, omit_dependent_details = T)
+
+sum_probabilities_per_group(locate_overview, ...)
 
 search_spatial_origin(
   independent,
