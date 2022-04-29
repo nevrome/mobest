@@ -206,7 +206,6 @@ locate_multi <- function(
         )
       ) %>%
       dplyr::mutate(
-        sd = NA_real_,
         .after = "search_measured"
       )
   } else if ("mobest_observationswitherror_multi" %in% class(search_dependent)) {
