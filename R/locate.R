@@ -68,13 +68,13 @@ locate <- function(
     search_time = search_time,
     search_time_mode = search_time_mode,
     quiet = quiet
-  ) %>%
-    dplyr::select(
-      -.data[["independent_table_id"]],
-      -.data[["dependent_setting_id"]],
-      -.data[["field_independent_table_id"]],
-      -.data[["field_kernel_setting_id"]]
-    )
+  )# %>%
+    # dplyr::select(
+    #   -.data[["independent_table_id"]],
+    #   -.data[["dependent_setting_id"]],
+    #   -.data[["kernel_setting_id"]],
+    #   -.data[["pred_grid_id"]]
+    # )
 }
 
 #' @rdname locate
@@ -117,24 +117,28 @@ locate_multi <- function(
   # prepare data
   search_points <- tidyr::crossing(
     search_independent = search_independent %>%
-      purrr::map2(names(.), ., function(n, x) { x$independent_table_id <- n; x}),
+      purrr::map2(names(.), ., function(n, x) {x$independent_table_id <- n; x}),
     search_dependent = search_dependent %>%
-      purrr::map2(names(.), ., function(n, x) { x$dependent_setting_id <- n; x})
+      purrr::map2(names(.), ., function(n, x) {x$dependent_setting_id <- n; x})
   ) %>% tidyr::unnest(
     cols = c("search_independent", "search_dependent")
   ) %>%
-    tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
+    dplyr::rename_with(
+      function(x) { paste0("search_", x) },
+      tidyselect::any_of(c("id", "x", "y", "z"))
+    ) %>%
+    tidyr::crossing(tibble::tibble(t = search_time)) %>%
     dplyr::mutate(
-      search_z =
+      field_z =
         if (search_time_mode == "relative") {
-          .data[["z"]] + .data[["search_time"]]
+          .data[["search_z"]] + .data[["t"]]
         } else if (search_time_mode == "absolute") {
-          .data[["search_time"]]
+          .data[["t"]]
         }
     ) %>%
-    dplyr::select(-.data[["search_time"]])
+    dplyr::select(-.data[["t"]])
   search_fields <- purrr::map(
-    search_points$search_z %>% unique(),
+    search_points$field_z %>% unique(),
     function(time_slice) {
       search_space_grid %>% geopos_to_spatpos(z = time_slice)
     }
@@ -154,7 +158,8 @@ locate_multi <- function(
     search_points %>%
       tidyr::pivot_longer(
         cols = -c(
-          "id", "x", "y", "z", "independent_table_id", "dependent_setting_id", "search_z"
+          "search_id", "search_x", "search_y", "search_z",
+          "independent_table_id", "dependent_setting_id", "field_z"
         ),
         names_to = "dependent_var_id",
         values_to = "intermediate_value"
@@ -166,16 +171,26 @@ locate_multi <- function(
         extra = "merge",
         fill = "right"
       ) %>%
-      dplyr::mutate(dep_var_type = tidyr::replace_na(dep_var_type, "measured")) %>%
+      dplyr::mutate(
+        dep_var_type = dplyr::case_when(
+          is.na(.data[["dep_var_type"]]) ~ "search_measured",
+          .data[["dep_var_type"]] == "sd" ~ "search_sd"
+        )
+      ) %>%
       tidyr::pivot_wider(
         names_from = "dep_var_type",
         values_from = "intermediate_value"
       ),
     interpol_grid %>%
-      magrittr::set_colnames(paste0("field_", colnames(interpol_grid))),
+      dplyr::rename_with(
+      function(x) { paste0("field_", x) },
+      tidyselect::any_of(c("id", "geo_id", "x", "y", "z", "mean", "sd"))
+    ),
     by = c(
-      "dependent_var_id" = "field_dependent_var_id",
-      "search_z" = "field_z"
+      "independent_table_id",
+      "dependent_setting_id",
+      "dependent_var_id",
+      "field_z"
     )
   )
   # calculate overlap probability
@@ -185,14 +200,14 @@ locate_multi <- function(
     full_search_table_prob <- full_search_table %>%
       dplyr::mutate(
         probability = dnorm(
-          x = .data[["measured"]],
+          x = .data[["search_measured"]],
           mean = .data[["field_mean"]],
           sd = .data[["field_sd"]]
         )
       ) %>%
       dplyr::mutate(
         sd = NA_real_,
-        .after = "measured"
+        .after = "search_measured"
       )
   } else if ("mobest_observationswitherror_multi" %in% class(search_dependent)) {
     int_f <- function(x, mu1, mu2, sd1, sd2) {
@@ -204,13 +219,13 @@ locate_multi <- function(
       dplyr::mutate(
         .,
         probability = purrr::pmap_dbl(
-          list(.data[["measured"]], .data[["field_mean"]], .data[["sd"]], .data[["field_sd"]]),
+          list(.data[["search_measured"]], .data[["field_mean"]], .data[["search_sd"]], .data[["field_sd"]]),
           function(mu1, mu2, sd1, sd2) {
             res <- try(
               integrate(
                 int_f, -Inf, Inf,
-                mu1 = mu1, mu2 = mu2, sd1 = sd1, sd2 = sd2#,
-                #rel.tol = 1e-10
+                mu1 = mu1, mu2 = mu2, sd1 = sd1, sd2 = sd2
+                #, rel.tol = 1e-10
               ),
               silent = TRUE
             )
