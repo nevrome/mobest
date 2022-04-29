@@ -254,12 +254,12 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
   locate_summary <- locate_overview %>%
     tidyr::pivot_wider(
       names_from = "dependent_var_id",
-      values_from = c(
-        "measured", "sd",
-        "field_dsx", "field_dsy", "field_dt", "field_g",
+      values_from = tidyselect::any_of(c(
+        "search_measured", "search_sd",
+        "dsx", "dsy", "dt", "g",
         "field_mean", "field_sd",
-        "probability",
-      )
+        "probability"
+      ))
     ) %>%
     dplyr::mutate(
       probability = dplyr::select(., tidyselect::starts_with("probability")) %>%

@@ -417,7 +417,7 @@ locate_simple <- mobest::locate(
   quiet = F
 )
 
-mul <- multiply_dependent_probabilities(locate_simple, omit_dependent_details = F)
+mul <- multiply_dependent_probabilities(locate_simple, omit_dependent_details = T)
 
 locate_overview <- mobest::locate_multi(
   independent = mobest::create_spatpos_multi(
