@@ -189,7 +189,7 @@ Available are:
 - `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
 - `mobest_spatiotemporalpositions_multi` (`mobest::create_spatpos_multi`)
 - `mobest_observations_multi` (`mobest::create_obs_multi`)
-- `mobest_observations_with_error_multi` (`mobest::create_obs_obserror_multi`)
+- `mobest_observationswitherror_multi` (`mobest::create_obs_obserror_multi`)
 - `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
 
 And here is how they can be filled with named arguments:

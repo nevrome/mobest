@@ -174,7 +174,7 @@ create_obs_obserror <- function(obs, obserror) {
   checkmate::assert_true(nrow(obs) == nrow(obserror))
   # compile tibble
   dplyr::bind_cols(obs, obserror) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_with_error")
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observationswitherror")
 }
 
 #' @rdname data_types
@@ -191,8 +191,8 @@ create_obs_multi <- function(..., .names = NULL) {
 #' @export
 create_obs_obserror_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
-    "mobest_observations_with_error",
-    "mobest_observations_with_error_multi",
+    "mobest_observationswitherror",
+    "mobest_observationswitherror_multi",
     T,F
   )(..., .names = .names)
 }

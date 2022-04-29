@@ -61,7 +61,7 @@ locate <- function(
     search_independent = create_spatpos_multi(i = search_independent),
     search_dependent = if ("mobest_observations" %in% class(search_dependent)) {
       create_obs_multi(d = search_dependent)
-    } else if ("mobest_observations_with_error" %in% class(search_dependent)) {
+    } else if ("mobest_observationswitherror" %in% class(search_dependent)) {
       create_obs_obserror_multi(d = search_dependent)
     },
     search_space_grid = search_space_grid,
@@ -99,7 +99,7 @@ locate_multi <- function(
       search_dependent, classes = "mobest_observations_multi"
     ),
     checkmate::check_class(
-      search_dependent, classes = "mobest_observations_with_error_multi"
+      search_dependent, classes = "mobest_observationswitherror_multi"
     )
   )
   checkmate::assert_class(search_space_grid, "mobest_spatialpositions")
@@ -194,7 +194,7 @@ locate_multi <- function(
         sd = NA_real_,
         .after = "measured"
       )
-  } else if ("mobest_observations_with_error_multi" %in% class(search_dependent)) {
+  } else if ("mobest_observationswitherror_multi" %in% class(search_dependent)) {
     int_f <- function(x, mu1, mu2, sd1, sd2) {
       f1 <- dnorm(x, mean = mu1, sd = sd1)
       f2 <- dnorm(x, mean = mu2, sd = sd2)
