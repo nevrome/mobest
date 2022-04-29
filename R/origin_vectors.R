@@ -15,13 +15,108 @@
 #' @rdname search_spatial_origin
 #' @export
 search_spatial_origin <- function(
-  independent,
-  dependent,
-  interpol_grid,
-  rearview_distance,
+  locate_product,
   quiet = F
 ) {
   # input checks
+  checkmate::assert_class(locate_product, "mobest_locateoverview_product")
+  # summarise data
+  locate_groups <- locate_product %>%
+    dplyr::group_split(
+      .data[["search_id"]],
+        .data[["search_x"]],
+        .data[["search_y"]],
+        .data[["search_z"]],
+      .data[["independent_table_id"]],
+      .data[["dependent_setting_id"]],
+      .data[["kernel_setting_id"]],
+      .data[["pred_grid_id"]],
+        .data[["field_z"]]
+    )
+  locate_groups %>%
+    purrr::map(function(locate_group) {
+      max_prob_field_point <- locate_group %>%
+        dplyr::slice_max(.data[["probability"]])
+      zup <- locate_group %>%
+        dplyr::mutate(
+          ov_x = .data[["field_x"]] - .data[["search_x"]],
+          ov_y = .data[["field_y"]] - .data[["search_y"]]
+          #, ov_dist = sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2),
+        ) %>%
+        dplyr::group_by(
+          .data[["search_id"]],
+            .data[["search_x"]],
+            .data[["search_y"]],
+            .data[["search_z"]],
+          .data[["independent_table_id"]],
+          .data[["dependent_setting_id"]],
+          .data[["kernel_setting_id"]],
+          .data[["pred_grid_id"]],
+            .data[["field_z"]]
+        ) %>%
+        dplyr::summarise(
+          ov_weighted_mean_x = Hmisc::wtd.mean(.data[["ov_x"]], .data[["probability"]]),
+          ov_weighted_mean_y = Hmisc::wtd.mean(.data[["ov_y"]], .data[["probability"]]),
+          ov_weighted_sd_x = sqrt(Hmisc::wtd.var(.data[["ov_x"]], .data[["probability"]])),
+          ov_weighted_sd_y = sqrt(Hmisc::wtd.var(.data[["ov_y"]], .data[["probability"]])),
+          #ov_dist_mean_undirected = Hmisc::wtd.mean(.data[["ov_dist"]], .data[["probability"]]),
+          #ov_dist_sd_undirected = sqrt(Hmisc::wtd.var(.data[["ov_dist"]], .data[["probability"]])),
+          ov_dist_mean_directed = sqrt(.data[["ov_weighted_mean_x"]]^2 + .data[["ov_weighted_mean_y"]]^2),
+          intermediate_distribution_x = list(rnorm(1000, .data[["ov_weighted_mean_x"]], .data[["ov_weighted_sd_x"]])),
+          intermediate_distribution_y = list(rnorm(1000, .data[["ov_weighted_mean_y"]], .data[["ov_weighted_sd_y"]])),
+          ov_dist_sd_directed = sd(sqrt(
+            unlist(.data[["intermediate_distribution_x"]])^2 + unlist(.data[["intermediate_distribution_y"]])^2
+          )),
+          # TODO: max fit point coordinates and mean angle
+          .groups = "drop"
+        ) %>%
+        dplyr::select(-.data[["intermediate_distribution_x"]], -.data[["intermediate_distribution_y"]])
+      # library(ggplot2)
+      # ggplot() +
+      #   geom_raster(data = locate_group, mapping = aes(field_x, field_y, fill = probability)) +
+      #   geom_point(
+      #     data = tibble::tibble(
+      #       search_x = unique(locate_group$search_x),
+      #       search_y = unique(locate_group$search_y)
+      #     ),
+      #     mapping = aes(search_x, search_y), colour = "red"
+      #   ) +
+      #   geom_point(
+      #     data = max_prob_field_point,
+      #     mapping = aes(field_x, field_y), colour = "green"
+      #   ) +
+      #   geom_point(
+      #     data = zup,
+      #     mapping = aes(search_x + ov_weighted_mean_x, search_y + ov_weighted_mean_y), colour = "yellow"
+      #   ) +
+      #   geom_point(
+      #     data = zup %>% tidyr::unnest(),
+      #     mapping = aes(
+      #       .data[["search_x"]] + intermediate_distribution_x,
+      #       .data[["search_y"]] + intermediate_distribution_y
+      #     ),
+      #     colour = "yellow", size = 0.5
+      #   ) +
+      #   geom_errorbar(
+      #     data = zup,
+      #     mapping = aes(
+      #       x = search_x + ov_weighted_mean_x,
+      #       ymin = search_y + ov_weighted_mean_y - ov_weighted_sd_y,
+      #       ymax = search_y + ov_weighted_mean_y + ov_weighted_sd_y,
+      #     ), colour = "yellow"
+      #   ) +
+      #   geom_errorbarh(
+      #     data = zup,
+      #     mapping = aes(
+      #       y = search_y + ov_weighted_mean_y,
+      #       xmin = search_x + ov_weighted_mean_x - ov_weighted_sd_x,
+      #       xmax = search_x + ov_weighted_mean_x + ov_weighted_sd_x
+      #     ), colour = "yellow"
+      #   )
+
+
+
+    })
 
   # run for each field
   origin_grid <- purrr::map2_dfr(
