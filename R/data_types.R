@@ -22,12 +22,12 @@
 #' @param ... Different inputs - usually individual elements to be merged in a list type
 #' @param .names Vector. Names of different object iterations
 #'
-#' @name input_data_constructors
+#' @name data_types
 NULL
 
 #### spatial coordinates ####
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_geopos <- function(id, x, y, ...) {
   # input check
@@ -42,7 +42,7 @@ create_geopos <- function(id, x, y, ...) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatialpositions")
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_prediction_grid <- function(area, spatial_cell_size) {
   # dependency check
@@ -71,7 +71,7 @@ create_prediction_grid <- function(area, spatial_cell_size) {
   )
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_geopos_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
@@ -83,7 +83,7 @@ create_geopos_multi <- function(..., .names = NULL) {
 
 #### spatiotemporal coordinates ####
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 geopos_to_spatpos <- function(geopos, z) {
   # input check
@@ -103,7 +103,7 @@ geopos_to_spatpos <- function(geopos, z) {
     dplyr::bind_cols(spatpos %>% dplyr::select(-id, -x, -y, -z))
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_spatpos <- function(id, x, y, z, ...) {
   # input check
@@ -119,7 +119,7 @@ create_spatpos <- function(id, x, y, z, ...) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_spatiotemporalpositions")
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_spatpos_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
@@ -131,7 +131,7 @@ create_spatpos_multi <- function(..., .names = NULL) {
 
 #### genetic coordinates ####
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_obs <- function(..., .names = NULL) {
   obs <- list(...)
@@ -146,7 +146,7 @@ create_obs <- function(..., .names = NULL) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations")
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_obserror <- function(..., .names = NULL) {
   obs <- list(...)
@@ -162,7 +162,7 @@ create_obserror <- function(..., .names = NULL) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_obs_obserror <- function(obs, obserror) {
   # input check
@@ -177,7 +177,7 @@ create_obs_obserror <- function(obs, obserror) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_with_error")
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_obs_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
@@ -187,7 +187,7 @@ create_obs_multi <- function(..., .names = NULL) {
   )(..., .names = .names)
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_obs_obserror_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
@@ -199,7 +199,7 @@ create_obs_obserror_multi <- function(..., .names = NULL) {
 
 #### kernel settings ####
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_kernel <- function(dsx, dsy, dt, g, on_residuals = T, auto = F) {
   # input check
@@ -221,7 +221,7 @@ create_kernel <- function(dsx, dsy, dt, g, on_residuals = T, auto = F) {
     magrittr::set_class("mobest_kernel")
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_kernset <- function(..., .names = NULL) {
   tibble_multi_function_factory(
@@ -231,7 +231,7 @@ create_kernset <- function(..., .names = NULL) {
   )(..., .names = .names)
 }
 
-#' @rdname input_data_constructors
+#' @rdname data_types
 #' @export
 create_kernset_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(

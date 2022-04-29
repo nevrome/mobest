@@ -1,4 +1,45 @@
-#' @rdname search_spatial_origin
+#' Calculate a similarity/"origin" probability field for samples of interest
+#'
+#' Create a genetic ancestry field and determine similarity probabilities with it.
+#' \code{locate_multi} handles permutations of input parameters, \link{locate} is
+#' a simplified interface.
+#'
+#' @param independent An object of class \code{mobest_spatiotemporalpositions_multi}
+#' or \code{mobest_spatiotemporalpositions_multi} as created by \link{create_spatpos}
+#' or \link{create_spatpos_multi}. Spatiotemporal input point positions to inform the
+#' ancestry field.
+#' @param dependent An object of class \code{mobest_observations} or
+#' \code{mobest_observations_multi} as created by \link{create_obs} or
+#' \link{create_obs_multi}. Dependent variables that should be interpolated for the
+#' ancestry field.
+#' @param kernel An object of class \code{mobest_kernelsetting} or
+#' \code{mobest_kernelsetting_multi} as created by \link{create_kernset} or
+#' \link{create_kernset_multi}. Kernel parameter settings for the ancestry fields.
+#' @param search_independent An object of class \code{mobest_spatiotemporalpositions_multi}
+#' or \code{mobest_spatiotemporalpositions_multi} as created by \link{create_spatpos}
+#' or \link{create_spatpos_multi}. Spatiotemporal input point positions of the samples
+#' of interest for which the similarity probability should be calculated. Must have
+#' the same names as \code{independent}.
+#' @param search_dependent An object of class \code{mobest_observations} or
+#' \code{mobest_observations_multi} as created by \link{create_obs} or
+#' \link{create_obs_multi}. Dependent variables of the samples of interest for which
+#' the similarity probability should be calculated. Must have the same names as
+#' \code{dependent}.
+#' @param search_space_grid An object of class \code{mobest_spatialpositions}
+#' as for example created by \link{create_prediction_grid}. Prediction grid positions
+#' for which the similarity probabilities should be printed.
+#' @param search_time Numeric vector. Time slices of the predition grid.
+#' @param search_time_mode Character choice. One of "relative" or "absolute". Should
+#' the search time be relative to the dating of the samples of interest or just absolute
+#' points in time? The default for \code{search_time} and \code{search_time_mode} is
+#' "relative" and 0, which causes the probabilities to be calculated for the exact dating
+#' of the samples of interest.
+#' @param quiet Logical. Should a progress indication be printed?
+#'
+#' @name locate
+NULL
+
+#' @rdname locate
 #' @export
 locate <- function(
   independent,
@@ -34,7 +75,7 @@ locate <- function(
     )
 }
 
-#' @rdname search_spatial_origin
+#' @rdname locate
 #' @export
 locate_multi <- function(
   independent,
@@ -67,10 +108,10 @@ locate_multi <- function(
   checkmate::assert_choice(
     search_time_mode, choices = c("relative", "absolute")
   )
-  check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
-  check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
   checkmate::assert_true(setequal(names(independent), names(search_independent)))
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
+  check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
+  check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
   # prepare data
   search_points <- tidyr::crossing(
     search_independent = search_independent %>%
@@ -187,7 +228,7 @@ locate_multi <- function(
     return()
 }
 
-#' @rdname search_spatial_origin
+#' @rdname locate
 #' @export
 multiply_dependent_probabilities <- function(locate_overview, omit_dependent_details = T) {
   # input checks
@@ -221,7 +262,7 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview_product")
 }
 
-#' @rdname search_spatial_origin
+#' @rdname locate
 #' @export
 sum_probabilities_per_group <- function(locate_overview, ...) {
   .grouping_var <- rlang::ensyms(...)

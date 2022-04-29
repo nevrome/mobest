@@ -18,10 +18,10 @@
 #' prediction point-wise table of class \code{mobest_interpolgrid}?
 #' @param quiet Logical. Should a progress indication be printed?
 #'
-#' @name interpolate
+#' @name interpolation
 NULL
 
-#' @rdname interpolate
+#' @rdname interpolation
 #' @export
 create_model_grid <- function(
   independent,
@@ -100,7 +100,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
     )
 }
 
-#' @rdname interpolate
+#' @rdname interpolation
 #' @export
 run_model_grid <- function(model_grid, unnest = T, quiet = F) {
   # input check
