@@ -75,9 +75,12 @@ points in time? The default for \code{search_time} and \code{search_time_mode} i
 of the samples of interest.}
 
 \item{quiet}{Logical. Should a progress indication be printed?}
+
+\item{locate_overview}{An object of class \code{mobest_locateoverview} as created by
+\link{locate} and \link{locate_multi}.}
 }
 \description{
 Create a genetic ancestry field and determine similarity probabilities with it.
-\code{locate_multi} handles permutations of input parameters, \link{locate} is
+\link{locate_multi} handles permutations of input parameters, \link{locate} is
 a simplified interface.
 }

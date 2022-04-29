@@ -1,7 +1,7 @@
 #' Calculate a similarity/"origin" probability field for samples of interest
 #'
 #' Create a genetic ancestry field and determine similarity probabilities with it.
-#' \code{locate_multi} handles permutations of input parameters, \link{locate} is
+#' \link{locate_multi} handles permutations of input parameters, \link{locate} is
 #' a simplified interface.
 #'
 #' @param independent An object of class \code{mobest_spatiotemporalpositions_multi}
@@ -35,6 +35,8 @@
 #' "relative" and 0, which causes the probabilities to be calculated for the exact dating
 #' of the samples of interest.
 #' @param quiet Logical. Should a progress indication be printed?
+#' @param locate_overview An object of class \code{mobest_locateoverview} as created by
+#' \link{locate} and \link{locate_multi}.
 #'
 #' @name locate
 NULL
