@@ -3,26 +3,21 @@
 \name{average_origin}
 \alias{average_origin}
 \alias{summarize_origin_vectors}
-\alias{summarize_origin_vectors_windows}
-\alias{no_data_windows.mobest_movingorigingrid}
+\alias{no_data_windows}
 \title{Summarize the results of the origin search}
 \usage{
-summarize_origin_vectors(origin_grid)
-
-summarize_origin_vectors_windows(
-  origin_grid,
+summarize_origin_vectors(
+  origin_vectors,
+  ...,
   window_start,
   window_stop,
   window_width,
   window_step
 )
 
-no_data_windows.mobest_movingorigingrid(moving_origin_grid, window_step)
+no_data_windows(moving_origin_grid, window_step)
 }
 \arguments{
-\item{origin_grid}{An object of class \code{mobest_origingrid} as created by
-\link{search_spatial_origin}}
-
 \item{window_start}{Start date of the moving window sequence}
 
 \item{window_stop}{Stop date of the moving window sequence}
@@ -35,6 +30,9 @@ one start at -3450 or -3400, so with window_step = 50 or window_step = 100?}
 
 \item{moving_origin_grid}{An object of class \code{mobest_movingorigingrid}
 as created by \link{average_origin_moving_window}}
+
+\item{origin_grid}{An object of class \code{mobest_origingrid} as created by
+\link{search_spatial_origin}}
 }
 \value{
 Different data products: \code{mobest_meanorigingrid},

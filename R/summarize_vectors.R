@@ -34,7 +34,7 @@ summarize_origin_vectors <- function(
     )
   # loop through units
   future::plan(future::multisession)
-  furrr::future_map_dfr(
+  vector_summary <- furrr::future_map_dfr(
     vector_groups,
     function(vector_group) {
       purrr::map2_df(
@@ -44,71 +44,67 @@ summarize_origin_vectors <- function(
         function(start, end) {
           # prepare window data subsets
           io <- dplyr::filter(
-            origin_per_region,
+            vector_group,
             .data[["search_z"]] >= start,
             .data[["search_z"]] < end
-          )
-          io_upper_quartile <- dplyr::filter(
-            io,
-            .data[["spatial_distance"]] >= stats::quantile(.data[["spatial_distance"]], probs = 0.75)
           )
           io_run_grouped <- io %>%
             dplyr::group_by(.data[["search_id"]]) %>%
             dplyr::summarise(
-              mean_spatial_distance = mean(.data[["spatial_distance"]]),
-              groups = "drop"
+              mean_spatial_distance = mean(.data[["ov_dist"]]),
+              .groups = "drop"
             )
           if (nrow(io) > 0) {
-            tibble::tibble(
-              z = mean(c(start, end)),
-              region_id = region,
-              undirected_mean_spatial_distance =
-                mean(io$spatial_distance),
-              undirected_mean_spatial_distance_upper_quartile =
-                mean(io_upper_quartile$spatial_distance),
-              directed_mean_spatial_distance = sqrt(
-                mean(io$search_x - io$origin_x)^2 +
-                  mean(io$search_y - io$origin_y)^2
-              ) / 1000,
-              directed_mean_spatial_distance_upper_quartile = sqrt(
-                mean(io_upper_quartile$search_x - io_upper_quartile$origin_x)^2 +
-                  mean(io_upper_quartile$search_y - io_upper_quartile$origin_y)^2
-              ) / 1000,
-              se_spatial_distance = if (nrow(io_run_grouped) >= 3) {
-                se(io_run_grouped$mean_spatial_distance)
-              } else {
-                Inf
-              },
-              sd_spatial_distance = if (nrow(io_run_grouped) >= 3) {
-                stats::sd(io_run_grouped$mean_spatial_distance)
-              } else {
-                Inf
-              },
-              fraction_smaller_500 = sum(io$spatial_distance < 500) / nrow(io),
-              fraction_bigger_500 = sum(io$spatial_distance >= 500 & io$spatial_distance < 1000) / nrow(io),
-              fraction_bigger_1000 = sum(io$spatial_distance >= 1000 & io$spatial_distance < 2000) / nrow(io),
-              fraction_bigger_2000 = sum(io$spatial_distance >= 2000) / nrow(io)
-            )
+            io %>%
+              dplyr::group_by(
+                !!!.grouping_var
+              ) %>%
+              dplyr::summarise(
+                z = mean(c(start, end)),
+                undirected_mean_spatial_distance =
+                  mean(.data[["ov_dist"]]),
+                directed_mean_spatial_distance = sqrt(
+                  mean(.data[["field_x"]] - .data[["search_x"]])^2 +
+                    mean(.data[["field_y"]] - .data[["search_y"]])^2
+                ),
+                se_spatial_distance = if (nrow(io_run_grouped) >= 3) {
+                  se(io_run_grouped$mean_spatial_distance)
+                } else {
+                  Inf
+                },
+                sd_spatial_distance = if (nrow(io_run_grouped) >= 3) {
+                  stats::sd(io_run_grouped$mean_spatial_distance)
+                } else {
+                  Inf
+                }
+              )
+            # tibble::tibble(
+            #   fraction_smaller_500 = sum(io$spatial_distance < 500) / nrow(io),
+            #   fraction_bigger_500 = sum(io$spatial_distance >= 500 & io$spatial_distance < 1000) / nrow(io),
+            #   fraction_bigger_1000 = sum(io$spatial_distance >= 1000 & io$spatial_distance < 2000) / nrow(io),
+            #   fraction_bigger_2000 = sum(io$spatial_distance >= 2000) / nrow(io)
+            # )
           } else {
-            tibble::tibble(
-              z = mean(c(start, end)),
-              region_id = region,
-              undirected_mean_spatial_distance = NA,
-              directed_mean_spatial_distance = NA,
-              mean_angle_deg = NA,
-              se_spatial_distance = Inf,
-              sd_spatial_distance = Inf,
-              fraction_smaller_500 = NA,
-              fraction_bigger_500 = NA,
-              fraction_bigger_1000 = NA,
-              fraction_bigger_2000 = NA
-            )
+            vector_group %>%
+              dplyr::group_by(
+                !!!.grouping_var
+              ) %>%
+              dplyr::summarise(
+                z = mean(c(start, end)),
+                region_id = region,
+                undirected_mean_spatial_distance = NA,
+                directed_mean_spatial_distance = NA,
+                mean_angle_deg = NA,
+                se_spatial_distance = Inf,
+                sd_spatial_distance = Inf
+              )
           }
         }
       )
     }
-  ) %>%
-  tibble::new_tibble(., nrow = nrow(.), class = "mobest_movingorigingrid")
+  )
+  vector_summary %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_originsummary")
 }
 
 se <- function(x) stats::sd(x)/sqrt(length(x))

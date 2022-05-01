@@ -37,6 +37,7 @@ determine_origin_vectors <- function(
           ov_dist = sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2),
           ov_dist_sd = sqrt(Hmisc::wtd.var(.data[["ov_dist"]], .data[["probability"]]))
         ) %>%
+        # keep only the maximum probability grid cell
         dplyr::slice_max(.data[["probability"]], n = 1, with_ties = FALSE) %>%
         dplyr::mutate(
           ov_angle_deg = vec2deg(c(.data[["ov_x"]], .data[["ov_y"]])),
