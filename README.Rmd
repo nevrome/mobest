@@ -313,7 +313,7 @@ kernels <- expand.grid(
     )
   }) %>%
   magrittr::set_names(paste("kernel", 1:length(.), sep = "_")) %>%
-  do.call(create_kernset_multi, .)
+  do.call(mobest::create_kernset_multi, .)
 
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
@@ -390,10 +390,6 @@ interpol_grid
 ### Origin search
 
 ```{r}
-# todo:
-# - option to weight different dimensions in the multiplication in multiply_dependent_probabilities?
-# - sum function to combine all the other setting permutations: "sum_permutation_probabilities" (maybe mean instead of sum? And even sd?)
-
 locate_simple <- mobest::locate(
   independent = positions,
   dependent = observations,
@@ -417,7 +413,7 @@ locate_simple <- mobest::locate(
   quiet = F
 )
 
-mul <- multiply_dependent_probabilities(locate_simple, omit_dependent_details = T)
+mul <- mobest::multiply_dependent_probabilities(locate_simple, omit_dependent_details = T)
 
 locate_overview <- mobest::locate_multi(
   independent = mobest::create_spatpos_multi(
@@ -471,8 +467,10 @@ locate_overview <- mobest::locate_multi(
   quiet = F
 )
 
-mul <- multiply_dependent_probabilities(locate_overview)
-sums <- sum_probabilities_per_group(mul, dependent_setting_id)
+locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
+#sums <- sum_probabilities_per_group(mul, dependent_setting_id)
+
+origin_vectors <- determine_origin_vectors(locate_product)
 
 ```
 
