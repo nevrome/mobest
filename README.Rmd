@@ -73,12 +73,12 @@ locate_product %>%
     mapping = aes(x = field_x, y = field_y, fill = probability)
   ) +
   geom_point(
-    mapping = aes(x = x, y = y), colour = "red"
+    mapping = aes(x = search_x, y = search_y), colour = "red"
   ) +
   coord_fixed() +
   ggtitle(paste0(
-    "t for sample of interest = ", unique(locate_product$z), "\n",
-    "t field time slice = ", unique(locate_product$search_z)
+    "t for sample of interest = ", unique(locate_product$search_z), "\n",
+    "t field time slice = ", unique(locate_product$field_z)
   ))
 ```
 
@@ -119,8 +119,11 @@ rnaturalearthdata::countries50 %>%
   sf::st_make_valid() %>%
   sf::st_crop(xmin = -10.8, ymin = 33.6, xmax = 34.5, ymax = 61.3) %>%
   sf::st_transform(3857) %>%
-  mobest::create_prediction_grid(150000) %>%
-  ggplot() + geom_raster(aes(x, y)) + coord_fixed()
+  mobest::create_prediction_grid(200000) %>%
+  ggplot() +
+    geom_raster(aes(x, y)) +
+    geom_text(aes(x,y,label = id), colour = "white", size = 2.5) +
+    coord_fixed()
 ```
 
 #### Spatiotemporal coordinates
