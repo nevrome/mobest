@@ -33,160 +33,22 @@ search_spatial_origin <- function(
       .data[["pred_grid_id"]],
         .data[["field_z"]]
     )
-  locate_groups %>%
-    purrr::map(function(locate_group) {
-      max_prob_field_point <- locate_group %>%
-        dplyr::slice_max(.data[["probability"]])
-      zup <- locate_group %>%
+  origin_grid <- locate_groups %>%
+    purrr::map_df(
+      function(locate_group) {
+      locate_group %>%
         dplyr::mutate(
           ov_x = .data[["field_x"]] - .data[["search_x"]],
-          ov_y = .data[["field_y"]] - .data[["search_y"]]
-          #, ov_dist = sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2),
+          ov_y = .data[["field_y"]] - .data[["search_y"]],
+          ov_dist = sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2),
+          ov_dist_sd = sqrt(Hmisc::wtd.var(.data[["ov_dist"]], .data[["probability"]]))
         ) %>%
-        dplyr::group_by(
-          .data[["search_id"]],
-            .data[["search_x"]],
-            .data[["search_y"]],
-            .data[["search_z"]],
-          .data[["independent_table_id"]],
-          .data[["dependent_setting_id"]],
-          .data[["kernel_setting_id"]],
-          .data[["pred_grid_id"]],
-            .data[["field_z"]]
-        ) %>%
-        dplyr::summarise(
-          ov_weighted_mean_x = Hmisc::wtd.mean(.data[["ov_x"]], .data[["probability"]]),
-          ov_weighted_mean_y = Hmisc::wtd.mean(.data[["ov_y"]], .data[["probability"]]),
-          ov_weighted_sd_x = sqrt(Hmisc::wtd.var(.data[["ov_x"]], .data[["probability"]])),
-          ov_weighted_sd_y = sqrt(Hmisc::wtd.var(.data[["ov_y"]], .data[["probability"]])),
-          #ov_dist_mean_undirected = Hmisc::wtd.mean(.data[["ov_dist"]], .data[["probability"]]),
-          #ov_dist_sd_undirected = sqrt(Hmisc::wtd.var(.data[["ov_dist"]], .data[["probability"]])),
-          ov_dist_mean_directed = sqrt(.data[["ov_weighted_mean_x"]]^2 + .data[["ov_weighted_mean_y"]]^2),
-          intermediate_distribution_x = list(rnorm(1000, .data[["ov_weighted_mean_x"]], .data[["ov_weighted_sd_x"]])),
-          intermediate_distribution_y = list(rnorm(1000, .data[["ov_weighted_mean_y"]], .data[["ov_weighted_sd_y"]])),
-          ov_dist_sd_directed = sd(sqrt(
-            unlist(.data[["intermediate_distribution_x"]])^2 + unlist(.data[["intermediate_distribution_y"]])^2
-          )),
-          # TODO: max fit point coordinates and mean angle
-          .groups = "drop"
-        ) %>%
-        dplyr::select(-.data[["intermediate_distribution_x"]], -.data[["intermediate_distribution_y"]])
-      # library(ggplot2)
-      # ggplot() +
-      #   geom_raster(data = locate_group, mapping = aes(field_x, field_y, fill = probability)) +
-      #   geom_point(
-      #     data = tibble::tibble(
-      #       search_x = unique(locate_group$search_x),
-      #       search_y = unique(locate_group$search_y)
-      #     ),
-      #     mapping = aes(search_x, search_y), colour = "red"
-      #   ) +
-      #   geom_point(
-      #     data = max_prob_field_point,
-      #     mapping = aes(field_x, field_y), colour = "green"
-      #   ) +
-      #   geom_point(
-      #     data = zup,
-      #     mapping = aes(search_x + ov_weighted_mean_x, search_y + ov_weighted_mean_y), colour = "yellow"
-      #   ) +
-      #   geom_point(
-      #     data = zup %>% tidyr::unnest(),
-      #     mapping = aes(
-      #       .data[["search_x"]] + intermediate_distribution_x,
-      #       .data[["search_y"]] + intermediate_distribution_y
-      #     ),
-      #     colour = "yellow", size = 0.5
-      #   ) +
-      #   geom_errorbar(
-      #     data = zup,
-      #     mapping = aes(
-      #       x = search_x + ov_weighted_mean_x,
-      #       ymin = search_y + ov_weighted_mean_y - ov_weighted_sd_y,
-      #       ymax = search_y + ov_weighted_mean_y + ov_weighted_sd_y,
-      #     ), colour = "yellow"
-      #   ) +
-      #   geom_errorbarh(
-      #     data = zup,
-      #     mapping = aes(
-      #       y = search_y + ov_weighted_mean_y,
-      #       xmin = search_x + ov_weighted_mean_x - ov_weighted_sd_x,
-      #       xmax = search_x + ov_weighted_mean_x + ov_weighted_sd_x
-      #     ), colour = "yellow"
-      #   )
-
-
-
-    })
-
-  # run for each field
-  origin_grid <- purrr::map2_dfr(
-    1:length(fields), fields,
-    function(cur_field_id, cur_field) {
-      # run for each independent (search points) iteration
-      purrr::map2_dfr(
-        names(search_points), search_points,
-        function(cur_search_points_id, cur_search_points) {
-          if (!quiet) {
-            message(
-              "running field setting ",
-              cur_field_id, " with search points ",
-              cur_search_points_id
-            )
-          }
-          # run for each search point
-          future::plan(future::multisession)
-          furrr::future_pmap(
-            cur_search_points,
-            function(...) {
-              # search closest point
-              cur_point <- data.frame(...)
-              closest_timestep <- cur_field$z[
-                which.min(abs(cur_field$z - (cur_point$z - rearview_distance)))
-              ]
-              field_slice <- cur_field[cur_field$z == closest_timestep, ]
-              closest_point_index <- which.min(fields::rdist(
-                cur_point[dep],
-                field_slice[paste0("mean_", dep)]
-              ))
-              closest_point <- field_slice[closest_point_index,]
-              # create output tibble with one row for the current point and its
-              # origin point
-              tibble::tibble(
-                search_id = cur_point$id,
-                search_x = cur_point$x,
-                search_y = cur_point$y,
-                search_z = cur_point$z,
-                dplyr::rename_with(cur_point[dep], ~paste("search", .x, sep = "_")),
-                origin_id = closest_point$id,
-                origin_x = closest_point$x,
-                origin_y = closest_point$y,
-                origin_z = closest_point$z,
-                dplyr::rename_with(closest_point[
-                  c(paste0("mean_", dep), paste0("sd_", dep))
-                ], ~paste("origin", .x, sep = "_")),
-                search_points_id = cur_search_points_id,
-                field_id = cur_field_id,
-                field_independent_table_id = closest_point$independent_table_id,
-                field_kernel_setting_id = closest_point$kernel_setting_id
-              )
-            }
-          ) %>% dplyr::bind_rows()
-        }
-      )
-    }
-  )
-  # add distance
-  origin_grid$spatial_distance <- sqrt(
-    (origin_grid$search_x - origin_grid$origin_x)^2 +
-      (origin_grid$search_y - origin_grid$origin_y)^2
-  )
-  # add angle
-  origin_grid$angle_deg <- purrr::map2_dbl(
-    (origin_grid$origin_x - origin_grid$search_x),
-    (origin_grid$origin_y - origin_grid$search_y),
-    function(x, y) { vec2deg(c(x, y)) }
-  )
-  # return result
+        dplyr::slice_max(.data[["probability"]]) %>%
+        dplyr::mutate(
+          ov_angle = vec2deg(c(ov_x, ov_y))
+        )
+      }
+    )
   origin_grid %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_originvectors")
 }
