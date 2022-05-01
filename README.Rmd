@@ -474,16 +474,24 @@ locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
 #sums <- sum_probabilities_per_group(mul, dependent_setting_id)
 
 origin_vectors <- determine_origin_vectors(locate_product)
+
+origin_vectors$region_id <- c(
+  "A", "B", "A", "C"
+)
+
 origin_summary <- summarize_origin_vectors(
   origin_vectors,
+  region_id,
   window_start = -5000,
   window_stop = -3000,
   window_width = 100,
   window_step = 10
 )
 
-find_no_data_windows(origin_summary)
-
+find_no_data_windows(
+  origin_summary,
+  region_id
+)
 ```
 
 ### Mobility estimation
