@@ -2,24 +2,14 @@
 % Please edit documentation in R/summarize_vectors.R
 \name{average_origin}
 \alias{average_origin}
-\alias{average_origin_searchid}
-\alias{average_origin_searchid.default}
-\alias{average_origin_searchid.mobest_origingrid}
-\alias{average_origin_moving_window}
-\alias{average_origin_moving_window.default}
-\alias{average_origin_moving_window.mobest_origingrid}
-\alias{no_data_windows}
-\alias{no_data_windows.default}
+\alias{summarize_origin_vectors}
+\alias{summarize_origin_vectors_windows}
 \alias{no_data_windows.mobest_movingorigingrid}
 \title{Summarize the results of the origin search}
 \usage{
-average_origin_searchid(origin_grid)
+summarize_origin_vectors(origin_grid)
 
-\method{average_origin_searchid}{default}(origin_grid)
-
-\method{average_origin_searchid}{mobest_origingrid}(origin_grid)
-
-average_origin_moving_window(
+summarize_origin_vectors_windows(
   origin_grid,
   window_start,
   window_stop,
@@ -27,27 +17,7 @@ average_origin_moving_window(
   window_step
 )
 
-\method{average_origin_moving_window}{default}(
-  origin_grid,
-  window_start,
-  window_stop,
-  window_width,
-  window_step
-)
-
-\method{average_origin_moving_window}{mobest_origingrid}(
-  origin_grid,
-  window_start,
-  window_stop,
-  window_width,
-  window_step
-)
-
-no_data_windows(moving_origin_grid, window_step)
-
-\method{no_data_windows}{default}(moving_origin_grid, window_step)
-
-\method{no_data_windows}{mobest_movingorigingrid}(moving_origin_grid, window_step)
+no_data_windows.mobest_movingorigingrid(moving_origin_grid, window_step)
 }
 \arguments{
 \item{origin_grid}{An object of class \code{mobest_origingrid} as created by

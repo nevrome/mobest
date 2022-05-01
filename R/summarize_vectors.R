@@ -17,73 +17,26 @@
 #' \code{mobest_movingorigingrid} or \code{mobest_origingridnodatawindows}
 #'
 #' @name average_origin
-#' @rdname average_origin
 NULL
 
 #' @rdname average_origin
 #' @export
-average_origin_searchid <- function(origin_grid) {
-  UseMethod("average_origin_searchid")
-}
-
-#' @rdname average_origin
-#' @export
-average_origin_searchid.default <- function(origin_grid) {
-  stop("x is not an object of class mobest_origingrid")
-}
-
-#' @rdname average_origin
-#' @export
-average_origin_searchid.mobest_origingrid <- function(origin_grid) {
-  origin_grid %>%
-    dplyr::group_by(.data[["search_id"]]) %>%
-    dplyr::summarise(
-      mean_search_z = mean(.data[["search_z"]]),
-      sd_search_z = stats::sd(.data[["search_z"]]),
-      region_id = dplyr::first(.data[["region_id"]]),
-      undirected_mean_spatial_distance = mean(.data[["spatial_distance"]]),
-      undirected_sd_spatial_distance = stats::sd(.data[["spatial_distance"]]),
-      directed_mean_spatial_distance = sqrt(
-        mean(.data[["search_x"]] - .data[["origin_x"]])^2 +
-          mean(.data[["search_y"]] - .data[["origin_y"]])^2
-      ) / 1000,
-      mean_angle_deg = mobest::vec2deg(
-        c(mean(.data[["origin_x"]] - .data[["search_x"]]), mean(.data[["origin_y"]] - .data[["search_y"]]))
-      ),
-      mean_angle_deg_cut = cut_angle_deg(.data[["mean_angle_deg"]]),
-      .groups = "drop"
-    ) %>% dplyr::arrange(.data[["undirected_mean_spatial_distance"]]) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_meanorigingrid")
-}
-
-#' @rdname average_origin
-#' @export
-average_origin_moving_window <- function(
-  origin_grid, window_start, window_stop, window_width, window_step
+summarize_origin_vectors <- function(
+  origin_vectors, ..., window_start, window_stop, window_width, window_step
 ) {
-  UseMethod("average_origin_moving_window")
-}
-
-#' @rdname average_origin
-#' @export
-average_origin_moving_window.default <- function(
-  origin_grid, window_start, window_stop, window_width, window_step
-) {
-  stop("x is not an object of class mobest_origingrid")
-}
-
-#' @rdname average_origin
-#' @export
-average_origin_moving_window.mobest_origingrid <- function(
-  origin_grid, window_start, window_stop, window_width, window_step
-) {
+  .grouping_var <- rlang::ensyms(...)
+  # input check
+  checkmate::assert_class(origin_vectors, "mobest_originvectors")
+  # split vector groups
+  vector_groups <- origin_vectors %>%
+    dplyr::group_split(
+      !!!.grouping_var
+    )
+  # loop through units
   future::plan(future::multisession)
   furrr::future_map_dfr(
-    # loop through all regions
-    unique(origin_grid$region_id),
-    function(region) {
-      origin_per_region <- origin_grid %>%
-        dplyr::filter(.data[["region_id"]] == region)
+    vector_groups,
+    function(vector_group) {
       purrr::map2_df(
         # define moving windows and loop through them
         seq(window_start, window_stop - window_width, window_step),
@@ -163,18 +116,6 @@ se <- function(x) stats::sd(x)/sqrt(length(x))
 #' @rdname average_origin
 #' @export
 no_data_windows <- function(moving_origin_grid, window_step) {
-  UseMethod("no_data_windows")
-}
-
-#' @rdname average_origin
-#' @export
-no_data_windows.default <- function(moving_origin_grid, window_step) {
-  stop("x is not an object of class mobest_movingorigingrid")
-}
-
-#' @rdname average_origin
-#' @export
-no_data_windows.mobest_movingorigingrid <- function(moving_origin_grid, window_step) {
   moving_origin_grid %>%
     dplyr::group_by(.data[["region_id"]]) %>%
     dplyr::mutate(
