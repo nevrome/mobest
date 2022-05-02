@@ -18,10 +18,10 @@
 #' prediction point-wise table of class \code{mobest_interpolgrid}?
 #' @param quiet Logical. Should a progress indication be printed?
 #'
-#' @name interpolation
+#' @name interpolate
 NULL
 
-#' @rdname interpolation
+#' @rdname interpolate
 #' @export
 create_model_grid <- function(
   independent,
@@ -100,7 +100,7 @@ create_model_grid_raw <- function(independent_tables, dependent_vars, kernel_set
     )
 }
 
-#' @rdname interpolation
+#' @rdname interpolate
 #' @export
 run_model_grid <- function(model_grid, unnest = T, quiet = F) {
   # input check
@@ -179,8 +179,9 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
 #' by laGPs maximum likelihood algorithm? See \code{?laGP::mleGPsep} for more info
 #' @param on_residuals Should a linear model be wrapped around the kriging model
 #' to handle the main trends independently?
-#' @return Output of \code{?laGP::predGPsep}
 #'
+#' @noRd
+#' @keywords internal
 interpolate <- function(independent, dependent, pred_grid, d = NA, g = NA, auto = F, on_residuals = T) {
   # check input
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")

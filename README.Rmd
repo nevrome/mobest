@@ -11,9 +11,9 @@ editor_options:
 This R package provides types and functions for spatiotemporal interpolation of human genetic ancestry components and a derived measure for **mob**ility **est**imation. The workflow in version 1.0 was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>.
 
 0. `mobest` assumes you have a set of genetic samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a PCA or MDS space).
-1. `mobest` then provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided. 
-2. `mobest` then allows to derive a similarity probability for samples of interest within the interpolated field, which -- under certain circumstances -- can be interpreted as an origin probability. 
-3. `mobest` finally introduces functions to estimate a measure of mobility for the samples of interest, based on the similarity probability field.
+1. `mobest` provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided.
+2. `mobest` allows to derive a similarity probability for samples of interest within the interpolated field, which -- under certain circumstances -- can be interpreted as an origin probability. 
+3. `mobest` finally introduces functions to estimate and summarize a measure of mobility for the samples of interest, based on the similarity probability field.
 
 Here is a simple, artificial example how 2. can be used:
 
@@ -23,7 +23,7 @@ set.seed(144)
 
 # a function to calculate the similarity probability for one particular sample
 locate_simple <- mobest::locate(
-  # spatiotemporal coordinates of the reference samples that inform the ancestry field
+  # spatiotemporal coordinates of the reference samples informing the ancestry field
   independent = mobest::create_spatpos(
     id = 1:100,
     x = c(sample(100000:700000, 50), sample(300000:1000000, 50)), # space x
@@ -93,13 +93,15 @@ remotes::install_github('nevrome/mobest')
 
 ## Overview
 
-The following guide briefly lists the functions in the order you would usually call them and introduces the interface from a technical point of view.
+The following guide briefly lists the data types and functions in the order you would usually call them and thus introduces the interface from a technical point of view.
 
 ### Basic data types
 
+`mobest` employs a number of basic [S3 data types](http://adv-r.had.co.nz/S3.html) to formalize the input to almost all of its functions. The constructors usually just check certain properties to insure input correctness.
+
 #### Spatial coordinates
 
-`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a cartesian space. For real world coordinates that means they have to be transformed to a projected coordinate system (e.g. with `?sf::st_transform`).
+`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `?sf::st_transform`): `mobest` can be used with longitude and latitude coordinates.
 
 ```{r}
 mobest::create_geopos(
@@ -109,9 +111,9 @@ mobest::create_geopos(
 )
 ```
 
-For the interpolation fields we often want regular, spatial rasters covering a specific spatial area. These can be constructed with `mobest::create_prediction_grid`, which takes an object of class `sf` with polygons in a projected coordinate system and also yields an objects of class `mobest_spatialpositions`.
+For the interpolation fields we often want regular, spatial grids covering a specific spatial area. These can be constructed with `mobest::create_prediction_grid`, which takes an object of class `sf` with polygons in a projected coordinate system. It also yields an object of class `mobest_spatialpositions`.
 
-Here is an example for the landmass of Europe:
+Here is an example for the landmass of Europe, which we cover in a 250km grid:
 
 ```{r, warning=FALSE}
 rnaturalearthdata::countries50 %>%
@@ -119,7 +121,7 @@ rnaturalearthdata::countries50 %>%
   sf::st_make_valid() %>%
   sf::st_crop(xmin = -10.8, ymin = 33.6, xmax = 34.5, ymax = 61.3) %>%
   sf::st_transform(3857) %>%
-  mobest::create_prediction_grid(200000) %>%
+  mobest::create_prediction_grid(250000) %>%
   ggplot() +
     geom_raster(aes(x, y)) +
     geom_text(aes(x,y,label = id), colour = "white", size = 2.5) +
@@ -128,7 +130,7 @@ rnaturalearthdata::countries50 %>%
 
 #### Spatiotemporal coordinates
 
-`mobest_spatialpositions` can be transformed to `mobest_spatiotemporalpositions` with `mobest::geopos_to_spatpos`, which calculates the permutations of all spatial positions with a new, implicitly temporal dimension `z`:
+`mobest_spatialpositions` can be transformed to `mobest_spatiotemporalpositions` with `mobest::geopos_to_spatpos`. This function calculates the permutations of all spatial positions with a new, implicitly temporal dimension `z`:
 
 ```{r}
 mobest::geopos_to_spatpos(
@@ -158,12 +160,12 @@ positions
 
 #### Genetic coordinates ####
 
-`mobest::create_obs` creates `mobest_observations`, which is a `tibble` with genetic coordinates.
+`mobest::create_obs` creates `mobest_observations`, which is a `tibble` with genetic coordinates. Genetic coordinates can be any simple numeric measure of ancestry, for example the position of the samples in PCA space.
 
 ```{r}
 observations <- mobest::create_obs(
-  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" here for "ancestry component"
-  ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))
+  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" here for "ancestry component", e.g. PCA coordinate 1
+  ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1)) # e.g. PCA coordinate 2
 )
 ```
 
@@ -171,11 +173,9 @@ observations <- mobest::create_obs(
 observations
 ```
 
-Under specific circumstances, these observations in genetic space come with an error bar. To represent these errors an object of class `mobest_observations_error` can be constructed with `mobest::create_obserror`, which, in turn, can be combined with an object of class `mobest_observations` using `mobest::create_obs_obserror`.
-
 #### Kernel parameter settings
 
-Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific genetic coordinate. Given that an analysis typically involves multiple genetic coordinates (see `mobest_observations`) `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly:
+Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific genetic coordinate. Given that an analysis typically involves multiple genetic coordinates (see `mobest_observations`) `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`:
 
 ```{r}
 mobest::create_kernset(
@@ -184,9 +184,11 @@ mobest::create_kernset(
 )
 ```
 
+If a function requires both input of type `mobest_observations` and `mobest_kernelsetting`, then the names of the individual ancestry components must be identical.
+
 #### Variability and permutations
 
-When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions. To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that can work with permutatations of these input lists.
+When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions. To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that automatically consider all permutations of these input lists.
 
 Available are:
 - `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
@@ -195,7 +197,7 @@ Available are:
 - `mobest_observationswitherror_multi` (`mobest::create_obs_obserror_multi`)
 - `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
 
-And here is how they can be filled with named arguments:
+And here is an example how they can be filled with named arguments:
 
 ```{r}
 multiple_kernel_settings <- mobest::create_kernset_multi(
@@ -212,7 +214,7 @@ multiple_kernel_settings <- mobest::create_kernset_multi(
 
 ### Parameter estimation
 
-`mobest` provides helper functions to estimate the kernel settings for the Gaussian process regression.
+One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is a correct and useful setting for the kernel parameters. The package therefore provides different helper functions to estimate them.
 
 #### Variogram calculation
 
@@ -250,6 +252,8 @@ variogram <- mobest::bin_pairwise_distances(
 ```{r, echo=F}
 variogram
 ```
+
+TODO: Nugget
 
 #### Maximum likelihood estimation
 
@@ -305,7 +309,7 @@ mle_sequence
 `mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below).
 
 ```{r, message=FALSE}
-kernels <- expand.grid(
+kernels_to_test <- expand.grid(
   ds = seq(100,200, 50)*1000,
   dt = seq(100,200, 50)
 ) %>% purrr::pmap(function(...) {
@@ -321,7 +325,7 @@ kernels <- expand.grid(
 interpol_comparison <- mobest::crossvalidate(
   independent = positions,
   dependent = observations,
-  kernel = kernels,
+  kernel = kernels_to_test,
   iterations = 2,
   groups = 10,
   quiet = T
