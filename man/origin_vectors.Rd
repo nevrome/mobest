@@ -7,7 +7,7 @@
 determine_origin_vectors(locate_product, ..., quiet = F)
 }
 \arguments{
-\item{locate_product}{An object of class \code{mobest_locateoverview_product} as created by
+\item{locate_product}{An object of class \code{mobest_locateproduct} as created by
 \link{locate} + \link{locate_multi} and \link{multiply_dependent_probabilities}.}
 
 \item{...}{(Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},

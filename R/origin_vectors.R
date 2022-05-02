@@ -1,6 +1,6 @@
 #' Search for a past point of "origin" in a prediction grid
 #'
-#' @param locate_product An object of class \code{mobest_locateoverview_product} as created by
+#' @param locate_product An object of class \code{mobest_locateproduct} as created by
 #' \link{locate} + \link{locate_multi} and \link{multiply_dependent_probabilities}.
 #' @param ... (Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
 #' \code{kernel_setting_id}, \code{pred_grid_id}, ...)
@@ -17,7 +17,7 @@ determine_origin_vectors <- function(
 ) {
   .grouping_var <- rlang::ensyms(...)
   # input checks
-  checkmate::assert_class(locate_product, "mobest_locateoverview_product")
+  checkmate::assert_class(locate_product, "mobest_locateproduct")
   # summarise data
   locate_groups <- locate_product %>%
     dplyr::group_split(
