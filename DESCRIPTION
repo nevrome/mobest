@@ -16,7 +16,6 @@ Imports:
     laGP,
     checkmate,
     dplyr (>= 0.8.5),
-    fields (>= 10.3),
     fractional,
     furrr,
     future,
