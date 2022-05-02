@@ -2,8 +2,8 @@
 #'
 #' @param locate_product An object of class \code{mobest_locateoverview_product} as created by
 #' \link{locate} + \link{locate_multi} and \link{multiply_dependent_probabilities}.
-#' @param ... Additional grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
-#' \code{kernel_setting_id}, \code{pred_grid_id})
+#' @param ... (Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
+#' \code{kernel_setting_id}, \code{pred_grid_id}, ...)
 #' @param quiet Logical. Should a progress indication be printed?
 #'
 #' @return An object of class \code{mobest_origin_grid}

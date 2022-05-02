@@ -10,8 +10,8 @@ determine_origin_vectors(locate_product, ..., quiet = F)
 \item{locate_product}{An object of class \code{mobest_locateoverview_product} as created by
 \link{locate} + \link{locate_multi} and \link{multiply_dependent_probabilities}.}
 
-\item{...}{Additional grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
-\code{kernel_setting_id}, \code{pred_grid_id})}
+\item{...}{(Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
+\code{kernel_setting_id}, \code{pred_grid_id}, ...)}
 
 \item{quiet}{Logical. Should a progress indication be printed?}
 }

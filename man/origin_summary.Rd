@@ -21,6 +21,9 @@ find_no_data_windows(origin_summary, ...)
 \item{origin_vectors}{An object of class \code{mobest_originvectors} as created by
 \link{determine_origin_vectors}}
 
+\item{...}{(Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
+\code{kernel_setting_id}, \code{pred_grid_id}, ...)}
+
 \item{window_start}{Start date of the moving window sequence}
 
 \item{window_stop}{Stop date of the moving window sequence}
@@ -31,7 +34,7 @@ find_no_data_windows(origin_summary, ...)
 If the first window starts at -3500 and extends until -3200, should the next
 one start at -3450 or -3400, so with window_step = 50 or window_step = 100?}
 
-\item{moving_origin_grid}{An object of class \code{mobest_originsummary}
+\item{origin_summary}{An object of class \code{mobest_originsummary}
 as created by \link{summarize_origin_vectors}}
 }
 \value{

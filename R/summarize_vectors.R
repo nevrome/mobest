@@ -5,8 +5,10 @@
 #'
 #' @param origin_vectors An object of class \code{mobest_originvectors} as created by
 #' \link{determine_origin_vectors}
-#' @param moving_origin_grid An object of class \code{mobest_originsummary}
+#' @param origin_summary An object of class \code{mobest_originsummary}
 #' as created by \link{summarize_origin_vectors}
+#' @param ... (Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
+#' \code{kernel_setting_id}, \code{pred_grid_id}, ...)
 #' @param window_start Start date of the moving window sequence
 #' @param window_stop Stop date of the moving window sequence
 #' @param window_width Width of each individual moving window
