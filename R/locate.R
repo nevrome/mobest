@@ -275,32 +275,33 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
     losum <- locate_summary
   }
   losum %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview_product")
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateproduct")
 }
 
 #' @rdname locate
 #' @export
-sum_probabilities_per_group <- function(locate_overview, ...) {
+sum_probabilities_per_group <- function(locate_product, ...) {
   .grouping_var <- rlang::ensyms(...)
   # input checks
-  checkmate::assert_class(locate_overview, classes = "mobest_locateoverview_product")
+  checkmate::assert_class(locate_product, classes = "mobest_locateproduct")
   # data transformation
-  locate_summary <- locate_overview %>%
+  locate_summary <- locate_product %>%
     dplyr::group_by(
       !!!.grouping_var,
-      .data[["id"]],
+      .data[["search_id"]],
       .data[["field_id"]],
       .data[["search_z"]],
     ) %>%
     dplyr::summarise(
-      x = dplyr::first(x),
-      y = dplyr::first(y),
-      z = dplyr::first(z),
+      search_x = dplyr::first(search_x),
+      search_y = dplyr::first(search_y),
       field_x = dplyr::first(field_x),
       field_y = dplyr::first(field_y),
-      probability = sum(probability, na.rm = T)
+      field_z = dplyr::first(field_z),
+      probability = sum(probability, na.rm = T),
+      .groups = "drop"
     )
   # prepare output
   locate_summary %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview_sum")
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locatesum")
 }

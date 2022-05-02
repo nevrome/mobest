@@ -33,7 +33,7 @@ locate_multi(
 
 multiply_dependent_probabilities(locate_overview, omit_dependent_details = T)
 
-sum_probabilities_per_group(locate_overview, ...)
+sum_probabilities_per_group(locate_product, ...)
 }
 \arguments{
 \item{independent}{An object of class \code{mobest_spatiotemporalpositions_multi}
