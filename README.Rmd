@@ -178,7 +178,7 @@ observations
 Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific genetic coordinate. Given that an analysis typically involves multiple genetic coordinates (see `mobest_observations`) `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`:
 
 ```{r}
-mobest::create_kernset(
+kernset <- mobest::create_kernset(
   ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
   ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
 )
@@ -394,40 +394,40 @@ interpol_grid
 
 ### Origin search
 
+`mobest::locate` uses the spatiotemporal interpolation to calculate a similarity probability between input a set of "search" samples and arbitrary spatiotemporal positions. It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell for each search sample in an object of class `mobest_locateoverview`.
+
 ```{r}
 locate_simple <- mobest::locate(
   independent = positions,
   dependent = observations,
-  kernel = mobest::create_kernset(
-    ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
-    ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
-  ),
+  kernel = kernset,
   search_independent = positions[1:4,],
-  search_dependent = mobest::create_obs_obserror(
-    observations[1:4,],
-    mobest::create_obserror(
-      ac1_sd = runif(4),
-      ac2_sd = runif(4)
-    )
-  ),
+  search_dependent = observations[1:4,],
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
     ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
-  search_time = c(-35, -30, 0),
-  quiet = F
+  search_time = c(0,-100),
+  quiet = T
 )
+```
 
-mul <- mobest::multiply_dependent_probabilities(locate_simple, omit_dependent_details = T)
+The spatiotemporal probability grids `locate` calculates are per ancestry component (as put in via `dependent`/`search_dependent`). To multiply the grids, `mobest` provides `mobest::multiply_dependent_probabilities`, which yields an object of class `mobest_locateproduct`.
 
+```{r}
+mobest::multiply_dependent_probabilities(locate_simple)
+```
+
+`mobest::locate` is actually just a special, simplified interface to `mobest::locate_multi`, which adds another level of complexity, by allowing multiple input values for `independent`, `dependent`, `kernel`, `search_independent` and `search_dependent`. The result will consider all permutations of these input settings (`independent` and `search_independent` as well as `dependent` and `search_dependent` have to be congruent, though).
+
+```{r}
 locate_overview <- mobest::locate_multi(
   independent = mobest::create_spatpos_multi(
     dating1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
     dating2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
   ),
   dependent = mobest:::create_obs_multi(
-    obs1 = observations,
-    obs2 = observations
+    obs1 = observations, obs2 = observations
   ),
   kernel = mobest::create_kernset_multi(
     kernel_1 = mobest::create_kernset(
@@ -440,43 +440,46 @@ locate_overview <- mobest::locate_multi(
     )
   ),
   search_independent = mobest::create_spatpos_multi(
-    dating1 = positions[1:4,],
-    dating2 = positions[1:4,]
+    dating1 = positions[1:4,], dating2 = positions[1:4,]
   ),
   search_dependent = mobest:::create_obs_multi(
-    obs1 = observations[1:4,],
-    obs2 = observations[1:4,]
+    obs1 = observations[1:4,], obs2 = observations[1:4,]
   ),
-  # search_dependent = mobest:::create_obs_obserror_multi(
-  #   obs1 = mobest::create_obs_obserror(
-  #     observations[1:4,],
-  #     mobest::create_obserror(
-  #       ac1_sd = runif(4),
-  #       ac2_sd = runif(4)
-  #     )
-  #   ),
-  #   obs2 = mobest::create_obs_obserror(
-  #     observations[1:4,],
-  #     mobest::create_obserror(
-  #       ac1_sd = runif(4),
-  #       ac2_sd = runif(4)
-  #     )
-  #   )
-  # ),
   search_space_grid = expand.grid(
       x = seq(100000, 1000000, 100000), 
       y = seq(100000, 1000000, 100000)
     ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
-  search_time = c(-35, -30, 0),
+  search_time = 0,
   search_time_mode = "relative",
   quiet = F
 )
 
 locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
-#sums <- sum_probabilities_per_group(mul, dependent_setting_id)
+```
 
+`mobest::locate_multi` produces many probability grids for each sample. Even after `mobest::multiply_dependent_probabilities` merges the per-ancestry component iterations, that still leaves many parameter permutations. `mobest::sum_probabilities_per_group` is a convenient function to sum these to one, simplified probability grid of class `mobest_locatesum`.
+
+```{r}
+sum_probabilities_per_group(locate_product)
+```
+
+`sum_probabilities_per_group` also allows to maintain the the permutation groups, in case a full summary is not desired:
+
+```{r}
+sum_probabilities_per_group(locate_product, dependent_setting_id, kernel_setting_id)
+```
+
+### Origin vectors
+
+TODO
+
+```{r}
 origin_vectors <- determine_origin_vectors(locate_product)
+```
 
+TODO
+
+```{r}
 origin_vectors$region_id <- c(
   "A", "B", "A", "C"
 )
@@ -495,23 +498,3 @@ find_no_data_windows(
   region_id
 )
 ```
-
-### Mobility estimation
-
-`mobest::search_spatial_origin` takes a number of "search points" (with `independent` and `dependent` variables) for which the spatial origin search should be performed, as well as an `interpol_grid`, which defines the field in which the origin search should be performed. It returns a data.frame with one row for each search point and interpol_grid setting. Each row contains the specifics of the genetically closest origin point.
-
-```{r}
-origin_grid <- mobest::search_spatial_origin(
-  independent = uncertain_positions,
-  dependent = observations,
-  interpol_grid = interpol_grid,
-  rearview_distance = 300,
-  quiet = T
-)
-```
-
-```{r, echo=F}
-origin_grid
-```
-
-From this output multiple data products can be derived (e.g. for plotting) with `mobest::average_origin_searchid`, `mobest::average_origin_moving_window` and `mobest::no_data_windows`.
