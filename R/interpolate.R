@@ -194,7 +194,7 @@ interpolate <- function(independent, dependent, pred_grid, d = NA, g = NA, auto 
     dependent <- model[["residuals"]]
   }
   # priors for the global GP
-  if ((is.na(d) && is.na(g)) || auto) {
+  if ((any(is.na(d)) && is.na(g)) || auto) {
     da <- laGP::darg(list(mle = TRUE, max = 10), independent)
     ga <- laGP::garg(list(mle = TRUE, max = 10), dependent)
     d <- da$start
