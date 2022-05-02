@@ -78,6 +78,14 @@ of the samples of interest.}
 
 \item{locate_overview}{An object of class \code{mobest_locateoverview} as created by
 \link{locate} and \link{locate_multi}.}
+
+\item{omit_dependent_details}{Logical. If TRUE, removes additional, dependent-wise
+columns.}
+
+\item{locate_product}{An object of class \code{mobest_locateproduct}.}
+
+\item{...}{(Additional) grouping variables (\code{independent_table_id},
+\code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)}
 }
 \description{
 Create a genetic ancestry field and determine similarity probabilities with it.

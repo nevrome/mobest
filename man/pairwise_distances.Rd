@@ -42,6 +42,8 @@ bin_pairwise_distances(
 
 \item{with_resid}{Logical. Calculate distances also on the residuals of a spatiotemporal linear model}
 
+\item{ids}{Vector. Sample identifiers (as in \code{mobest_spatiotemporalpositions}).}
+
 \item{pairwise_distances}{An object of class mobest_pairwisedistances}
 
 \item{geo_bin}{Numeric. Width of the spatial bins}

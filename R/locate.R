@@ -56,7 +56,7 @@ locate <- function(
 ) {
   locate_multi(
     independent = create_spatpos_multi(i = independent),
-    dependent = mobest:::create_obs_multi(d = dependent),
+    dependent = create_obs_multi(d = dependent),
     kernel = create_kernset_multi(k = kernel),
     search_independent = create_spatpos_multi(i = search_independent),
     search_dependent = if ("mobest_observations" %in% class(search_dependent)) {
@@ -199,7 +199,7 @@ locate_multi <- function(
   if ("mobest_observations_multi" %in% class(search_dependent)) {
     full_search_table_prob <- full_search_table %>%
       dplyr::mutate(
-        probability = dnorm(
+        probability = stats::dnorm(
           x = .data[["search_measured"]],
           mean = .data[["field_mean"]],
           sd = .data[["field_sd"]]
@@ -210,8 +210,8 @@ locate_multi <- function(
       )
   } else if ("mobest_observationswitherror_multi" %in% class(search_dependent)) {
     int_f <- function(x, mu1, mu2, sd1, sd2) {
-      f1 <- dnorm(x, mean = mu1, sd = sd1)
-      f2 <- dnorm(x, mean = mu2, sd = sd2)
+      f1 <- stats::dnorm(x, mean = mu1, sd = sd1)
+      f2 <- stats::dnorm(x, mean = mu2, sd = sd2)
       pmin(f1, f2)
     }
     full_search_table_prob <- full_search_table %>%
@@ -221,7 +221,7 @@ locate_multi <- function(
           list(.data[["search_measured"]], .data[["field_mean"]], .data[["search_sd"]], .data[["field_sd"]]),
           function(mu1, mu2, sd1, sd2) {
             res <- try(
-              integrate(
+              stats::integrate(
                 int_f, -Inf, Inf,
                 mu1 = mu1, mu2 = mu2, sd1 = sd1, sd2 = sd2
                 #, rel.tol = 1e-10
@@ -244,6 +244,9 @@ locate_multi <- function(
     return()
 }
 
+#' @param omit_dependent_details Logical. If TRUE, removes additional, dependent-wise
+#' columns.
+#'
 #' @rdname locate
 #' @export
 multiply_dependent_probabilities <- function(locate_overview, omit_dependent_details = T) {
@@ -278,6 +281,10 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateproduct")
 }
 
+#' @param locate_product An object of class \code{mobest_locateproduct}.
+#' @param ... (Additional) grouping variables (\code{independent_table_id},
+#' \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)
+#'
 #' @rdname locate
 #' @export
 sum_probabilities_per_group <- function(locate_product, ...) {
@@ -293,12 +300,12 @@ sum_probabilities_per_group <- function(locate_product, ...) {
       .data[["search_z"]],
     ) %>%
     dplyr::summarise(
-      search_x = dplyr::first(search_x),
-      search_y = dplyr::first(search_y),
-      field_x = dplyr::first(field_x),
-      field_y = dplyr::first(field_y),
-      field_z = dplyr::first(field_z),
-      probability = sum(probability, na.rm = T),
+      search_x = dplyr::first(.data[["search_x"]]),
+      search_y = dplyr::first(.data[["search_y"]]),
+      field_x = dplyr::first(.data[["field_x"]]),
+      field_y = dplyr::first(.data[["field_y"]]),
+      field_z = dplyr::first(.data[["field_z"]]),
+      probability = sum(.data[["probability"]], na.rm = T),
       .groups = "drop"
     )
   # prepare output

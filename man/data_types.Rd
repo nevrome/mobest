@@ -63,7 +63,13 @@ be constructed}
 
 \item{.names}{Vector. Names of different object iterations}
 
+\item{geopos}{An object of class `mobest_spatialpositions`.}
+
 \item{z}{Numeric vector. Temporal positions}
+
+\item{obs}{An object of class `mobest_observations`.}
+
+\item{obserror}{An object of class `mobest_observations_error`.}
 
 \item{dsx}{Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more information}
 

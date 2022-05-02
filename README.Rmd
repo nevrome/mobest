@@ -345,11 +345,11 @@ The spatiotemporal interpolation workflow consists of the creation of a list of 
 ```{r}
 library(magrittr)
 model_grid <- mobest::create_model_grid(
-  independent = mobest:::create_spatpos_multi(
+  independent = mobest::create_spatpos_multi(
     dating_1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
     dating_2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
   ),
-  dependent = mobest:::create_obs_multi(
+  dependent = mobest::create_obs_multi(
     obs1 = observations,
     obs2 = observations
   ),
@@ -426,7 +426,7 @@ locate_overview <- mobest::locate_multi(
     dating1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
     dating2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
   ),
-  dependent = mobest:::create_obs_multi(
+  dependent = mobest::create_obs_multi(
     obs1 = observations, obs2 = observations
   ),
   kernel = mobest::create_kernset_multi(
@@ -442,7 +442,7 @@ locate_overview <- mobest::locate_multi(
   search_independent = mobest::create_spatpos_multi(
     dating1 = positions[1:4,], dating2 = positions[1:4,]
   ),
-  search_dependent = mobest:::create_obs_multi(
+  search_dependent = mobest::create_obs_multi(
     obs1 = observations[1:4,], obs2 = observations[1:4,]
   ),
   search_space_grid = expand.grid(

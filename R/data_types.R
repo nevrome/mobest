@@ -83,6 +83,9 @@ create_geopos_multi <- function(..., .names = NULL) {
 
 #### spatiotemporal coordinates ####
 
+
+#' @param geopos An object of class `mobest_spatialpositions`.
+#'
 #' @rdname data_types
 #' @export
 geopos_to_spatpos <- function(geopos, z) {
@@ -100,7 +103,11 @@ geopos_to_spatpos <- function(geopos, z) {
     z = spatpos$z,
     geo_id = spatpos$id
   ) %>%
-    dplyr::bind_cols(spatpos %>% dplyr::select(-id, -x, -y, -z))
+    dplyr::bind_cols(
+      spatpos %>% dplyr::select(
+        -.data[["id"]], -.data[["x"]], -.data[["y"]], -.data[["z"]]
+      )
+    )
 }
 
 #' @rdname data_types
@@ -162,6 +169,9 @@ create_obserror <- function(..., .names = NULL) {
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
 }
 
+#' @param obs An object of class `mobest_observations`.
+#' @param obserror An object of class `mobest_observations_error`.
+#'
 #' @rdname data_types
 #' @export
 create_obs_obserror <- function(obs, obserror) {

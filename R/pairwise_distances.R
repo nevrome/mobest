@@ -75,6 +75,8 @@ calculate_time_pairwise_distances <- function(independent) {
     tibble::as_tibble()
 }
 
+#' @param ids Vector. Sample identifiers (as in \code{mobest_spatiotemporalpositions}).
+#'
 #' @rdname pairwise_distances
 #' @export
 calculate_dependent_pairwise_distances <- function(ids, dependent, with_resid = F, independent = NULL) {

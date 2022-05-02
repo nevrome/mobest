@@ -62,7 +62,7 @@ wtd.var <- function (
   if (!length(weights)) {
     if (na.rm)
       x <- x[!is.na(x)]
-    return(var(x))
+    return(stats::var(x))
   }
   if (na.rm) {
     s <- !is.na(x + weights)
