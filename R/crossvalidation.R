@@ -18,15 +18,12 @@ crossvalidate <- function(
   kernel,
   iterations,
   groups = 10,
-  quiet = T
+  quiet = F
 ) {
   # input check
   checkmate::assert_class(independent, "mobest_spatiotemporalpositions")
   checkmate::assert_class(dependent, "mobest_observations")
-  checkmate::assert_list(
-    kernel, types = "mobest_kernelsetting",
-    any.missing = F, min.len = 1, names = "strict"
-  )
+  checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
   checkmate::assert_count(iterations)
   checkmate::assert_count(groups)
   # create crossvalidation dataset
@@ -40,6 +37,9 @@ crossvalidate <- function(
     1:iterations, # this counter is only passed here to document the run number in the output df
     crossval_mixed_list,
     function(mixing_iteration, crossval_mixed) {
+      if (!quiet) {
+        message("starting mixing iteration ", mixing_iteration, " of ", iterations)
+      }
       # split crossval into sections
       n <- groups
       nr <- nrow(crossval_mixed)
@@ -55,23 +55,26 @@ crossvalidate <- function(
           function(run_id, training, test) {
             mobest::create_model_grid(
               independent = mobest::create_spatpos_multi(
-                id = training$id,
-                x = list(training$x),
-                y = list(training$y),
-                z = list(training$z),
-                it = paste0("ind_crossval_run_", run_id)
+                mobest::create_spatpos(
+                  id = training$id,
+                  x = training$x, y = training$y, z = training$z
+                ),
+                .names = paste0("ind_crossval_run_", run_id)
               ),
-              dependent = do.call(
-                mobest::create_obs,
-                training[, names(dependent)]
+              dependent = mobest::create_obs_multi(
+                do.call(
+                  mobest::create_obs,
+                  training[, names(dependent)]
+                ),
+                .names = paste0("obs_crossval_run_", run_id)
               ),
               kernel = kernel,
               prediction_grid = mobest::create_spatpos_multi(
-                id = test$id,
-                x = list(test$x),
-                y = list(test$y),
-                z = list(test$z),
-                it = paste0("pred_crossval_run_", run_id)
+                mobest::create_spatpos(
+                  id = test$id,
+                  x = test$x, y = test$y, z = test$z
+                ),
+                .names = paste0("pred_crossval_run_", run_id)
               )
             )
           }
@@ -79,54 +82,28 @@ crossvalidate <- function(
       )
       # run interpolation on model grid
       interpol_grid <- mobest::run_model_grid(model_grid, quiet = quiet)
-      # add mixing iteration column
-      interpol_grid %>% dplyr::mutate(mixing_iteration = mixing_iteration)
+      interpol_grid %>%
+        # add mixing iteration column
+        dplyr::mutate(
+          mixing_iteration = mixing_iteration,
+          .after = "pred_grid_id"
+        )
     }
   )
-  # make wide for predicted (by the GPR) mean and sd values
-  crossval_interpol_grid_wide <- crossval_interpol_grid %>% tidyr::pivot_wider(
-    names_from = "dependent_var_id",
-    values_from = c("mean", "sd")
-  )
   # merge with actually measured information
-  crossval_interpol_comparison <- crossval_interpol_grid_wide %>%
+  crossval_interpol_grid %>%
     dplyr::left_join(
       crossval %>% dplyr::select(
         -.data[["x"]], -.data[["y"]], -.data[["z"]]
+      ) %>% tidyr::pivot_longer(
+        cols = -"id",
+        names_to = "dependent_var_id",
+        values_to = "measured"
       ),
-      by = "id"
-    )
-  # calculate differences between estimated and measured values
-  for (dep in names(dependent)) {
-    crossval_interpol_comparison[[paste0(dep, "_dist")]] <-
-      crossval_interpol_comparison[[paste0("mean_", dep)]] -
-      crossval_interpol_comparison[[dep]]
-  }
-  # prepare output dataset
-  crossval_interpol_comparison %>%
-    dplyr::select(
-      .data[["id"]],
-      .data[["mixing_iteration"]],
-      .data[["kernel_setting_id"]],
-      tidyselect::contains("_dist")
+      by = c("id", "dependent_var_id")
     ) %>%
-    tidyr::pivot_longer(
-      cols = tidyselect::contains("_dist"),
-      names_to = "dependent_var",
-      values_to = "difference"
-    ) %>%
-    # turn kernel parameters into distinct columns again
+    # calculate differences between estimated and measured values
     dplyr::mutate(
-      kernel_setting_id = gsub("kernel_", "", .data[["kernel_setting_id"]])
-    ) %>%
-    tidyr::separate(
-      .data[["kernel_setting_id"]],
-      c("ds", "dt", "g"),
-      sep = "_",
-      convert = T,
-      remove = F
-    ) %>%
-    dplyr::select(
-      -.data[["kernel_setting_id"]]
+      difference = .data[["mean"]] - .data[["measured"]]
     )
 }
