@@ -304,7 +304,7 @@ mle_sequence
 
 #### Crossvalidation
 
-`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple cross-validation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below).
+`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below). Crossvalidation is computationally expensive, but in our experience the best method for the kernel parameter estimation.
 
 ```{r, message=FALSE}
 kernels_to_test <- expand.grid(
@@ -336,9 +336,9 @@ interpol_comparison
 
 ### Spatiotemporal interpolation
 
-The spatiotemporal interpolation workflow consists of the creation of a list of models and then running each element in this list. The direct interpolation function `mobest:::interpolate` has a minimal interface and is therefore kept internal.
+The spatiotemporal interpolation workflow consists of the creation of a list of models and then subsequently running each element in this list to construct different ancestry fields. The actual interpolation is done in a function `mobest:::interpolate`, which has a minimal interface and is therefore kept internal.
 
-`mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of input elements. Each row equals one complete model definition with all parameters and input data fully defined.
+`mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of the field-defining input objects. Each row equals one complete model definition with all parameters and input data fully defined.
 
 ```{r}
 library(magrittr)
