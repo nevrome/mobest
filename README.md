@@ -1,6 +1,10 @@
 
 <!-- Rmd -> md -->
 
+![GitHub R package
+version](https://img.shields.io/github/r-package/v/nevrome/mobest)
+[![R-CMD-check](https://github.com/nevrome/mobest/actions/workflows/check-release.yaml/badge.svg)](https://github.com/nevrome/mobest/actions/workflows/check-release.yaml)
+
 # mobest
 
 This R package provides types and functions for spatiotemporal
