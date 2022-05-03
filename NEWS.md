@@ -1,0 +1,1 @@
+- v0.3.0: Rewrite of most of the package to be independently useful beyond the paper it was written for.
