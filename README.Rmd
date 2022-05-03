@@ -247,7 +247,7 @@ obs_dist <- mobest::calculate_dependent_pairwise_distances(positions$id, observa
 ```{r}
 variogram <- mobest::bin_pairwise_distances(
   pairwise_distances,
-  geo_bin = 0.1, time_bin = 100
+  geo_bin = 100, time_bin = 100
 )
 ```
 
