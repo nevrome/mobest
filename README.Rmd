@@ -455,21 +455,21 @@ locate_overview <- mobest::locate_multi(
 locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
 ```
 
-`mobest::locate_multi` produces many probability grids for each sample. Even after `mobest::multiply_dependent_probabilities` merges the per-ancestry component iterations, that still leaves many parameter permutations. `mobest::sum_probabilities_per_group` is a convenient function to sum these to a single, merged probability grid of class `mobest_locatesum`.
+`mobest::locate_multi` produces many probability grids for each sample. Even after `mobest::multiply_dependent_probabilities` merges the per-ancestry component iterations, that still leaves many parameter permutations. `mobest::fold_probabilities_per_group` is a convenient function to combine these to a single, merged probability grid of class `mobest_locatefold`. The folding operation can be set in the argument `folding_operation`, where the default is a simple sum.
 
 ```{r}
-mobest::sum_probabilities_per_group(locate_product)
+mobest::fold_probabilities_per_group(locate_product)
 ```
 
-`sum_probabilities_per_group` also allows to maintain the the permutation groups, in case a full summary is not desired:
+`fold_probabilities_per_group` also allows to maintain the the permutation groups, in case a full summary is not desired:
 
 ```{r}
-mobest::sum_probabilities_per_group(locate_product, dependent_setting_id, kernel_setting_id)
+mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kernel_setting_id)
 ```
 
 ### Origin vectors
 
-To derive a simple, sample-wise measure of mobility, `mobest::determine_origin_vectors` constructs what we call "origin vectors" from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a respective individual was buried with the point of highest genetic similarity in a respective search field. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector", which can thus serve as a proxy of mobility.
+To derive a simple, sample-wise measure of mobility, `mobest::determine_origin_vectors` constructs what we call "origin vectors" from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a sample was found (so for ancient samples that is usually where the respective individual was buried) with the point of **highest genetic similarity** in the interpolated search field and its permutations. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector". Under certain circumstances this vector can serve as a proxy for mobility.
 
 ```{r}
 origin_vectors <- mobest::determine_origin_vectors(locate_product)
@@ -479,13 +479,13 @@ origin_vectors <- mobest::determine_origin_vectors(locate_product)
 origin_vectors
 ```
 
-Just as `mobest::sum_probabilities_per_group`, this summary can be split to maintain the permutation groups introduced above.
+Just as `mobest::fold_probabilities_per_group`, this summary can be split to maintain the permutation groups introduced above.
 
 ```{r}
-mobest::determine_origin_vectors(locate_product, kernel_setting_id)
+mobest::determine_origin_vectors(locate_product, independent_table_id)
 ```
 
-In a very final step of the pipeline supported by `mobest` we can summarise origin vectors through time. `mobest::summarize_origin_vectors` allows for a moving window summary. It also supports the deliberate grouping -- note that also additional variables can be introduced, e.g. a (spatial) region attribution of the search samples.
+In a very final step of the pipeline supported by `mobest`, we can summarise origin vectors through time. `mobest::summarize_origin_vectors` allows for a moving window summary. It also supports the deliberate grouping available for all functions following `multiply_dependent_probabilities`. Note that this explicitly includes additional variables that can be introduced even at this point in the pipeline, e.g. a (spatial) region attribution of the search samples.
 
 ```{r}
 origin_vectors$region_id <- c(
@@ -506,7 +506,7 @@ origin_summary <- mobest::summarize_origin_vectors(
 origin_summary
 ```
 
-Empty time ranges can be identified with `mobest::find_no_data_windows`, which is a minor, but useful helper function for plotting.
+Empty (i.e. not sufficiently informed from data) time ranges in this moving window summary can be identified with `mobest::find_no_data_windows`, which is a minor, but useful helper function e.g. for plotting.
 
 ```{r}
 mobest::find_no_data_windows(

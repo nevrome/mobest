@@ -4,9 +4,10 @@
 # mobest
 
 This R package provides types and functions for spatiotemporal
-interpolation of human genetic ancestry components and a derived measure
-for **mob**ility **est**imation. The workflow in version 1.0 was
-specifically developed to support this research compendium:
+interpolation of human genetic ancestry components, similarity search
+and the calculation of a derived measure for **mob**ility
+**est**imation. The workflow in version X.X.X was specifically developed
+to support this research compendium:
 <https://github.com/nevrome/mobest.analysis.2022>.
 
 0.  `mobest` assumes you have a set of genetic samples with spatial (two
@@ -29,7 +30,7 @@ Here is a simple, artificial example how 2. can be used:
 
 ``` r
 library(magrittr)
-set.seed(144)
+set.seed(145)
 
 # a function to calculate the similarity probability for one particular sample
 locate_simple <- mobest::locate(
@@ -77,14 +78,9 @@ locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
 
 # plot the resulting probability surface
 library(ggplot2)
-locate_product %>%
-  ggplot() +
-  geom_raster(
-    mapping = aes(x = field_x, y = field_y, fill = probability)
-  ) +
-  geom_point(
-    mapping = aes(x = search_x, y = search_y), colour = "red"
-  ) +
+locate_product %>% ggplot() +
+  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
+  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
   coord_fixed() +
   ggtitle(paste0(
     "t for sample of interest = ", unique(locate_product$search_z), "\n",
@@ -103,16 +99,16 @@ Install the package from github with the following command in R:
 
 ## Overview
 
-The following guide briefly lists the data types and functions in the
-order you would usually call them and thus introduces the interface from
-a technical point of view.
+The following guide briefly lists the data types and functions of
+`mobest` loosely in the order one would usually call them and thus
+introduces the interface and workflow.
 
 ### Basic data types
 
 `mobest` employs a number of basic [S3 data
 types](http://adv-r.had.co.nz/S3.html) to formalize the input to almost
-all of its functions. The constructors usually just check certain
-properties to insure input correctness.
+all of its functions. The constructors check certain properties to
+insure input correctness.
 
 #### Spatial coordinates
 
@@ -121,8 +117,8 @@ properties to insure input correctness.
 positions. Spatial positions in `mobest` are always 2-dimensional
 coordinates in a Cartesian space. For real world coordinates that means,
 that they have to be transformed to a projected coordinate system
-(e.g. with `?sf::st_transform`): `mobest` can be used with longitude and
-latitude coordinates.
+(e.g. with `sf::st_transform`): `mobest` can not be used with longitude
+and latitude coordinates.
 
 ``` r
 mobest::create_geopos(
@@ -135,16 +131,16 @@ mobest::create_geopos(
     ## # A tibble: 100 × 3
     ##       id      x      y
     ##    <int>  <int>  <int>
-    ##  1     1 563893 248161
-    ##  2     2 499058 241120
-    ##  3     3 379661 597583
-    ##  4     4 271319 396118
-    ##  5     5 532892 614256
-    ##  6     6 187987 398150
-    ##  7     7 103322 395421
-    ##  8     8 199717 464662
-    ##  9     9 234251 102680
-    ## 10    10 452401 352873
+    ##  1     1 349697 531615
+    ##  2     2 682396 677009
+    ##  3     3 111943 674572
+    ##  4     4 539214 440676
+    ##  5     5 255543 244130
+    ##  6     6 678504 341140
+    ##  7     7 536256 545510
+    ##  8     8 544375 530917
+    ##  9     9 208521 371833
+    ## 10    10 115593 134532
     ## # … with 90 more rows
 
 For the interpolation fields we often want regular, spatial grids
@@ -153,8 +149,7 @@ covering a specific spatial area. These can be constructed with
 with polygons in a projected coordinate system. It also yields an object
 of class `mobest_spatialpositions`.
 
-Here is an example for the landmass of Europe, which we cover in a 250km
-grid:
+Here is an example for the landmass of Europe, covered in a 250km grid:
 
 ``` r
 rnaturalearthdata::countries50 %>%
@@ -176,7 +171,8 @@ rnaturalearthdata::countries50 %>%
 `mobest_spatialpositions` can be transformed to
 `mobest_spatiotemporalpositions` with `mobest::geopos_to_spatpos`. This
 function calculates the permutations of all spatial positions with a
-new, implicitly temporal dimension `z`:
+new, implicitly temporal dimension `z`. `mobest_spatiotemporalpositions`
+is also derived from `tibble`.
 
 ``` r
 mobest::geopos_to_spatpos(
@@ -192,20 +188,21 @@ mobest::geopos_to_spatpos(
     ## # A tibble: 300 × 5
     ##       id      x      y     z geo_id
     ##    <int>  <int>  <int> <dbl>  <int>
-    ##  1     1 158229 205700 -5000      1
-    ##  2     2 158229 205700 -4900      1
-    ##  3     3 158229 205700 -4800      1
-    ##  4     4 557976 121732 -5000      2
-    ##  5     5 557976 121732 -4900      2
-    ##  6     6 557976 121732 -4800      2
-    ##  7     7 448428 527090 -5000      3
-    ##  8     8 448428 527090 -4900      3
-    ##  9     9 448428 527090 -4800      3
-    ## 10    10 134001 354103 -5000      4
+    ##  1     1 329750 162954 -5000      1
+    ##  2     2 329750 162954 -4900      1
+    ##  3     3 329750 162954 -4800      1
+    ##  4     4 334821 301093 -5000      2
+    ##  5     5 334821 301093 -4900      2
+    ##  6     6 334821 301093 -4800      2
+    ##  7     7 460308 458861 -5000      3
+    ##  8     8 460308 458861 -4900      3
+    ##  9     9 460308 458861 -4800      3
+    ## 10    10 697811 669567 -5000      4
     ## # … with 290 more rows
 
-`mobest::create_spatpos` directly creates an object of class
-`mobest_spatiotemporalpositions` to represent spatiotemporal positions.
+`mobest::create_spatpos` directly creates
+`mobest_spatiotemporalpositions` objects to represent spatiotemporal
+positions.
 
 ``` r
 positions <- mobest::create_spatpos(
@@ -219,24 +216,24 @@ positions <- mobest::create_spatpos(
     ## # A tibble: 100 × 4
     ##       id      x      y     z
     ##    <int>  <int>  <int> <int>
-    ##  1     1 625599 599424 -3853
-    ##  2     2 442475 155479 -3937
-    ##  3     3 699770 539179 -4475
-    ##  4     4 661104 254403 -4921
-    ##  5     5 424049 640011 -3823
-    ##  6     6 301860 528395 -4227
-    ##  7     7 580030 109333 -4322
-    ##  8     8 568890 269995 -3708
-    ##  9     9 363356 128083 -3650
-    ## 10    10 173665 250891 -4892
+    ##  1     1 593039 372080 -3586
+    ##  2     2 326494 513740 -4501
+    ##  3     3 636281 563535 -4272
+    ##  4     4 122139 171731 -3975
+    ##  5     5 540838 345322 -4791
+    ##  6     6 298406 213714 -3961
+    ##  7     7 364614 301969 -3868
+    ##  8     8 301387 108758 -4638
+    ##  9     9 476376 567265 -4779
+    ## 10    10 511404 537129 -4283
     ## # … with 90 more rows
 
 #### Genetic coordinates
 
-`mobest::create_obs` creates `mobest_observations`, which is a `tibble`
-with genetic coordinates. Genetic coordinates can be any simple numeric
-measure of ancestry, for example the position of the samples in PCA
-space.
+`mobest::create_obs` creates an object `mobest_observations`, which is a
+`tibble` with genetic coordinates. Genetic coordinates can be any simple
+numeric measure of ancestry, for example the position of the samples in
+PCA space.
 
 ``` r
 observations <- mobest::create_obs(
@@ -246,30 +243,33 @@ observations <- mobest::create_obs(
 ```
 
     ## # A tibble: 100 × 2
-    ##      ac1      ac2
-    ##    <dbl>    <dbl>
-    ##  1 0.107 0.219   
-    ##  2 0.252 0.234   
-    ##  3 0.368 0.000774
-    ##  4 0.274 0.270   
-    ##  5 0.188 0.300   
-    ##  6 0.153 0.278   
-    ##  7 0.480 0.0918  
-    ##  8 0.113 0.152   
-    ##  9 0.252 0.0133  
-    ## 10 0.470 0.279   
+    ##       ac1    ac2
+    ##     <dbl>  <dbl>
+    ##  1 0.370  0.208 
+    ##  2 0.331  0.151 
+    ##  3 0.455  0.183 
+    ##  4 0.114  0.194 
+    ##  5 0.563  0.240 
+    ##  6 0.0873 0.0353
+    ##  7 0.203  0.0386
+    ##  8 0.538  0.272 
+    ##  9 0.316  0.0307
+    ## 10 0.578  0.0695
     ## # … with 90 more rows
+
+Names and number of the components are freely selectable, so instead of
+`ac1` + `ac2` as in the example here, one could, for example, also have
+`PC1` + `PC2` + `PC3`, or `MDS1` + `MDS2`.
 
 #### Kernel parameter settings
 
 Gaussian process regression requires a parametrized covariance function:
 a “kernel”. One `mobest_kernel` can be constructed with
 `mobest::create_kernel`. `mobest_kernel` only represents one specific
-kernel, though, for one specific genetic coordinate. Given that an
-analysis typically involves multiple genetic coordinates (see
-`mobest_observations`) `mobest::create_kernset` provides a wrapper to
-bundle multiple kernels directly in an object of class
-`mobest_kernelsetting`:
+kernel, though, for one specific ancestry component (e.g. `ac1`). Given
+that an analysis typically involves multiple genetic coordinates
+`mobest::create_kernset` provides a wrapper to bundle multiple kernels
+directly in an object of class `mobest_kernelsetting`.
 
 ``` r
 kernset <- mobest::create_kernset(
@@ -280,23 +280,27 @@ kernset <- mobest::create_kernset(
 
 If a function requires both input of type `mobest_observations` and
 `mobest_kernelsetting`, then the names of the individual ancestry
-components must be identical.
+components must be identical, i.e. fit to each other.
 
 #### Variability and permutations
 
 When working with real data we often need to explore permutations of
-data or account for uncertainty by sampling from distributions. To
-represent that, `mobest` provides wrapper classes and constructors with
-a `*_multi` suffix, to bundle multiple individual elements in a list
-class. Some of the core functions provide interfaces that automatically
-consider all permutations of these input lists.
+data or account for uncertainty by sampling from distributions
+(e.g. uncertain dating). To represent that, `mobest` provides wrapper
+classes and constructors with a `*_multi` suffix, to bundle multiple
+individual elements in a list class. Some of the core functions provide
+interfaces that automatically consider all permutations of these input
+lists.
 
-Available are: - `mobest_spatialpositions_multi`
-(`mobest::create_geopos_multi`) - `mobest_spatiotemporalpositions_multi`
-(`mobest::create_spatpos_multi`) - `mobest_observations_multi`
-(`mobest::create_obs_multi`) - `mobest_observationswitherror_multi`
-(`mobest::create_obs_obserror_multi`) - `mobest_kernelsetting_multi`
-(`mobest::create_kernset_multi`)
+Available are:
+
+-   `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
+-   `mobest_spatiotemporalpositions_multi`
+    (`mobest::create_spatpos_multi`)
+-   `mobest_observations_multi` (`mobest::create_obs_multi`)
+-   `mobest_observationswitherror_multi`
+    (`mobest::create_obs_obserror_multi`)
+-   `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
 
 And here is an example how they can be filled with named arguments:
 
@@ -318,13 +322,14 @@ multiple_kernel_settings <- mobest::create_kernset_multi(
 One important question for the Gaussian process regression performed
 within multiple of the core functions of `mobest` is a correct and
 useful setting for the kernel parameters. The package therefore provides
-different helper functions to estimate them.
+different helper functions to either estimate them or prepare data
+products that can be used to estimate them.
 
 #### Variogram calculation
 
 `mobest::calculate_pairwise_distances` calculates different types of
-pairwise distances (spatial, temporal, ancestry components) and returns
-them in a long format `data.frame` object of class
+pairwise distances (spatial, temporal, ancestry components) for each
+input sample pair and returns them in a long format `tibble` of class
 `mobest_pairwisedistances`.
 
 ``` r
@@ -338,16 +343,16 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
     ## # A tibble: 10,000 × 9
     ##      id1   id2 geo_dist time_dist obs_dist_total ac1_dist ac1_dist_resid
     ##    <int> <int>    <dbl>     <dbl>          <dbl>    <dbl>          <dbl>
-    ##  1     1     1      0           0         0       0               0     
-    ##  2     2     1    480.         84         0.146   0.146           0.332 
-    ##  3     3     1     95.6       622         0.340   0.261           0.350 
-    ##  4     4     1    347.       1068         0.175   0.167           0.415 
-    ##  5     5     1    206.         30         0.114   0.0809          0.0858
-    ##  6     6     1    331.        374         0.0755  0.0464          0.154 
-    ##  7     7     1    492.        469         0.394   0.373           0.608 
-    ##  8     8     1    334.        145         0.0668  0.00646         0.111 
-    ##  9     9     1    539.        203         0.252   0.145           0.315 
-    ## 10    10     1    571.       1039         0.368   0.363           0.665 
+    ##  1     1     1      0           0         0        0             0      
+    ##  2     2     1    302.        915         0.0697   0.0391        0.0776 
+    ##  3     3     1    196.        686         0.0881   0.0845        0.0631 
+    ##  4     4     1    512.        389         0.256    0.256         0.00965
+    ##  5     5     1     58.7      1205         0.195    0.193         0.343  
+    ##  6     6     1    334.        375         0.332    0.283         0.0898 
+    ##  7     7     1    239.        282         0.238    0.167         0.0402 
+    ##  8     8     1    393.       1052         0.180    0.168         0.473  
+    ##  9     9     1    227.       1193         0.186    0.0546        0.0230 
+    ## 10    10     1    184.        697         0.250    0.208         0.236  
     ## # … with 9,990 more rows, and 2 more variables: ac2_dist <dbl>,
     ## #   ac2_dist_resid <dbl>
 
@@ -360,9 +365,9 @@ time_dist <- mobest::calculate_time_pairwise_distances(positions)
 obs_dist <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
 ```
 
-`mobest::bin_pairwise_distances` bins the pairwise differences in an
-object of class `mobest_pairwisedistances` and calculates an empirical
-variogram (class `mobest_empiricalvariogram`) from them.
+`mobest::bin_pairwise_distances` bins the pairwise distances in an
+`mobest_pairwisedistances` object and calculates an empirical variogram
+(class `mobest_empiricalvariogram`) from them.
 
 ``` r
 variogram <- mobest::bin_pairwise_distances(
@@ -371,20 +376,20 @@ variogram <- mobest::bin_pairwise_distances(
 )
 ```
 
-    ## # A tibble: 4,805 × 8
-    ##    geo_dist_cut time_dist_cut obs_dist_total ac1_dist ac1_dist_resid ac2_dist
-    ##           <dbl>         <dbl>          <dbl>    <dbl>          <dbl>    <dbl>
-    ##  1         0.05            50       0        0              0        0       
-    ##  2         3.15           250       0.0695   0.0586         0.0472   0.0109  
-    ##  3         4.35            50       0.00841  0.000226       0.000510 0.00818 
-    ##  4         7.55           550       0.0760   0.0560         0.0365   0.0200  
-    ##  5        12.2             50       0.0160   0.00323        0.00314  0.0127  
-    ##  6        12.8            450       0.343    0.140          0.174    0.203   
-    ##  7        13.4             50       0.00318  0.000859       0.00139  0.00232 
-    ##  8        13.6            250       0.314    0.00560        0.00826  0.309   
-    ##  9        13.8           1050       0.304    0.173          0.103    0.131   
-    ## 10        14.4            550       0.000637 0.000467       0.000442 0.000170
-    ## # … with 4,795 more rows, and 2 more variables: ac2_dist_resid <dbl>, n <int>
+    ## # A tibble: 4,830 × 8
+    ##    geo_dist_cut time_dist_cut obs_dist_total  ac1_dist ac1_dist_resid ac2_dist
+    ##           <dbl>         <dbl>          <dbl>     <dbl>          <dbl>    <dbl>
+    ##  1         0.05            50        0       0               0        0       
+    ##  2         4.15           450        0.336   0.103           0.126    0.233   
+    ##  3         5.35           750        0.00637 0.000523        0.00105  0.00585 
+    ##  4         6.45           150        0.118   0.00873         0.0110   0.109   
+    ##  5         6.55           350        0.0748  0.0516          0.0624   0.0232  
+    ##  6         6.65           350        0.0290  0.0287          0.0395   0.000306
+    ##  7        11.6            750        0.0562  0.0139          0.0299   0.0423  
+    ##  8        11.6           1150        0.00438 0.00148         0.00204  0.00290 
+    ##  9        13.0            250        0.0641  0.000133        0.000958 0.0640  
+    ## 10        15.4            150        0.0284  0.0000931       0.000611 0.0283  
+    ## # … with 4,820 more rows, and 2 more variables: ac2_dist_resid <dbl>, n <int>
 
 This variogram can for example be used to estimate the nugget parameter
 of the GPR kernel settings, by filtering for pairwise “genetic”
@@ -408,10 +413,10 @@ mleGPsep_out <- mobest::laGP_mle_anisotropic(
     ## # A tibble: 4 × 9
     ##   mle_method dependent_var_id   dsx   dsy    dt      g optimizer_iterat… message
     ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>             <int> <chr>  
-    ## 1 mleGPsep   ac1              1482.  272. 1420. 0.0784                41 CONVER…
-    ## 2 mleGPsep   ac1              1482.  272. 1420. 0.0784                41 CONVER…
-    ## 3 mleGPsep   ac2               336.  311. 1881. 0.116                 17 CONVER…
-    ## 4 mleGPsep   ac2               336.  311. 1881. 0.116                 17 CONVER…
+    ## 1 mleGPsep   ac1              1318. 1378. 1353. 0.0627                50 CONVER…
+    ## 2 mleGPsep   ac1              1318. 1378. 1353. 0.0627                50 CONVER…
+    ## 3 mleGPsep   ac2              1182. 1276. 1431. 0.0903                34 CONVER…
+    ## 4 mleGPsep   ac2              1182. 1276. 1431. 0.0903                34 CONVER…
     ## # … with 1 more variable: converged <int>
 
 `mobest::laGP_jmle_anisotropic` does the same, but for joint maximum
@@ -429,10 +434,10 @@ jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
     ## # A tibble: 4 × 9
     ##   mle_method dependent_var_id   dsx   dsy    dt      g optimizer_iterat… message
     ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>             <int> <chr>  
-    ## 1 jmleGPsep  ac1              1550. 1496. 1665. 0.0745                74 <NA>   
-    ## 2 jmleGPsep  ac1              1550. 1496. 1665. 0.0745                74 <NA>   
-    ## 3 jmleGPsep  ac2               336.  311. 1881. 0.116                130 <NA>   
-    ## 4 jmleGPsep  ac2               336.  311. 1881. 0.116                130 <NA>   
+    ## 1 jmleGPsep  ac1              1318. 1378. 1353. 0.0627                82 <NA>   
+    ## 2 jmleGPsep  ac1              1318. 1378. 1353. 0.0627                82 <NA>   
+    ## 3 jmleGPsep  ac2              1182. 1276. 1431. 0.0903                61 <NA>   
+    ## 4 jmleGPsep  ac2              1182. 1276. 1431. 0.0903                61 <NA>   
     ## # … with 1 more variable: converged <int>
 
 `mobest::laGP_mle_sequence_isotropic_fixed_g` implements a very specific
@@ -470,9 +475,11 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
 #### Crossvalidation
 
 `mobest::crossvalidate` allows to tackle the parameter estimation
-challenge with simple cross-validation across a grid of kernel function
+challenge with simple crossvalidation across a grid of kernel function
 parameters. Internally it employs `mobest::create_model_grid` and
-`mobest::run_model_grid` (see below).
+`mobest::run_model_grid` (see below). Crossvalidation is computationally
+expensive, but in our experience the best method for the kernel
+parameter estimation.
 
 ``` r
 kernels_to_test <- expand.grid(
@@ -519,14 +526,15 @@ interpol_comparison <- mobest::crossvalidate(
 ### Spatiotemporal interpolation
 
 The spatiotemporal interpolation workflow consists of the creation of a
-list of models and then running each element in this list. The direct
-interpolation function `mobest:::interpolate` has a minimal interface
-and is therefore kept internal.
+list of models and then subsequently running each element in this list
+to construct different ancestry fields. The actual interpolation is done
+in a function `mobest:::interpolate`, which has a minimal interface and
+is therefore kept internal.
 
 `mobest::create_model_grid` creates an object of class
-`mobest_modelgrid` which holds all permutations of input elements. Each
-row equals one complete model definition with all parameters and input
-data fully defined.
+`mobest_modelgrid` which holds all permutations of the field-defining
+input objects. Each row equals one complete model definition with all
+parameters and input data fully defined.
 
 ``` r
 library(magrittr)
@@ -609,12 +617,12 @@ interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 ### Origin search
 
 `mobest::locate` uses the spatiotemporal interpolation to calculate a
-similarity probability between input a set of “search” samples and
-arbitrary spatiotemporal positions. It requires the necessary reference
-sample input to perform the interpolation, which internally employs
+similarity probability between a set of “search” samples and an
+interpolation field. It requires the necessary reference sample input to
+perform the interpolation, which internally employs
 `mobest::create_model_grid` and `mobest::run_model_grid`. The search
-then yields a similarity probability value for each grid cell for each
-search sample in an object of class `mobest_locateoverview`.
+then yields a similarity probability value for each grid cell and for
+each search sample in an object of class `mobest_locateoverview`.
 
 ``` r
 locate_simple <- mobest::locate(
@@ -632,9 +640,9 @@ locate_simple <- mobest::locate(
 )
 ```
 
-The spatiotemporal probability grids `locate` calculates are per
-ancestry component (as put in via `dependent`/`search_dependent`). To
-multiply the grids, `mobest` provides
+The spatiotemporal probability grids `locate` returns are calculated are
+per ancestry component (as put in via `dependent`/`search_dependent`).
+To multiply the ancestry componentn grids, `mobest` provides
 `mobest::multiply_dependent_probabilities`, which yields an object of
 class `mobest_locateproduct`.
 
@@ -645,27 +653,27 @@ mobest::multiply_dependent_probabilities(locate_simple)
     ## # A tibble: 800 × 14
     ##    search_id search_x search_y search_z independent_table_id dependent_setting_…
     ##        <int>    <int>    <int>    <int> <chr>                <chr>              
-    ##  1         1   625599   599424    -3853 i                    d                  
-    ##  2         1   625599   599424    -3853 i                    d                  
-    ##  3         1   625599   599424    -3853 i                    d                  
-    ##  4         1   625599   599424    -3853 i                    d                  
-    ##  5         1   625599   599424    -3853 i                    d                  
-    ##  6         1   625599   599424    -3853 i                    d                  
-    ##  7         1   625599   599424    -3853 i                    d                  
-    ##  8         1   625599   599424    -3853 i                    d                  
-    ##  9         1   625599   599424    -3853 i                    d                  
-    ## 10         1   625599   599424    -3853 i                    d                  
+    ##  1         1   593039   372080    -3586 i                    d                  
+    ##  2         1   593039   372080    -3586 i                    d                  
+    ##  3         1   593039   372080    -3586 i                    d                  
+    ##  4         1   593039   372080    -3586 i                    d                  
+    ##  5         1   593039   372080    -3586 i                    d                  
+    ##  6         1   593039   372080    -3586 i                    d                  
+    ##  7         1   593039   372080    -3586 i                    d                  
+    ##  8         1   593039   372080    -3586 i                    d                  
+    ##  9         1   593039   372080    -3586 i                    d                  
+    ## 10         1   593039   372080    -3586 i                    d                  
     ## # … with 790 more rows, and 8 more variables: field_z <dbl>,
     ## #   kernel_setting_id <fct>, pred_grid_id <fct>, field_id <int>, field_x <dbl>,
     ## #   field_y <dbl>, field_geo_id <int>, probability <dbl>
 
 `mobest::locate` is actually just a special, simplified interface to
-`mobest::locate_multi`, which adds another level of complexity, by
-allowing multiple input values for `independent`, `dependent`, `kernel`,
-`search_independent` and `search_dependent`. The result will consider
-all permutations of these input settings (`independent` and
-`search_independent` as well as `dependent` and `search_dependent` have
-to be congruent, though).
+`mobest::locate_multi`, which adds another level of complexity. It
+allows multiple input values for `independent`, `dependent`, `kernel`,
+`search_independent` and `search_dependent` and the result will
+therefore consider all permutations of these input settings
+(`independent` and `search_independent` as well as `dependent` and
+`search_dependent` have to be congruent, though).
 
 ``` r
 locate_overview <- mobest::locate_multi(
@@ -707,49 +715,50 @@ locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
 `mobest::locate_multi` produces many probability grids for each sample.
 Even after `mobest::multiply_dependent_probabilities` merges the
 per-ancestry component iterations, that still leaves many parameter
-permutations. `mobest::sum_probabilities_per_group` is a convenient
-function to sum these to one, simplified probability grid of class
-`mobest_locatesum`.
+permutations. `mobest::fold_probabilities_per_group` is a convenient
+function to combine these to a single, merged probability grid of class
+`mobest_locatefold`. The folding operation can be set in the argument
+`folding_operation`, where the default is a simple sum.
 
 ``` r
-mobest::sum_probabilities_per_group(locate_product)
+mobest::fold_probabilities_per_group(locate_product)
 ```
 
     ## # A tibble: 400 × 9
     ##    search_id field_id search_z search_x search_y field_x field_y field_z
     ##        <int>    <int>    <int>    <int>    <int>   <dbl>   <dbl>   <dbl>
-    ##  1         1        1    -3853   625599   599424  100000  100000   -3853
-    ##  2         1        2    -3853   625599   599424  200000  100000   -3853
-    ##  3         1        3    -3853   625599   599424  300000  100000   -3853
-    ##  4         1        4    -3853   625599   599424  400000  100000   -3853
-    ##  5         1        5    -3853   625599   599424  500000  100000   -3853
-    ##  6         1        6    -3853   625599   599424  600000  100000   -3853
-    ##  7         1        7    -3853   625599   599424  700000  100000   -3853
-    ##  8         1        8    -3853   625599   599424  800000  100000   -3853
-    ##  9         1        9    -3853   625599   599424  900000  100000   -3853
-    ## 10         1       10    -3853   625599   599424 1000000  100000   -3853
+    ##  1         1        1    -3586   593039   372080  100000  100000   -3586
+    ##  2         1        2    -3586   593039   372080  200000  100000   -3586
+    ##  3         1        3    -3586   593039   372080  300000  100000   -3586
+    ##  4         1        4    -3586   593039   372080  400000  100000   -3586
+    ##  5         1        5    -3586   593039   372080  500000  100000   -3586
+    ##  6         1        6    -3586   593039   372080  600000  100000   -3586
+    ##  7         1        7    -3586   593039   372080  700000  100000   -3586
+    ##  8         1        8    -3586   593039   372080  800000  100000   -3586
+    ##  9         1        9    -3586   593039   372080  900000  100000   -3586
+    ## 10         1       10    -3586   593039   372080 1000000  100000   -3586
     ## # … with 390 more rows, and 1 more variable: probability <dbl>
 
-`sum_probabilities_per_group` also allows to maintain the the
+`fold_probabilities_per_group` also allows to maintain the the
 permutation groups, in case a full summary is not desired:
 
 ``` r
-mobest::sum_probabilities_per_group(locate_product, dependent_setting_id, kernel_setting_id)
+mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kernel_setting_id)
 ```
 
     ## # A tibble: 1,600 × 11
     ##    dependent_setting_id kernel_setting_id search_id field_id search_z search_x
     ##    <chr>                <fct>                 <int>    <int>    <int>    <int>
-    ##  1 obs1                 kernel_1                  1        1    -3853   625599
-    ##  2 obs1                 kernel_1                  1        2    -3853   625599
-    ##  3 obs1                 kernel_1                  1        3    -3853   625599
-    ##  4 obs1                 kernel_1                  1        4    -3853   625599
-    ##  5 obs1                 kernel_1                  1        5    -3853   625599
-    ##  6 obs1                 kernel_1                  1        6    -3853   625599
-    ##  7 obs1                 kernel_1                  1        7    -3853   625599
-    ##  8 obs1                 kernel_1                  1        8    -3853   625599
-    ##  9 obs1                 kernel_1                  1        9    -3853   625599
-    ## 10 obs1                 kernel_1                  1       10    -3853   625599
+    ##  1 obs1                 kernel_1                  1        1    -3586   593039
+    ##  2 obs1                 kernel_1                  1        2    -3586   593039
+    ##  3 obs1                 kernel_1                  1        3    -3586   593039
+    ##  4 obs1                 kernel_1                  1        4    -3586   593039
+    ##  5 obs1                 kernel_1                  1        5    -3586   593039
+    ##  6 obs1                 kernel_1                  1        6    -3586   593039
+    ##  7 obs1                 kernel_1                  1        7    -3586   593039
+    ##  8 obs1                 kernel_1                  1        8    -3586   593039
+    ##  9 obs1                 kernel_1                  1        9    -3586   593039
+    ## 10 obs1                 kernel_1                  1       10    -3586   593039
     ## # … with 1,590 more rows, and 5 more variables: search_y <int>, field_x <dbl>,
     ## #   field_y <dbl>, field_z <dbl>, probability <dbl>
 
@@ -758,11 +767,13 @@ mobest::sum_probabilities_per_group(locate_product, dependent_setting_id, kernel
 To derive a simple, sample-wise measure of mobility,
 `mobest::determine_origin_vectors` constructs what we call “origin
 vectors” from objects of class `mobest_locateproduct`. Each vector
-connects the spatial point where a respective individual was buried with
-the point of highest genetic similarity in a respective search field.
-The output is of class `mobest_originvectors` and documents distance and
-direction of the “origin vector”, which can thus serve as a proxy of
-mobility.
+connects the spatial point where a sample was found (so for ancient
+samples that is usually where the respective individual was buried) with
+the point of **highest genetic similarity** in the interpolated search
+field and its permutations. The output is of class
+`mobest_originvectors` and documents distance and direction of the
+“origin vector”. Under certain circumstances this vector can serve as a
+proxy for mobility.
 
 ``` r
 origin_vectors <- mobest::determine_origin_vectors(locate_product)
@@ -771,44 +782,46 @@ origin_vectors <- mobest::determine_origin_vectors(locate_product)
     ## # A tibble: 4 × 20
     ##   search_id search_x search_y search_z independent_tab… dependent_setti… field_z
     ##       <int>    <int>    <int>    <int> <chr>            <chr>              <dbl>
-    ## 1         1   625599   599424    -3853 dating2          obs1               -3853
-    ## 2         2   442475   155479    -3937 dating2          obs1               -3937
-    ## 3         3   699770   539179    -4475 dating2          obs1               -4475
-    ## 4         4   661104   254403    -4921 dating2          obs1               -4921
+    ## 1         1   593039   372080    -3586 dating2          obs1               -3586
+    ## 2         2   326494   513740    -4501 dating1          obs1               -4501
+    ## 3         3   636281   563535    -4272 dating1          obs1               -4272
+    ## 4         4   122139   171731    -3975 dating1          obs1               -3975
     ## # … with 13 more variables: kernel_setting_id <fct>, pred_grid_id <fct>,
     ## #   field_id <int>, field_x <dbl>, field_y <dbl>, field_geo_id <int>,
     ## #   probability <dbl>, ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>, ov_dist_sd <dbl>,
     ## #   ov_angle_deg <dbl>, ov_angle_cut <chr>
 
-Just as `mobest::sum_probabilities_per_group`, this summary can be split
-to maintain the permutation groups introduced above.
+Just as `mobest::fold_probabilities_per_group`, this summary can be
+split to maintain the permutation groups introduced above.
 
 ``` r
-mobest::determine_origin_vectors(locate_product, kernel_setting_id)
+mobest::determine_origin_vectors(locate_product, independent_table_id)
 ```
 
     ## # A tibble: 8 × 20
     ##   search_id search_x search_y search_z independent_tab… dependent_setti… field_z
     ##       <int>    <int>    <int>    <int> <chr>            <chr>              <dbl>
-    ## 1         1   625599   599424    -3853 dating2          obs1               -3853
-    ## 2         2   442475   155479    -3937 dating2          obs1               -3937
-    ## 3         3   699770   539179    -4475 dating2          obs1               -4475
-    ## 4         4   661104   254403    -4921 dating2          obs1               -4921
-    ## 5         1   625599   599424    -3853 dating2          obs1               -3853
-    ## 6         2   442475   155479    -3937 dating2          obs1               -3937
-    ## 7         3   699770   539179    -4475 dating2          obs1               -4475
-    ## 8         4   661104   254403    -4921 dating2          obs1               -4921
+    ## 1         1   593039   372080    -3586 dating1          obs1               -3586
+    ## 2         2   326494   513740    -4501 dating1          obs1               -4501
+    ## 3         3   636281   563535    -4272 dating1          obs1               -4272
+    ## 4         4   122139   171731    -3975 dating1          obs1               -3975
+    ## 5         1   593039   372080    -3586 dating2          obs1               -3586
+    ## 6         2   326494   513740    -4501 dating2          obs1               -4501
+    ## 7         3   636281   563535    -4272 dating2          obs1               -4272
+    ## 8         4   122139   171731    -3975 dating2          obs1               -3975
     ## # … with 13 more variables: kernel_setting_id <fct>, pred_grid_id <fct>,
     ## #   field_id <int>, field_x <dbl>, field_y <dbl>, field_geo_id <int>,
     ## #   probability <dbl>, ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>, ov_dist_sd <dbl>,
     ## #   ov_angle_deg <dbl>, ov_angle_cut <chr>
 
-In a very final step of the pipeline supported by `mobest` we can
+In a very final step of the pipeline supported by `mobest`, we can
 summarise origin vectors through time.
 `mobest::summarize_origin_vectors` allows for a moving window summary.
-It also supports the deliberate grouping – note that also additional
-variables can be introduced, e.g. a (spatial) region attribution of the
-search samples.
+It also supports the deliberate grouping available for all functions
+following `multiply_dependent_probabilities`. Note that this explicitly
+includes additional variables that can be introduced even at this point
+in the pipeline, e.g. a (spatial) region attribution of the search
+samples.
 
 ``` r
 origin_vectors$region_id <- c(
@@ -841,8 +854,10 @@ origin_summary <- mobest::summarize_origin_vectors(
     ## # … with 563 more rows, and 2 more variables: se_spatial_distance <dbl>,
     ## #   sd_spatial_distance <dbl>
 
-Empty time ranges can be identified with `mobest::find_no_data_windows`,
-which is a minor, but useful helper function for plotting.
+Empty (i.e. not sufficiently informed from data) time ranges in this
+moving window summary can be identified with
+`mobest::find_no_data_windows`, which is a minor, but useful helper
+function e.g. for plotting.
 
 ``` r
 mobest::find_no_data_windows(
@@ -851,12 +866,13 @@ mobest::find_no_data_windows(
 )
 ```
 
-    ## # A tibble: 6 × 3
+    ## # A tibble: 7 × 3
     ##   region_id min_date_not_covered max_date_not_covered
     ##   <chr>                    <dbl>                <dbl>
-    ## 1 A                        -4960                -4520
-    ## 2 A                        -4430                -3900
-    ## 3 A                        -3810                -3040
-    ## 4 B                        -4960                -3980
-    ## 5 B                        -3890                -3040
-    ## 6 C                        -4880                -3040
+    ## 1 A                        -4960                -4320
+    ## 2 A                        -4230                -3630
+    ## 3 A                        -3540                -3040
+    ## 4 B                        -4960                -4550
+    ## 5 B                        -4460                -3040
+    ## 6 C                        -4960                -4020
+    ## 7 C                        -3930                -3040
