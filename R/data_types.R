@@ -46,7 +46,7 @@ create_geopos <- function(id, x, y, ...) {
 #' @export
 create_prediction_grid <- function(area, spatial_cell_size) {
   # dependency check
-  check_if_packages_are_available("sf")
+  rlang::check_installed("sf", reason = "to use `create_prediction_grid()`")
   # input checks
   checkmate::assert_class(area, classes = "sf")
   # prepare grid
