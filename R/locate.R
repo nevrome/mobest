@@ -284,10 +284,16 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
 #' @param locate_product An object of class \code{mobest_locateproduct}.
 #' @param ... (Additional) grouping variables (\code{independent_table_id},
 #' \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)
+#' @param folding_operation Function. Folding operation that should be applied to
+#' the probabilities in a group. Default: sum
 #'
 #' @rdname locate
 #' @export
-sum_probabilities_per_group <- function(locate_product, ...) {
+fold_probabilities_per_group <- function(
+  locate_product,
+  ...,
+  folding_operation = function(x) { sum(x, na.rm = T) }
+) {
   .grouping_var <- rlang::ensyms(...)
   # input checks
   checkmate::assert_class(locate_product, classes = "mobest_locateproduct")
@@ -305,10 +311,10 @@ sum_probabilities_per_group <- function(locate_product, ...) {
       field_x = dplyr::first(.data[["field_x"]]),
       field_y = dplyr::first(.data[["field_y"]]),
       field_z = dplyr::first(.data[["field_z"]]),
-      probability = sum(.data[["probability"]], na.rm = T),
+      probability = folding_operation(.data[["probability"]]),
       .groups = "drop"
     )
   # prepare output
   locate_summary %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locatesum")
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_locatefold")
 }

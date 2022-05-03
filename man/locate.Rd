@@ -4,7 +4,7 @@
 \alias{locate}
 \alias{locate_multi}
 \alias{multiply_dependent_probabilities}
-\alias{sum_probabilities_per_group}
+\alias{fold_probabilities_per_group}
 \title{Calculate a similarity/"origin" probability field for samples of interest}
 \usage{
 locate(
@@ -33,7 +33,11 @@ locate_multi(
 
 multiply_dependent_probabilities(locate_overview, omit_dependent_details = T)
 
-sum_probabilities_per_group(locate_product, ...)
+fold_probabilities_per_group(
+  locate_product,
+  ...,
+  folding_operation = function(x) {     sum(x, na.rm = T) }
+)
 }
 \arguments{
 \item{independent}{An object of class \code{mobest_spatiotemporalpositions_multi}
@@ -86,6 +90,9 @@ columns.}
 
 \item{...}{(Additional) grouping variables (\code{independent_table_id},
 \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)}
+
+\item{folding_operation}{Function. Folding operation that should be applied to
+the probabilities in a group. Default: sum}
 }
 \description{
 Create a genetic ancestry field and determine similarity probabilities with it.
