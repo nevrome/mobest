@@ -26,8 +26,8 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
       z = .data[["z"]] / total_scaling_factor
     )
   checkmate::assert_class(dependent, "mobest_observations")
-  checkmate::assert_numeric(g, len = length(dependent), names = "strict")
-  checkmate::assert_true(setequal(names(g), names(dependent)))
+  checkmate::assert_numeric(g, min.len = length(dependent), names = "strict")
+  checkmate::assert_true(all(names(dependent) %in% names(g)))
   checkmate::assert_count(iterations)
   checkmate::assert_count(total_scaling_factor)
   checkmate::assert_numeric(space_time_scaling_factor_sequence)
