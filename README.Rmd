@@ -296,7 +296,7 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
   independent = dplyr::mutate(positions, x = x/1000, y = y/1000),
   dependent = observations,
   iterations = 2,
-  g = 0.1,
+  g = c(ac1 = 0.1, ac2 = 0.1),
   space_time_scaling_factor_sequence = seq(0.1, 2, 0.1),
   verb = 0
 )

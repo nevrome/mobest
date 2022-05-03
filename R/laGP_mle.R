@@ -1,12 +1,13 @@
 #' Use laGPs mle algorithms for kriging kernel parameter estimation
 #'
-#' @param independent An object of class mobest_spatiotemporalpositions
-#' @param dependent An object of class mobest_observations
+#' @param independent An object of class \code{mobest_spatiotemporalpositions}
+#' @param dependent An object of class \code{mobest_observations}
 #' @param iterations Integer. Number of mle iterations
 #' @param total_scaling_factor Numeric. It turned out that the parameter estimation
 #' works better in certain (small) numeric ranges. This scaling factor affects all three
 #' dimensions (x/scaling_factor)
-#' @param g Numeric. Fixed value for the nugget term
+#' @param g Named numeric vector. Fixed values for the nugget term for each component in
+#' \code{dependent}
 #' @param space_time_scaling_factor_sequence Numeric vector. Sequence of space-time
 #' scaling factors
 #' @param verb Integer. See \link[laGP]{mleGP} for more information
@@ -25,6 +26,8 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
       z = .data[["z"]] / total_scaling_factor
     )
   checkmate::assert_class(dependent, "mobest_observations")
+  checkmate::assert_numeric(g, len = length(dependent), names = "strict")
+  checkmate::assert_true(setequal(names(g), names(dependent)))
   checkmate::assert_count(iterations)
   checkmate::assert_count(total_scaling_factor)
   checkmate::assert_numeric(space_time_scaling_factor_sequence)
@@ -46,7 +49,7 @@ laGP_mle_sequence_isotropic_fixed_g <- function(
           X = independent_rescaled,
           Z = cur_dependent,
           d = da$start,
-          g = g,
+          g = g[[cur_dependent_name]],
           dK = TRUE
         )
         param_estimation <- laGP::mleGP(
