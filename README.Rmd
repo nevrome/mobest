@@ -8,7 +8,7 @@ editor_options:
 
 # mobest
 
-This R package provides types and functions for spatiotemporal interpolation of human genetic ancestry components and a derived measure for **mob**ility **est**imation. The workflow in version 1.0 was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>.
+This R package provides types and functions for spatiotemporal interpolation of human genetic ancestry components, similarity search and the calculation of a derived measure for **mob**ility **est**imation. The workflow in version X.X.X was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>.
 
 0. `mobest` assumes you have a set of genetic samples with spatial (two coordinates in a projected reference system) and temporal positions (years BC/AD) for which you calculated a derived, numeric measure of genetic ancestry (e.g. coordinates in a PCA or MDS space).
 1. `mobest` provides a framework to perform spatiotemporal interpolation using Gaussian process regression (kriging) with the [`laGP`](https://CRAN.R-project.org/package=laGP) package to reconstruct an ancestry field based on the ancestry measure you provided.
@@ -19,7 +19,7 @@ Here is a simple, artificial example how 2. can be used:
 
 ```{r}
 library(magrittr)
-set.seed(144)
+set.seed(145)
 
 # a function to calculate the similarity probability for one particular sample
 locate_simple <- mobest::locate(
@@ -67,14 +67,9 @@ locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
 
 # plot the resulting probability surface
 library(ggplot2)
-locate_product %>%
-  ggplot() +
-  geom_raster(
-    mapping = aes(x = field_x, y = field_y, fill = probability)
-  ) +
-  geom_point(
-    mapping = aes(x = search_x, y = search_y), colour = "red"
-  ) +
+locate_product %>% ggplot() +
+  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
+  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
   coord_fixed() +
   ggtitle(paste0(
     "t for sample of interest = ", unique(locate_product$search_z), "\n",
@@ -93,15 +88,15 @@ remotes::install_github('nevrome/mobest')
 
 ## Overview
 
-The following guide briefly lists the data types and functions in the order you would usually call them and thus introduces the interface from a technical point of view.
+The following guide briefly lists the data types and functions of `mobest` loosely in the order one would usually call them and thus introduces the interface and workflow.
 
 ### Basic data types
 
-`mobest` employs a number of basic [S3 data types](http://adv-r.had.co.nz/S3.html) to formalize the input to almost all of its functions. The constructors usually just check certain properties to insure input correctness.
+`mobest` employs a number of basic [S3 data types](http://adv-r.had.co.nz/S3.html) to formalize the input to almost all of its functions. The constructors check certain properties to insure input correctness.
 
 #### Spatial coordinates
 
-`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `?sf::st_transform`): `mobest` can be used with longitude and latitude coordinates.
+`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `sf::st_transform`): `mobest` can not be used with longitude and latitude coordinates.
 
 ```{r}
 mobest::create_geopos(
@@ -113,7 +108,7 @@ mobest::create_geopos(
 
 For the interpolation fields we often want regular, spatial grids covering a specific spatial area. These can be constructed with `mobest::create_prediction_grid`, which takes an object of class `sf` with polygons in a projected coordinate system. It also yields an object of class `mobest_spatialpositions`.
 
-Here is an example for the landmass of Europe, which we cover in a 250km grid:
+Here is an example for the landmass of Europe, covered in a 250km grid:
 
 ```{r, warning=FALSE}
 rnaturalearthdata::countries50 %>%
@@ -130,7 +125,7 @@ rnaturalearthdata::countries50 %>%
 
 #### Spatiotemporal coordinates
 
-`mobest_spatialpositions` can be transformed to `mobest_spatiotemporalpositions` with `mobest::geopos_to_spatpos`. This function calculates the permutations of all spatial positions with a new, implicitly temporal dimension `z`:
+`mobest_spatialpositions` can be transformed to `mobest_spatiotemporalpositions` with `mobest::geopos_to_spatpos`. This function calculates the permutations of all spatial positions with a new, implicitly temporal dimension `z`. `mobest_spatiotemporalpositions` is also derived from `tibble`.
 
 ```{r}
 mobest::geopos_to_spatpos(
@@ -143,7 +138,7 @@ mobest::geopos_to_spatpos(
 )
 ```
 
-`mobest::create_spatpos` directly creates an object of class `mobest_spatiotemporalpositions` to represent spatiotemporal positions.
+`mobest::create_spatpos` directly creates `mobest_spatiotemporalpositions` objects to represent spatiotemporal positions.
 
 ```{r}
 positions <- mobest::create_spatpos(
@@ -160,7 +155,7 @@ positions
 
 #### Genetic coordinates ####
 
-`mobest::create_obs` creates `mobest_observations`, which is a `tibble` with genetic coordinates. Genetic coordinates can be any simple numeric measure of ancestry, for example the position of the samples in PCA space.
+`mobest::create_obs` creates an object `mobest_observations`, which is a `tibble` with genetic coordinates. Genetic coordinates can be any simple numeric measure of ancestry, for example the position of the samples in PCA space.
 
 ```{r}
 observations <- mobest::create_obs(
@@ -173,9 +168,11 @@ observations <- mobest::create_obs(
 observations
 ```
 
+Names and number of the components are freely selectable, so instead of `ac1` + `ac2` as in the example here, one could, for example, also have `PC1` + `PC2` + `PC3`, or `MDS1` + `MDS2`.
+
 #### Kernel parameter settings
 
-Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific genetic coordinate. Given that an analysis typically involves multiple genetic coordinates (see `mobest_observations`) `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`:
+Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific ancestry component (e.g. `ac1`). Given that an analysis typically involves multiple genetic coordinates `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`.
 
 ```{r}
 kernset <- mobest::create_kernset(
@@ -184,13 +181,14 @@ kernset <- mobest::create_kernset(
 )
 ```
 
-If a function requires both input of type `mobest_observations` and `mobest_kernelsetting`, then the names of the individual ancestry components must be identical.
+If a function requires both input of type `mobest_observations` and `mobest_kernelsetting`, then the names of the individual ancestry components must be identical, i.e. fit to each other.
 
 #### Variability and permutations
 
-When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions. To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that automatically consider all permutations of these input lists.
+When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions (e.g. uncertain dating). To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that automatically consider all permutations of these input lists.
 
 Available are:
+
 - `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
 - `mobest_spatiotemporalpositions_multi` (`mobest::create_spatpos_multi`)
 - `mobest_observations_multi` (`mobest::create_obs_multi`)
@@ -214,11 +212,11 @@ multiple_kernel_settings <- mobest::create_kernset_multi(
 
 ### Parameter estimation
 
-One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is a correct and useful setting for the kernel parameters. The package therefore provides different helper functions to estimate them.
+One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is a correct and useful setting for the kernel parameters. The package therefore provides different helper functions to either estimate them or prepare data products that can be used to estimate them.
 
 #### Variogram calculation
 
-`mobest::calculate_pairwise_distances` calculates different types of pairwise distances (spatial, temporal, ancestry components) and returns them in a long format `data.frame` object of class `mobest_pairwisedistances`.
+`mobest::calculate_pairwise_distances` calculates different types of pairwise distances (spatial, temporal, ancestry components) for each input sample pair and returns them in a long format `tibble` of class `mobest_pairwisedistances`.
 
 ```{r}
 pairwise_distances <- mobest::calculate_pairwise_distances(
@@ -240,7 +238,7 @@ time_dist <- mobest::calculate_time_pairwise_distances(positions)
 obs_dist <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
 ```
 
-`mobest::bin_pairwise_distances` bins the pairwise differences in an object of class `mobest_pairwisedistances` and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
+`mobest::bin_pairwise_distances` bins the pairwise distances in an `mobest_pairwisedistances` object and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
 
 ```{r}
 variogram <- mobest::bin_pairwise_distances(
