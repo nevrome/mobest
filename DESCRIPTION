@@ -1,5 +1,5 @@
 Package: mobest
-Title: Spatiotemporal ancestry interpolation and search
+Title: Spatiotemporal Ancestry Interpolation and Search
 Description: 
   Types and functions for spatiotemporal interpolation of human genetic ancestry components,
   similarity search and the calculation of a derived measure of mobility.
@@ -20,20 +20,21 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.2
+Depends: R (>= 3.2.0)
 Imports:
-    laGP,
-    checkmate,
-    dplyr (>= 0.8.5),
-    fractional,
-    furrr,
-    future,
+    laGP (>= 1.5-5),
+    checkmate (>= 2.1.0),
+    dplyr (>= 1.0.0),
+    fractional (>= 0.1.3),
+    furrr (>= 0.2.3),
+    future (>= 1.25.0),
     magrittr,
-    purrr (>= 0.3.3),
-    reshape2,
-    rlang,
+    purrr (>= 0.3.4),
+    reshape2 (>= 1.4.4),
+    rlang (>= 1.0.0),
     stats,
     tibble (>= 3.0.0),
-    tidyselect,
+    tidyselect (>= 1.1.2),
     tidyr (>= 1.0.2)
 Suggests:
     sf
