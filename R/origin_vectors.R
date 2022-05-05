@@ -22,10 +22,7 @@ determine_origin_vectors <- function(
   locate_groups <- locate_product %>%
     dplyr::group_split(
       !!!.grouping_var,
-      .data[["search_id"]],
-        .data[["search_x"]],
-        .data[["search_y"]],
-        .data[["search_z"]]
+      .data[["search_id"]]
     )
   origin_grid <- locate_groups %>%
     purrr::map_df(
