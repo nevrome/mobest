@@ -110,7 +110,6 @@ locate_multi <- function(
   checkmate::assert_choice(
     search_time_mode, choices = c("relative", "absolute")
   )
-  checkmate::assert_true(setequal(names(independent), names(search_independent)))
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
   check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
@@ -125,7 +124,7 @@ locate_multi <- function(
   ) %>%
     dplyr::rename_with(
       function(x) { paste0("search_", x) },
-      tidyselect::any_of(c("id", "x", "y", "z"))
+      tidyselect::any_of(c("id", "x", "y", "z", "independent_table_id"))
     ) %>%
     tidyr::crossing(tibble::tibble(t = search_time)) %>%
     dplyr::mutate(
@@ -164,7 +163,8 @@ locate_multi <- function(
       tidyr::pivot_longer(
         cols = -c(
           "search_id", "search_x", "search_y", "search_z",
-          "independent_table_id", "dependent_setting_id", "field_z"
+          "search_independent_table_id",
+          "dependent_setting_id", "field_z"
         ),
         names_to = "dependent_var_id",
         values_to = "intermediate_value"
@@ -187,7 +187,6 @@ locate_multi <- function(
         values_from = "intermediate_value"
       ),
     by = c(
-      "independent_table_id",
       "dependent_setting_id",
       "dependent_var_id",
       "field_z"
