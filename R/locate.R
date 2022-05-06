@@ -155,6 +155,11 @@ locate_multi <- function(
   # join search points and fields
   if (!quiet) { message("Compiling full search table") }
   full_search_table <- dplyr::left_join(
+    interpol_grid %>%
+      dplyr::rename_with(
+      function(x) { paste0("field_", x) },
+      tidyselect::any_of(c("id", "geo_id", "x", "y", "z", "mean", "sd"))
+    ),
     search_points %>%
       tidyr::pivot_longer(
         cols = -c(
@@ -181,11 +186,6 @@ locate_multi <- function(
         names_from = "dep_var_type",
         values_from = "intermediate_value"
       ),
-    interpol_grid %>%
-      dplyr::rename_with(
-      function(x) { paste0("field_", x) },
-      tidyselect::any_of(c("id", "geo_id", "x", "y", "z", "mean", "sd"))
-    ),
     by = c(
       "independent_table_id",
       "dependent_setting_id",
