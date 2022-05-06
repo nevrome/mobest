@@ -72,9 +72,9 @@ summarize_origin_vectors <- function(
                 undirected_mean_spatial_distance =
                   mean(.data[["ov_dist"]]),
                 directed_mean_spatial_distance = sqrt(
-                  mean(.data[["field_x"]] - .data[["search_x"]])^2 +
-                    mean(.data[["field_y"]] - .data[["search_y"]])^2
+                  mean(.data[["ov_x"]])^2 + mean(.data[["ov_y"]])^2
                 ),
+                mean_angle_deg = vec2deg(c(mean(.data[["ov_x"]]), mean(.data[["ov_y"]]))),
                 se_spatial_distance = if (nrow(io_run_grouped) >= 3) {
                   calculate_standard_error(io_run_grouped$mean_spatial_distance)
                 } else {
