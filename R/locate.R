@@ -59,11 +59,7 @@ locate <- function(
     dependent = create_obs_multi(d = dependent),
     kernel = create_kernset_multi(k = kernel),
     search_independent = create_spatpos_multi(i = search_independent),
-    search_dependent = if ("mobest_observations" %in% class(search_dependent)) {
-      create_obs_multi(d = search_dependent)
-    } else if ("mobest_observationswitherror" %in% class(search_dependent)) {
-      create_obs_obserror_multi(d = search_dependent)
-    },
+    search_dependent = create_obs_multi(d = search_dependent),
     search_space_grid = search_space_grid,
     search_time = search_time,
     search_time_mode = search_time_mode,
@@ -94,22 +90,10 @@ locate_multi <- function(
   # (we don't need to assert properties that are already covered by
   # create_model_grid below)
   checkmate::assert_class(search_independent, "mobest_spatiotemporalpositions_multi")
-  checkmate::assert(
-    checkmate::check_class(
-      search_dependent, classes = "mobest_observations_multi"
-    ),
-    checkmate::check_class(
-      search_dependent, classes = "mobest_observationswitherror_multi"
-    )
-  )
+  checkmate::assert_class(search_dependent, classes = "mobest_observations_multi")
   checkmate::assert_class(search_space_grid, "mobest_spatialpositions")
-  checkmate::assert_numeric(
-    search_time,
-    finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
-  )
-  checkmate::assert_choice(
-    search_time_mode, choices = c("relative", "absolute")
-  )
+  checkmate::assert_numeric(search_time, finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE)
+  checkmate::assert_choice(search_time_mode, choices = c("relative", "absolute"))
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
   check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
@@ -167,24 +151,7 @@ locate_multi <- function(
           "dependent_setting_id", "field_z"
         ),
         names_to = "dependent_var_id",
-        values_to = "intermediate_value"
-      ) %>%
-      tidyr::separate(
-        col = "dependent_var_id",
-        into = c("dependent_var_id", "dep_var_type"),
-        sep = "_(?=sd$)", # only split, if the string ends with "_sd"
-        extra = "merge",
-        fill = "right"
-      ) %>%
-      dplyr::mutate(
-        dep_var_type = dplyr::case_when(
-          is.na(.data[["dep_var_type"]]) ~ "search_measured",
-          .data[["dep_var_type"]] == "sd" ~ "search_sd"
-        )
-      ) %>%
-      tidyr::pivot_wider(
-        names_from = "dep_var_type",
-        values_from = "intermediate_value"
+        values_to = "search_measured"
       ),
     by = c(
       "dependent_setting_id",
@@ -195,48 +162,17 @@ locate_multi <- function(
   # calculate overlap probability
   if (!quiet) { message("Calculating probabilities") }
   #return(full_search_table)
-  if ("mobest_observations_multi" %in% class(search_dependent)) {
-    full_search_table_prob <- full_search_table %>%
-      dplyr::mutate(
-        probability = stats::dnorm(
-          x = .data[["search_measured"]],
-          mean = .data[["field_mean"]],
-          sd = .data[["field_sd"]]
-        )
-      ) %>%
-      dplyr::mutate(
-        .after = "search_measured"
+  full_search_table_prob <- full_search_table %>%
+    dplyr::mutate(
+      probability = stats::dnorm(
+        x = .data[["search_measured"]],
+        mean = .data[["field_mean"]],
+        sd = .data[["field_sd"]]
       )
-  } else if ("mobest_observationswitherror_multi" %in% class(search_dependent)) {
-    int_f <- function(x, mu1, mu2, sd1, sd2) {
-      f1 <- stats::dnorm(x, mean = mu1, sd = sd1)
-      f2 <- stats::dnorm(x, mean = mu2, sd = sd2)
-      pmin(f1, f2)
-    }
-    full_search_table_prob <- full_search_table %>%
-      dplyr::mutate(
-        .,
-        probability = purrr::pmap_dbl(
-          list(.data[["search_measured"]], .data[["field_mean"]], .data[["search_sd"]], .data[["field_sd"]]),
-          function(mu1, mu2, sd1, sd2) {
-            res <- try(
-              stats::integrate(
-                int_f, -Inf, Inf,
-                mu1 = mu1, mu2 = mu2, sd1 = sd1, sd2 = sd2
-                #, rel.tol = 1e-10
-              ),
-              silent = TRUE
-            )
-            if(inherits(res ,'try-error')){
-              #warning(as.vector(res))
-              return(0)
-            } else {
-              return(res$value)
-            }
-          }
-        )
-      )
-  }
+    ) %>%
+    dplyr::mutate(
+      .after = "search_measured"
+    )
   # output
   full_search_table_prob %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview") %>%
