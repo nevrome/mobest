@@ -509,7 +509,7 @@ interpol_comparison <- mobest::crossvalidate(
 
     ## # A tibble: 3,600 × 18
     ##    independent_table_id dependent_setting_id dependent_var_id kernel_setting_id
-    ##    <fct>                <fct>                <chr>            <fct>            
+    ##    <chr>                <chr>                <chr>            <chr>            
     ##  1 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
     ##  2 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
     ##  3 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
@@ -520,7 +520,7 @@ interpol_comparison <- mobest::crossvalidate(
     ##  8 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
     ##  9 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
     ## 10 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ## # … with 3,590 more rows, and 14 more variables: pred_grid_id <fct>,
+    ## # … with 3,590 more rows, and 14 more variables: pred_grid_id <chr>,
     ## #   mixing_iteration <int>, dsx <dbl>, dsy <dbl>, dt <dbl>, g <dbl>, id <int>,
     ## #   x <int>, y <int>, z <int>, mean <dbl>, sd <dbl>, measured <dbl>,
     ## #   difference <dbl>
@@ -576,7 +576,7 @@ model_grid <- mobest::create_model_grid(
 
     ## # A tibble: 32 × 9
     ##    independent_table_id dependent_setting_id dependent_var_id kernel_setting_id
-    ##    <fct>                <fct>                <chr>            <fct>            
+    ##    <chr>                <chr>                <chr>            <chr>            
     ##  1 dating_1             obs1                 ac1              kernel_1         
     ##  2 dating_2             obs1                 ac1              kernel_1         
     ##  3 dating_1             obs2                 ac1              kernel_1         
@@ -587,7 +587,7 @@ model_grid <- mobest::create_model_grid(
     ##  8 dating_2             obs2                 ac2              kernel_1         
     ##  9 dating_1             obs1                 ac1              kernel_2         
     ## 10 dating_2             obs1                 ac1              kernel_2         
-    ## # … with 22 more rows, and 5 more variables: pred_grid_id <fct>,
+    ## # … with 22 more rows, and 5 more variables: pred_grid_id <chr>,
     ## #   independent_table <mbst_sp_>, dependent_var <named list>,
     ## #   kernel_setting <named list>, pred_grid <mbst_sp_>
 
@@ -601,7 +601,7 @@ interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 
     ## # A tibble: 19,200 × 15
     ##    independent_table_id dependent_setting_id dependent_var_id kernel_setting_id
-    ##    <fct>                <fct>                <chr>            <fct>            
+    ##    <chr>                <chr>                <chr>            <chr>            
     ##  1 dating_1             obs1                 ac1              kernel_1         
     ##  2 dating_1             obs1                 ac1              kernel_1         
     ##  3 dating_1             obs1                 ac1              kernel_1         
@@ -612,7 +612,7 @@ interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
     ##  8 dating_1             obs1                 ac1              kernel_1         
     ##  9 dating_1             obs1                 ac1              kernel_1         
     ## 10 dating_1             obs1                 ac1              kernel_1         
-    ## # … with 19,190 more rows, and 11 more variables: pred_grid_id <fct>,
+    ## # … with 19,190 more rows, and 11 more variables: pred_grid_id <chr>,
     ## #   dsx <dbl>, dsy <dbl>, dt <dbl>, g <dbl>, id <int>, x <dbl>, y <dbl>,
     ## #   z <dbl>, mean <dbl>, sd <dbl>
 
@@ -654,7 +654,7 @@ mobest::multiply_dependent_probabilities(locate_simple)
 
     ## # A tibble: 800 × 14
     ##    independent_table_id dependent_settin… kernel_setting_… pred_grid_id field_id
-    ##    <chr>                <chr>             <fct>            <fct>           <int>
+    ##    <chr>                <chr>             <chr>            <chr>           <int>
     ##  1 i                    d                 k                time_slice_1        1
     ##  2 i                    d                 k                time_slice_1        2
     ##  3 i                    d                 k                time_slice_1        3
@@ -750,7 +750,7 @@ mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kerne
 
     ## # A tibble: 1,600 × 11
     ##    dependent_setting_id kernel_setting_id search_id field_id search_z search_x
-    ##    <chr>                <fct>                 <int>    <int>    <int>    <int>
+    ##    <chr>                <chr>                 <int>    <int>    <int>    <int>
     ##  1 obs1                 kernel_1                  1        1    -3586   593039
     ##  2 obs1                 kernel_1                  1        2    -3586   593039
     ##  3 obs1                 kernel_1                  1        3    -3586   593039
@@ -783,7 +783,7 @@ origin_vectors <- mobest::determine_origin_vectors(locate_product)
 
     ## # A tibble: 4 × 20
     ##   independent_table_id dependent_setting… kernel_setting_… pred_grid_id field_id
-    ##   <chr>                <chr>              <fct>            <fct>           <int>
+    ##   <chr>                <chr>              <chr>            <chr>           <int>
     ## 1 dating2              obs1               kernel_1         time_slice_1       43
     ## 2 dating1              obs1               kernel_1         time_slice_2       43
     ## 3 dating1              obs1               kernel_1         time_slice_3       44
@@ -802,7 +802,7 @@ mobest::determine_origin_vectors(locate_product, independent_table_id)
 
     ## # A tibble: 8 × 20
     ##   independent_table_id dependent_setting… kernel_setting_… pred_grid_id field_id
-    ##   <chr>                <chr>              <fct>            <fct>           <int>
+    ##   <chr>                <chr>              <chr>            <chr>           <int>
     ## 1 dating1              obs1               kernel_1         time_slice_1       16
     ## 2 dating1              obs1               kernel_1         time_slice_2       43
     ## 3 dating1              obs1               kernel_1         time_slice_3       44
