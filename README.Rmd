@@ -495,8 +495,10 @@ origin_vectors$region_id <- c(
   "A", "B", "A", "C"
 )
 
+packed_origin_vectors <- pack_origin_vectors(origin_vectors, region_id)
+
 origin_summary <- mobest::summarize_origin_vectors(
-  origin_vectors,
+  packed_origin_vectors,
   region_id,
   window_start = -5000,
   window_stop = -3000,

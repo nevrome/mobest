@@ -2,10 +2,13 @@
 % Please edit documentation in R/summarize_vectors.R
 \name{origin_summary}
 \alias{origin_summary}
+\alias{pack_origin_vectors}
 \alias{summarize_origin_vectors}
 \alias{find_no_data_windows}
 \title{Summarize the results of the origin search}
 \usage{
+pack_origin_vectors(origin_vectors, ...)
+
 summarize_origin_vectors(
   origin_vectors,
   ...,
@@ -43,5 +46,7 @@ as created by \link{summarize_origin_vectors}}
 \code{mobest_nodatawindows}.
 }
 \description{
-Functions to transform the large origin vector tables to meaningful moving window
+Functions to transform the large origin vector tables to meaningful summaries.
+\code{pack_origin_vectors} yields simple mean vectors,
+\code{summarize_origin_vectors} a moving window summary through time.
 }
