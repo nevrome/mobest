@@ -98,7 +98,7 @@ locate_multi <- function(
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
   check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
-  # construct search points permutations
+  # construct search point permutations
   search_points <- tidyr::crossing(
     search_independent = search_independent %>%
       purrr::map2(names(.), ., function(n, x) {x$independent_table_id <- n; x}),
@@ -112,13 +112,12 @@ locate_multi <- function(
       tidyselect::any_of(c("id", "x", "y", "z", "independent_table_id"))
     ) %>%
     tidyr::crossing(tibble::tibble(t = search_time)) %>%
-    dplyr::mutate(
-      field_z =
-        if (search_time_mode == "relative") {
-          .data[["search_z"]] + .data[["t"]]
-        } else if (search_time_mode == "absolute") {
-          .data[["t"]]
-        }
+    dplyr::mutate(field_z =
+      if (search_time_mode == "relative") {
+        .data[["search_z"]] + .data[["t"]]
+      } else if (search_time_mode == "absolute") {
+        .data[["t"]]
+      }
     ) %>%
     dplyr::select(-.data[["t"]]) %>%
     tidyr::pivot_longer(
@@ -130,23 +129,36 @@ locate_multi <- function(
       names_to = "dependent_var_id",
       values_to = "search_measured"
     )
-  # construct search point grids
+  # construct search fields (point rasters for the search)
+  unique_time_slices <- tibble::tibble(
+    field_z = search_points$field_z %>% unique(),
+    pred_grid_id = paste0("time_slice_", seq_along(.data[["field_z"]]))
+  )
   search_fields <- purrr::map(
-    search_points$field_z %>% unique(),
-    function(time_slice) {
-      search_space_grid %>% geopos_to_spatpos(z = time_slice)
-    }
-  ) %>% magrittr::set_names(., paste("time_slice", 1:length(.), sep = "_"))
-  # construct model grid for the fields in all permutations
+    unique_time_slices$field_z,
+    function(time_slice) {search_space_grid %>% geopos_to_spatpos(z = time_slice)}
+  ) %>% magrittr::set_names(., unique_time_slices$pred_grid_id)
+  # construct model grid for the fields with all (!) permutations
   model_grid <- create_model_grid(
     independent = independent,
     dependent = dependent,
     kernel = kernel,
     prediction_grid = do.call(create_spatpos_multi, search_fields)
-  )
+  ) %>%
+    dplyr::left_join(unique_time_slices, by = "pred_grid_id")
+  # remove unnecessary permutations
+  model_grid_filtered <- dplyr::semi_join(
+    model_grid, search_points,
+    by = c(
+      "independent_table_id" = "search_independent_table_id",
+      "dependent_setting_id",
+      "dependent_var_id",
+      "field_z"
+    )
+  ) %>% dplyr::select(-.data[["field_z"]])
   # run model grid to create search fields
   if (!quiet) { message("Constructing search fields") }
-  interpol_grid <- run_model_grid(model_grid, quiet = quiet) %>%
+  interpol_grid <- run_model_grid(model_grid_filtered, quiet = quiet) %>%
     dplyr::rename_with(
       function(x) { paste0("field_", x) },
       tidyselect::any_of(c("id", "geo_id", "x", "y", "z", "mean", "sd"))
@@ -164,7 +176,6 @@ locate_multi <- function(
   )
   # calculate overlap probability
   if (!quiet) { message("Calculating probabilities") }
-  #return(full_search_table)
   full_search_table_prob <- full_search_table %>%
     dplyr::mutate(
       probability = stats::dnorm(
@@ -172,9 +183,6 @@ locate_multi <- function(
         mean = .data[["field_mean"]],
         sd = .data[["field_sd"]]
       )
-    ) %>%
-    dplyr::mutate(
-      .after = "search_measured"
     )
   # output
   full_search_table_prob %>%
