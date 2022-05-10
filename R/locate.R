@@ -97,7 +97,7 @@ locate_multi <- function(
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
   check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
-  # prepare data
+  # construct search points permutations
   search_points <- tidyr::crossing(
     search_independent = search_independent %>%
       purrr::map2(names(.), ., function(n, x) {x$independent_table_id <- n; x}),
@@ -119,41 +119,43 @@ locate_multi <- function(
           .data[["t"]]
         }
     ) %>%
-    dplyr::select(-.data[["t"]])
+    dplyr::select(-.data[["t"]]) %>%
+    tidyr::pivot_longer(
+      cols = -c(
+        "search_id", "search_x", "search_y", "search_z",
+        "search_independent_table_id",
+        "dependent_setting_id", "field_z"
+      ),
+      names_to = "dependent_var_id",
+      values_to = "search_measured"
+    )
+  # construct search point grids
   search_fields <- purrr::map(
     search_points$field_z %>% unique(),
     function(time_slice) {
       search_space_grid %>% geopos_to_spatpos(z = time_slice)
     }
   ) %>% magrittr::set_names(., paste("time_slice", 1:length(.), sep = "_"))
-  # construct and run model grid to construct the fields
+  # construct model grid for the fields in all permutations
   model_grid <- create_model_grid(
     independent = independent,
     dependent = dependent,
     kernel = kernel,
     prediction_grid = do.call(create_spatpos_multi, search_fields)
   )
+  # run model grid to create search fields
   if (!quiet) { message("Constructing search fields") }
-  interpol_grid <- run_model_grid(model_grid, quiet = quiet)
-  # join search points and fields
-  if (!quiet) { message("Compiling full search table") }
-  full_search_table <- dplyr::left_join(
-    interpol_grid %>%
-      dplyr::rename_with(
+  interpol_grid <- run_model_grid(model_grid, quiet = quiet) %>%
+    dplyr::rename_with(
       function(x) { paste0("field_", x) },
       tidyselect::any_of(c("id", "geo_id", "x", "y", "z", "mean", "sd"))
-    ),
-    search_points %>%
-      tidyr::pivot_longer(
-        cols = -c(
-          "search_id", "search_x", "search_y", "search_z",
-          "search_independent_table_id",
-          "dependent_setting_id", "field_z"
-        ),
-        names_to = "dependent_var_id",
-        values_to = "search_measured"
-      ),
+    )
+  # join search fields and search points
+  if (!quiet) { message("Compiling full search table") }
+  full_search_table <- dplyr::left_join(
+    interpol_grid, search_points,
     by = c(
+      "independent_table_id" = "search_independent_table_id",
       "dependent_setting_id",
       "dependent_var_id",
       "field_z"
