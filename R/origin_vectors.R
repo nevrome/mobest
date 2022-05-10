@@ -37,8 +37,7 @@ determine_origin_vectors <- function(
         # keep only the maximum probability grid cell
         dplyr::slice_max(.data[["probability"]], n = 1, with_ties = FALSE) %>%
         dplyr::mutate(
-          ov_angle_deg = vec2deg(c(.data[["ov_x"]], .data[["ov_y"]])),
-          ov_angle_cut = cut_angle_deg(.data[["ov_angle_deg"]])
+          ov_angle_deg = vec2deg(c(.data[["ov_x"]], .data[["ov_y"]]))
         )
       }
     )
