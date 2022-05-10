@@ -94,6 +94,7 @@ locate_multi <- function(
   checkmate::assert_class(search_space_grid, "mobest_spatialpositions")
   checkmate::assert_numeric(search_time, finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE)
   checkmate::assert_choice(search_time_mode, choices = c("relative", "absolute"))
+  checkmate::assert_true(setequal(names(independent), names(search_independent)))
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
   check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
