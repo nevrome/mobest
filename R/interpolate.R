@@ -39,20 +39,20 @@ create_model_grid <- function(
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
     independent_table = independent,
-    independent_table_id = factor(names(independent), levels = names(independent))
+    independent_table_id = names(independent)
   )
   dependent_vars <- purrr::map2_dfr(
-    factor(names(dependent), levels = names(dependent)), dependent,
+    names(dependent), dependent,
     function(dependent_name, one_dependent) {
       tibble::tibble(
         dependent_setting_id = dependent_name,
-        dependent_var_id = names(one_dependent),#Needs solution for factor: factor(names(one_dependent), levels = names(dependent)),
+        dependent_var_id = names(one_dependent),
         dependent_var = as.list(one_dependent)
       )
     }
   )
   kernel_settings <- purrr::map2_dfr(
-    factor(names(kernel), levels = names(kernel)), kernel,
+    names(kernel), kernel,
     function(kernel_name, one_kernel) {
       tibble::tibble(
         kernel_setting_id = kernel_name,
@@ -63,7 +63,7 @@ create_model_grid <- function(
   )
   pred_grids <- tibble::tibble(
     pred_grid = prediction_grid,
-    pred_grid_id = factor(names(prediction_grid), levels = names(prediction_grid))
+    pred_grid_id = names(prediction_grid)
   )
   # expand grid and create model grid
   model_grid <- create_model_grid_raw(
