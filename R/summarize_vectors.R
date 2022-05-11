@@ -50,7 +50,7 @@ pack_origin_vectors <- function(origin_vectors, ...) {
       ov_angle_deg = vec2deg(c(.data[["mean_ov_x"]], .data[["mean_ov_y"]])),
       .groups = "drop"
     ) %>%
-    dplyr::mutate(
+    dplyr::rename(
       ov_x = .data[["mean_ov_x"]],
       ov_y = .data[["mean_ov_y"]]
     )
@@ -146,11 +146,11 @@ find_no_data_windows <- function(origin_summary, ...) {
       !!!.grouping_var
     ) %>%
     dplyr::mutate(
-      usd = tidyr::replace_na(.data[["undirected_mean_spatial_distance"]], 0),
+      usd = tidyr::replace_na(.data[["ov_dist"]], 0),
       cumsum_undir_dist = cumsum(.data[["usd"]])
     ) %>%
     dplyr::filter(
-      is.na(.data[["undirected_mean_spatial_distance"]])
+      is.na(.data[["ov_dist"]])
     ) %>%
     dplyr::group_by(
       !!!.grouping_var,
