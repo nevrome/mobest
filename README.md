@@ -778,7 +778,7 @@ field and its permutations. The output is of class
 proxy for mobility.
 
 ``` r
-origin_vectors <- mobest::determine_origin_vectors(locate_product)
+mobest::determine_origin_vectors(locate_product)
 ```
 
     ## # A tibble: 4 × 20
@@ -791,47 +791,83 @@ origin_vectors <- mobest::determine_origin_vectors(locate_product)
     ## # … with 15 more variables: field_x <dbl>, field_y <dbl>, field_z <dbl>,
     ## #   field_geo_id <int>, search_id <int>, search_x <int>, search_y <int>,
     ## #   search_z <int>, probability <dbl>, ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>,
-    ## #   ov_dist_sd <dbl>, ov_angle_deg <dbl>, ov_angle_cut <chr>
+    ## #   ov_dist_se <dbl>, ov_dist_sd <dbl>, ov_angle_deg <dbl>
 
-Just as `mobest::fold_probabilities_per_group`, this summary can be
-split to maintain the permutation groups introduced above.
+Just as in `mobest::fold_probabilities_per_group`, the origin vector
+search can be performed per permutation of the groups introduced above.
 
 ``` r
-mobest::determine_origin_vectors(locate_product, independent_table_id)
+origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id)
 ```
 
-    ## # A tibble: 8 × 20
-    ##   independent_table_id dependent_setting… kernel_setting_… pred_grid_id field_id
-    ##   <chr>                <chr>              <chr>            <chr>           <int>
-    ## 1 dating1              obs1               kernel_1         time_slice_1       16
-    ## 2 dating1              obs1               kernel_1         time_slice_2       43
-    ## 3 dating1              obs1               kernel_1         time_slice_3       44
-    ## 4 dating1              obs1               kernel_2         time_slice_4       14
-    ## 5 dating2              obs1               kernel_1         time_slice_1       43
-    ## 6 dating2              obs1               kernel_1         time_slice_2       33
-    ## 7 dating2              obs1               kernel_2         time_slice_3       54
-    ## 8 dating2              obs1               kernel_1         time_slice_4       13
-    ## # … with 15 more variables: field_x <dbl>, field_y <dbl>, field_z <dbl>,
-    ## #   field_geo_id <int>, search_id <int>, search_x <int>, search_y <int>,
-    ## #   search_z <int>, probability <dbl>, ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>,
-    ## #   ov_dist_sd <dbl>, ov_angle_deg <dbl>, ov_angle_cut <chr>
+#### Summarising origin vectors
 
 In a very final step of the pipeline supported by `mobest`, we can
-summarise origin vectors through time.
-`mobest::summarize_origin_vectors` allows for a moving window summary.
-It also supports the deliberate grouping available for all functions
-following `multiply_dependent_probabilities`. Note that this explicitly
+combine origin vectors to meaningful summaries. Which summary statistics
+turn out to be useful strongly depends on the research questions guiding
+a particular project, so it is well likely that the following functions
+are not appropriate for a given use case.
+
+`mobest::pack_origin_vectors` takes an object of class
+`mobest_originvectors` and merges iterations of origin vectors that
+might have emerged from permutations in `mobest::locate_multi` into a
+single, mean (!) origin vector for each search individual.
+
+``` r
+mobest::pack_origin_vectors(origin_vectors, independent_table_id)
+```
+
+    ## # A tibble: 8 × 14
+    ##   search_id independent_tabl… field_x field_y field_z search_x search_y search_z
+    ##       <int> <chr>               <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>
+    ## 1         1 dating1            600000  200000   -3586   593039   372080    -3586
+    ## 2         1 dating2            300000  500000   -3586   593039   372080    -3586
+    ## 3         2 dating1            300000  500000   -4501   326494   513740    -4501
+    ## 4         2 dating2            300000  400000   -4501   326494   513740    -4501
+    ## 5         3 dating1            400000  500000   -4272   636281   563535    -4272
+    ## 6         3 dating2            400000  600000   -4272   636281   563535    -4272
+    ## 7         4 dating1            400000  200000   -3975   122139   171731    -3975
+    ## 8         4 dating2            300000  200000   -3975   122139   171731    -3975
+    ## # … with 6 more variables: ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>,
+    ## #   ov_dist_se <dbl>, ov_dist_sd <dbl>, ov_angle_deg <dbl>
+
+``` r
+packed_origin_vectors <- mobest::pack_origin_vectors(origin_vectors)
+```
+
+    ## # A tibble: 4 × 13
+    ##   search_id field_x field_y field_z search_x search_y search_z    ov_x   ov_y
+    ##       <int>   <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>   <dbl>  <dbl>
+    ## 1         1  450000  350000   -3586   593039   372080    -3586 -143039 -22080
+    ## 2         2  300000  450000   -4501   326494   513740    -4501  -26494 -63740
+    ## 3         3  400000  550000   -4272   636281   563535    -4272 -236281 -13535
+    ## 4         4  350000  200000   -3975   122139   171731    -3975  227861  28269
+    ## # … with 4 more variables: ov_dist <dbl>, ov_dist_se <dbl>, ov_dist_sd <dbl>,
+    ## #   ov_angle_deg <dbl>
+
+An important limitation of `pack_origin_vectors`: The standard deviation
+(`ov_dist_sd`) and standard error of the mean (`ov_dist_se`) are
+recalculated from the origin vectors in the input `mobest_originvectors`
+object. The `ov_dist_sd` and `ov_dist_se` available there are not taken
+into account (as of now).
+
+Beyond merging individual vector iterations,
+`mobest::summarize_origin_vectors` allows for a moving window summary
+across (!) origin vectors of individual samples. It accepts both objects
+of class `mobest_originvectors` and `mobest_originvectorspacked`. It
+also supports the deliberate grouping available for all functions
+following `multiply_dependent_probabilities` – note that this explicitly
 includes additional variables that can be introduced even at this point
 in the pipeline, e.g. a (spatial) region attribution of the search
 samples.
 
 ``` r
-origin_vectors$region_id <- c(
+packed_origin_vectors$region_id <- c(
   "A", "B", "A", "C"
 )
 
 origin_summary <- mobest::summarize_origin_vectors(
-  origin_vectors,
+  packed_origin_vectors,
   region_id,
   window_start = -5000,
   window_stop = -3000,
@@ -840,21 +876,20 @@ origin_summary <- mobest::summarize_origin_vectors(
 )
 ```
 
-    ## # A tibble: 573 × 7
-    ##    region_id     z undirected_mean_spatial_dist… directed_mean_s… mean_angle_deg
-    ##    <chr>     <dbl>                         <dbl>            <dbl>          <dbl>
-    ##  1 A         -4950                            NA               NA             NA
-    ##  2 A         -4940                            NA               NA             NA
-    ##  3 A         -4930                            NA               NA             NA
-    ##  4 A         -4920                            NA               NA             NA
-    ##  5 A         -4910                            NA               NA             NA
-    ##  6 A         -4900                            NA               NA             NA
-    ##  7 A         -4890                            NA               NA             NA
-    ##  8 A         -4880                            NA               NA             NA
-    ##  9 A         -4870                            NA               NA             NA
-    ## 10 A         -4860                            NA               NA             NA
-    ## # … with 563 more rows, and 2 more variables: se_spatial_distance <dbl>,
-    ## #   sd_spatial_distance <dbl>
+    ## # A tibble: 573 × 6
+    ##    region_id     z ov_dist ov_dist_se ov_dist_sd ov_angle_deg
+    ##    <chr>     <dbl>   <dbl>      <dbl>      <dbl>        <dbl>
+    ##  1 A         -4950      NA        Inf        Inf           NA
+    ##  2 A         -4940      NA        Inf        Inf           NA
+    ##  3 A         -4930      NA        Inf        Inf           NA
+    ##  4 A         -4920      NA        Inf        Inf           NA
+    ##  5 A         -4910      NA        Inf        Inf           NA
+    ##  6 A         -4900      NA        Inf        Inf           NA
+    ##  7 A         -4890      NA        Inf        Inf           NA
+    ##  8 A         -4880      NA        Inf        Inf           NA
+    ##  9 A         -4870      NA        Inf        Inf           NA
+    ## 10 A         -4860      NA        Inf        Inf           NA
+    ## # … with 563 more rows
 
 Empty (i.e. not sufficiently informed from data) time ranges in this
 moving window summary can be identified with

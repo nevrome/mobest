@@ -29,10 +29,11 @@ determine_origin_vectors <- function(
       function(locate_group) {
       locate_group %>%
         dplyr::mutate(
-          ov_x = .data[["field_x"]] - .data[["search_x"]],
-          ov_y = .data[["field_y"]] - .data[["search_y"]],
-          ov_dist = sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2),
-          ov_dist_sd = sqrt(wtd.var(.data[["ov_dist"]], .data[["probability"]]))
+          ov_x         = .data[["field_x"]] - .data[["search_x"]],
+          ov_y         = .data[["field_y"]] - .data[["search_y"]],
+          ov_dist      = sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2),
+          ov_dist_se   = calculate_standard_error(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2)),
+          ov_dist_sd   = sqrt(wtd.var(.data[["ov_dist"]], .data[["probability"]]))
         ) %>%
         # keep only the maximum probability grid cell
         dplyr::slice_max(.data[["probability"]], n = 1, with_ties = FALSE) %>%

@@ -6,10 +6,12 @@
 #'
 #' @param origin_vectors An object of class \code{mobest_originvectors} as created by
 #' \link{determine_origin_vectors}
+#' @param origin_vectors_packed And object of class \code{mobest_originvectorspacked}
+#' as created by \link{pack_origin_vectors}
 #' @param origin_summary An object of class \code{mobest_originsummary}
 #' as created by \link{summarize_origin_vectors}
-#' @param ... (Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
-#' \code{kernel_setting_id}, \code{pred_grid_id}, ...)
+#' @param ... (Additional) grouping variables (\code{independent_table_id},
+#' \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)
 #' @param window_start Start date of the moving window sequence
 #' @param window_stop Stop date of the moving window sequence
 #' @param window_width Width of each individual moving window
@@ -37,16 +39,17 @@ pack_origin_vectors <- function(origin_vectors, ...) {
       !!!.grouping_var
     ) %>%
     dplyr::summarise(
-      field_x = mean(.data[["field_x"]]),
-      field_y = mean(.data[["field_y"]]),
-      field_z = mean(.data[["field_z"]]),
-      search_x = mean(.data[["search_x"]]),
-      search_y = mean(.data[["search_y"]]),
-      search_z = mean(.data[["search_z"]]),
-      mean_ov_x = mean(.data[["ov_x"]]),
-      mean_ov_y = mean(.data[["ov_y"]]),
-      ov_dist = sqrt(.data[["mean_ov_x"]]^2 + .data[["mean_ov_y"]]^2),
-      ov_dist_sd = stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2)),
+      field_x      = mean(.data[["field_x"]]),
+      field_y      = mean(.data[["field_y"]]),
+      field_z      = mean(.data[["field_z"]]),
+      search_x     = mean(.data[["search_x"]]),
+      search_y     = mean(.data[["search_y"]]),
+      search_z     = mean(.data[["search_z"]]),
+      mean_ov_x    = mean(.data[["ov_x"]]),
+      mean_ov_y    = mean(.data[["ov_y"]]),
+      ov_dist      = sqrt(.data[["mean_ov_x"]]^2 + .data[["mean_ov_y"]]^2),
+      ov_dist_se   = calculate_standard_error(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2)),
+      ov_dist_sd   = stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2)),
       ov_angle_deg = vec2deg(c(.data[["mean_ov_x"]], .data[["mean_ov_y"]])),
       .groups = "drop"
     ) %>%
@@ -62,17 +65,17 @@ pack_origin_vectors <- function(origin_vectors, ...) {
 #' @rdname origin_summary
 #' @export
 summarize_origin_vectors <- function(
-  origin_vectors, ..., window_start, window_stop, window_width, window_step
+  origin_vectors_packed, ..., window_start, window_stop, window_width, window_step
 ) {
   .grouping_var <- rlang::ensyms(...)
   # input check
-  checkmate::assert_class(origin_vectors, "mobest_originvectorspacked")
+  checkmate::assert_class(origin_vectors_packed, "mobest_originvectorspacked")
   checkmate::assert_number(window_start)
   checkmate::assert_number(window_stop, lower = window_start)
   checkmate::assert_number(window_width)
   checkmate::assert_number(window_step)
   # split vector groups
-  vector_groups <- origin_vectors %>%
+  vector_groups <- origin_vectors_packed %>%
     dplyr::group_split(
       !!!.grouping_var
     )
@@ -98,14 +101,15 @@ summarize_origin_vectors <- function(
                 !!!.grouping_var
               ) %>%
               dplyr::summarise(
-                z = mean(c(start, end)),
-                ov_dist = sqrt(mean(.data[["ov_x"]])^2 + mean(.data[["ov_y"]])^2),
-                ov_dist_se = if (dplyr::n() >= 3) {
-                  calculate_standard_error(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
-                } else { Inf },
-                ov_dist_sd = if (dplyr::n() >= 3) {
-                  stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
-                } else { Inf }
+                z            = mean(c(start, end)),
+                ov_dist      = sqrt(mean(.data[["ov_x"]])^2 + mean(.data[["ov_y"]])^2),
+                ov_dist_se   = if (dplyr::n() >= 2) {
+                                 calculate_standard_error(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
+                               } else { Inf },
+                ov_dist_sd   = if (dplyr::n() >= 2) {
+                                 stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
+                               } else { Inf },
+                ov_angle_deg = vec2deg(c(mean(.data[["ov_x"]]), mean(.data[["ov_x"]])))
               )
             # tibble::tibble(
             #   fraction_smaller_500 = sum(io$spatial_distance < 500) / nrow(io),
@@ -119,10 +123,11 @@ summarize_origin_vectors <- function(
                 !!!.grouping_var
               ) %>%
               dplyr::summarise(
-                z = mean(c(start, end)),
-                ov_dist = NA,
-                ov_dist_se = Inf,
-                ov_dist_sd = Inf
+                z            = mean(c(start, end)),
+                ov_dist      = NA,
+                ov_dist_se   = Inf,
+                ov_dist_sd   = Inf,
+                ov_angle_deg = NA
               )
           }
         }
