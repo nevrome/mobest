@@ -59,11 +59,7 @@ locate <- function(
     dependent = create_obs_multi(d = dependent),
     kernel = create_kernset_multi(k = kernel),
     search_independent = create_spatpos_multi(i = search_independent),
-    search_dependent = if ("mobest_observations" %in% class(search_dependent)) {
-      create_obs_multi(d = search_dependent)
-    } else if ("mobest_observationswitherror" %in% class(search_dependent)) {
-      create_obs_obserror_multi(d = search_dependent)
-    },
+    search_dependent = create_obs_multi(d = search_dependent),
     search_space_grid = search_space_grid,
     search_time = search_time,
     search_time_mode = search_time_mode,
@@ -94,27 +90,15 @@ locate_multi <- function(
   # (we don't need to assert properties that are already covered by
   # create_model_grid below)
   checkmate::assert_class(search_independent, "mobest_spatiotemporalpositions_multi")
-  checkmate::assert(
-    checkmate::check_class(
-      search_dependent, classes = "mobest_observations_multi"
-    ),
-    checkmate::check_class(
-      search_dependent, classes = "mobest_observationswitherror_multi"
-    )
-  )
+  checkmate::assert_class(search_dependent, classes = "mobest_observations_multi")
   checkmate::assert_class(search_space_grid, "mobest_spatialpositions")
-  checkmate::assert_numeric(
-    search_time,
-    finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE
-  )
-  checkmate::assert_choice(
-    search_time_mode, choices = c("relative", "absolute")
-  )
+  checkmate::assert_numeric(search_time, finite = TRUE, any.missing = FALSE, min.len = 1, unique = TRUE)
+  checkmate::assert_choice(search_time_mode, choices = c("relative", "absolute"))
   checkmate::assert_true(setequal(names(independent), names(search_independent)))
   checkmate::assert_true(setequal(names(dependent), names(search_dependent)))
   check_compatible_multi(search_independent, search_dependent, check_df_nrow_equal)
   check_compatible_multi(dependent, search_dependent, check_names_equal, ignore_sd_cols = T)
-  # prepare data
+  # construct search point permutations
   search_points <- tidyr::crossing(
     search_independent = search_independent %>%
       purrr::map2(names(.), ., function(n, x) {x$independent_table_id <- n; x}),
@@ -125,69 +109,66 @@ locate_multi <- function(
   ) %>%
     dplyr::rename_with(
       function(x) { paste0("search_", x) },
-      tidyselect::any_of(c("id", "x", "y", "z"))
+      tidyselect::any_of(c("id", "x", "y", "z", "independent_table_id"))
     ) %>%
     tidyr::crossing(tibble::tibble(t = search_time)) %>%
-    dplyr::mutate(
-      field_z =
-        if (search_time_mode == "relative") {
-          .data[["search_z"]] + .data[["t"]]
-        } else if (search_time_mode == "absolute") {
-          .data[["t"]]
-        }
+    dplyr::mutate(field_z =
+      if (search_time_mode == "relative") {
+        .data[["search_z"]] + .data[["t"]]
+      } else if (search_time_mode == "absolute") {
+        .data[["t"]]
+      }
     ) %>%
-    dplyr::select(-.data[["t"]])
+    dplyr::select(-.data[["t"]]) %>%
+    tidyr::pivot_longer(
+      cols = -c(
+        "search_id", "search_x", "search_y", "search_z",
+        "search_independent_table_id",
+        "dependent_setting_id", "field_z"
+      ),
+      names_to = "dependent_var_id",
+      values_to = "search_measured"
+    )
+  # construct search fields (point rasters for the search)
+  unique_time_slices <- tibble::tibble(
+    field_z = search_points$field_z %>% unique(),
+    pred_grid_id = paste0("time_slice_", seq_along(.data[["field_z"]]))
+  )
   search_fields <- purrr::map(
-    search_points$field_z %>% unique(),
-    function(time_slice) {
-      search_space_grid %>% geopos_to_spatpos(z = time_slice)
-    }
-  ) %>% magrittr::set_names(., paste("time_slice", 1:length(.), sep = "_"))
-  # construct and run model grid to construct the fields
+    unique_time_slices$field_z,
+    function(time_slice) {search_space_grid %>% geopos_to_spatpos(z = time_slice)}
+  ) %>% magrittr::set_names(., unique_time_slices$pred_grid_id)
+  # construct model grid for the fields with all (!) permutations
   model_grid <- create_model_grid(
     independent = independent,
     dependent = dependent,
     kernel = kernel,
     prediction_grid = do.call(create_spatpos_multi, search_fields)
-  )
+  ) %>%
+    dplyr::left_join(unique_time_slices, by = "pred_grid_id")
+  # remove unnecessary permutations
+  model_grid_filtered <- dplyr::semi_join(
+    model_grid, search_points,
+    by = c(
+      "independent_table_id" = "search_independent_table_id",
+      "dependent_setting_id",
+      "dependent_var_id",
+      "field_z"
+    )
+  ) %>% dplyr::select(-.data[["field_z"]])
+  # run model grid to create search fields
   if (!quiet) { message("Constructing search fields") }
-  interpol_grid <- run_model_grid(model_grid, quiet = quiet)
-  # join search points and fields
-  if (!quiet) { message("Compiling full search table") }
-  full_search_table <- dplyr::left_join(
-    search_points %>%
-      tidyr::pivot_longer(
-        cols = -c(
-          "search_id", "search_x", "search_y", "search_z",
-          "independent_table_id", "dependent_setting_id", "field_z"
-        ),
-        names_to = "dependent_var_id",
-        values_to = "intermediate_value"
-      ) %>%
-      tidyr::separate(
-        col = "dependent_var_id",
-        into = c("dependent_var_id", "dep_var_type"),
-        sep = "_(?=sd$)", # only split, if the string ends with "_sd"
-        extra = "merge",
-        fill = "right"
-      ) %>%
-      dplyr::mutate(
-        dep_var_type = dplyr::case_when(
-          is.na(.data[["dep_var_type"]]) ~ "search_measured",
-          .data[["dep_var_type"]] == "sd" ~ "search_sd"
-        )
-      ) %>%
-      tidyr::pivot_wider(
-        names_from = "dep_var_type",
-        values_from = "intermediate_value"
-      ),
-    interpol_grid %>%
-      dplyr::rename_with(
+  interpol_grid <- run_model_grid(model_grid_filtered, quiet = quiet) %>%
+    dplyr::rename_with(
       function(x) { paste0("field_", x) },
       tidyselect::any_of(c("id", "geo_id", "x", "y", "z", "mean", "sd"))
-    ),
+    )
+  # join search fields and search points
+  if (!quiet) { message("Compiling full search table") }
+  full_search_table <- dplyr::left_join(
+    interpol_grid, search_points,
     by = c(
-      "independent_table_id",
+      "independent_table_id" = "search_independent_table_id",
       "dependent_setting_id",
       "dependent_var_id",
       "field_z"
@@ -195,49 +176,14 @@ locate_multi <- function(
   )
   # calculate overlap probability
   if (!quiet) { message("Calculating probabilities") }
-  #return(full_search_table)
-  if ("mobest_observations_multi" %in% class(search_dependent)) {
-    full_search_table_prob <- full_search_table %>%
-      dplyr::mutate(
-        probability = stats::dnorm(
-          x = .data[["search_measured"]],
-          mean = .data[["field_mean"]],
-          sd = .data[["field_sd"]]
-        )
-      ) %>%
-      dplyr::mutate(
-        .after = "search_measured"
+  full_search_table_prob <- full_search_table %>%
+    dplyr::mutate(
+      probability = stats::dnorm(
+        x = .data[["search_measured"]],
+        mean = .data[["field_mean"]],
+        sd = .data[["field_sd"]]
       )
-  } else if ("mobest_observationswitherror_multi" %in% class(search_dependent)) {
-    int_f <- function(x, mu1, mu2, sd1, sd2) {
-      f1 <- stats::dnorm(x, mean = mu1, sd = sd1)
-      f2 <- stats::dnorm(x, mean = mu2, sd = sd2)
-      pmin(f1, f2)
-    }
-    full_search_table_prob <- full_search_table %>%
-      dplyr::mutate(
-        .,
-        probability = purrr::pmap_dbl(
-          list(.data[["search_measured"]], .data[["field_mean"]], .data[["search_sd"]], .data[["field_sd"]]),
-          function(mu1, mu2, sd1, sd2) {
-            res <- try(
-              stats::integrate(
-                int_f, -Inf, Inf,
-                mu1 = mu1, mu2 = mu2, sd1 = sd1, sd2 = sd2
-                #, rel.tol = 1e-10
-              ),
-              silent = TRUE
-            )
-            if(inherits(res ,'try-error')){
-              #warning(as.vector(res))
-              return(0)
-            } else {
-              return(res$value)
-            }
-          }
-        )
-      )
-  }
+    )
   # output
   full_search_table_prob %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview") %>%

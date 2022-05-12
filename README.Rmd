@@ -196,7 +196,6 @@ Available are:
 - `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
 - `mobest_spatiotemporalpositions_multi` (`mobest::create_spatpos_multi`)
 - `mobest_observations_multi` (`mobest::create_obs_multi`)
-- `mobest_observationswitherror_multi` (`mobest::create_obs_obserror_multi`)
 - `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
 
 And here is an example how they can be filled with named arguments:
@@ -247,7 +246,7 @@ obs_dist <- mobest::calculate_dependent_pairwise_distances(positions$id, observa
 ```{r}
 variogram <- mobest::bin_pairwise_distances(
   pairwise_distances,
-  geo_bin = 0.1, time_bin = 100
+  geo_bin = 100, time_bin = 100
 )
 ```
 
@@ -296,7 +295,7 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
   independent = dplyr::mutate(positions, x = x/1000, y = y/1000),
   dependent = observations,
   iterations = 2,
-  g = 0.1,
+  g = c(ac1 = 0.1, ac2 = 0.1),
   space_time_scaling_factor_sequence = seq(0.1, 2, 0.1),
   verb = 0
 )
@@ -476,28 +475,41 @@ mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kerne
 To derive a simple, sample-wise measure of mobility, `mobest::determine_origin_vectors` constructs what we call "origin vectors" from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a sample was found (so for ancient samples that is usually where the respective individual was buried) with the point of **highest genetic similarity** in the interpolated search field and its permutations. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector". Under certain circumstances this vector can serve as a proxy for mobility.
 
 ```{r}
-origin_vectors <- mobest::determine_origin_vectors(locate_product)
+mobest::determine_origin_vectors(locate_product)
 ```
 
-```{r, echo=FALSE}
-origin_vectors
-```
-
-Just as `mobest::fold_probabilities_per_group`, this summary can be split to maintain the permutation groups introduced above.
+Just as in `mobest::fold_probabilities_per_group`, the origin vector search can be performed per permutation of the groups introduced above.
 
 ```{r}
-mobest::determine_origin_vectors(locate_product, independent_table_id)
+origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id)
 ```
 
-In a very final step of the pipeline supported by `mobest`, we can summarise origin vectors through time. `mobest::summarize_origin_vectors` allows for a moving window summary. It also supports the deliberate grouping available for all functions following `multiply_dependent_probabilities`. Note that this explicitly includes additional variables that can be introduced even at this point in the pipeline, e.g. a (spatial) region attribution of the search samples.
+#### Summarising origin vectors
+
+In a very final step of the pipeline supported by `mobest`, we can combine origin vectors to meaningful summaries. Which summary statistics turn out to be useful strongly depends on the research questions guiding a particular project, so it is well likely that the following functions are not appropriate for a given use case.
+
+`mobest::pack_origin_vectors` takes an object of class `mobest_originvectors` and merges iterations of origin vectors that might have emerged from permutations in `mobest::locate_multi` into a single, mean (!) origin vector for each search individual.
 
 ```{r}
-origin_vectors$region_id <- c(
+mobest::pack_origin_vectors(origin_vectors, independent_table_id)
+packed_origin_vectors <- mobest::pack_origin_vectors(origin_vectors)
+```
+
+```{r, echo=F}
+packed_origin_vectors
+```
+
+An important limitation of `pack_origin_vectors`: The standard deviation (`ov_dist_sd`) and standard error of the mean (`ov_dist_se`) are recalculated from the origin vectors in the input `mobest_originvectors` object. The `ov_dist_sd` and `ov_dist_se` available there are not taken into account (as of now).
+
+Beyond merging individual vector iterations, `mobest::summarize_origin_vectors` allows for a moving window summary across (!) origin vectors of individual samples. It accepts both objects of class `mobest_originvectors` and `mobest_originvectorspacked`. It also supports the deliberate grouping available for all functions following `multiply_dependent_probabilities` -- note that this explicitly includes additional variables that can be introduced even at this point in the pipeline, e.g. a (spatial) region attribution of the search samples.
+
+```{r}
+packed_origin_vectors$region_id <- c(
   "A", "B", "A", "C"
 )
 
 origin_summary <- mobest::summarize_origin_vectors(
-  origin_vectors,
+  packed_origin_vectors,
   region_id,
   window_start = -5000,
   window_stop = -3000,

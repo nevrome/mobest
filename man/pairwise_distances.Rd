@@ -28,8 +28,8 @@ calculate_dependent_pairwise_distances(
 
 bin_pairwise_distances(
   pairwise_distances,
-  geo_bin = 100,
-  time_bin = 100,
+  geo_bin,
+  time_bin,
   per_bin_operation = function(x) {     0.5 * mean(x^2, na.rm = T) }
 )
 }

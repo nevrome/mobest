@@ -9,10 +9,7 @@
 \alias{create_spatpos}
 \alias{create_spatpos_multi}
 \alias{create_obs}
-\alias{create_obserror}
-\alias{create_obs_obserror}
 \alias{create_obs_multi}
-\alias{create_obs_obserror_multi}
 \alias{create_kernel}
 \alias{create_kernset}
 \alias{create_kernset_multi}
@@ -32,13 +29,7 @@ create_spatpos_multi(..., .names = NULL)
 
 create_obs(..., .names = NULL)
 
-create_obserror(..., .names = NULL)
-
-create_obs_obserror(obs, obserror)
-
 create_obs_multi(..., .names = NULL)
-
-create_obs_obserror_multi(..., .names = NULL)
 
 create_kernel(dsx, dsy, dt, g, on_residuals = T, auto = F)
 
@@ -66,10 +57,6 @@ be constructed}
 \item{geopos}{An object of class `mobest_spatialpositions`.}
 
 \item{z}{Numeric vector. Temporal positions}
-
-\item{obs}{An object of class `mobest_observations`.}
-
-\item{obserror}{An object of class `mobest_observations_error`.}
 
 \item{dsx}{Double. Kernel lengthscale parameter for the x dimension (spatial x-axis). See \code{?laGP::newGP} for more information}
 

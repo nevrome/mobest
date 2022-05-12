@@ -1,14 +1,16 @@
 #' Summarize the results of the origin search
 #'
-#' Functions to transform the large origin vector tables to meaningful moving window
-# ' summaries
+#' Functions to transform the large origin vector tables to meaningful summaries.
+#' \code{pack_origin_vectors} yields simple mean vectors,
+#' \code{summarize_origin_vectors} a moving window summary through time.
 #'
 #' @param origin_vectors An object of class \code{mobest_originvectors} as created by
-#' \link{determine_origin_vectors}
+#' \link{determine_origin_vectors} or (for \code{summarize_origin_vectors}) an object
+#' of class \code{mobest_originvectorspacked} as created by \link{pack_origin_vectors}
 #' @param origin_summary An object of class \code{mobest_originsummary}
 #' as created by \link{summarize_origin_vectors}
-#' @param ... (Additional) grouping variables (\code{independent_table_id}, \code{dependent_setting_id},
-#' \code{kernel_setting_id}, \code{pred_grid_id}, ...)
+#' @param ... (Additional) grouping variables (\code{independent_table_id},
+#' \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)
 #' @param window_start Start date of the moving window sequence
 #' @param window_stop Stop date of the moving window sequence
 #' @param window_width Width of each individual moving window
@@ -25,12 +27,51 @@ NULL
 
 #' @rdname origin_summary
 #' @export
+pack_origin_vectors <- function(origin_vectors, ...) {
+  .grouping_var <- rlang::ensyms(...)
+  # input check
+  checkmate::assert_class(origin_vectors, "mobest_originvectors")
+  # pack vectors
+  packed_origin_vectors <- origin_vectors %>%
+    dplyr::group_by(
+      .data[["search_id"]],
+      !!!.grouping_var
+    ) %>%
+    dplyr::summarise(
+      field_x      = mean(.data[["field_x"]]),
+      field_y      = mean(.data[["field_y"]]),
+      field_z      = mean(.data[["field_z"]]),
+      search_x     = mean(.data[["search_x"]]),
+      search_y     = mean(.data[["search_y"]]),
+      search_z     = mean(.data[["search_z"]]),
+      mean_ov_x    = mean(.data[["ov_x"]]),
+      mean_ov_y    = mean(.data[["ov_y"]]),
+      ov_dist      = sqrt(.data[["mean_ov_x"]]^2 + .data[["mean_ov_y"]]^2),
+      ov_dist_se   = calculate_standard_error(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2)),
+      ov_dist_sd   = stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2)),
+      ov_angle_deg = vec2deg(c(.data[["mean_ov_x"]], .data[["mean_ov_y"]])),
+      .groups = "drop"
+    ) %>%
+    dplyr::rename(
+      ov_x = .data[["mean_ov_x"]],
+      ov_y = .data[["mean_ov_y"]]
+    )
+  # compile output
+  packed_origin_vectors %>%
+    tibble::new_tibble(., nrow = nrow(.), class = "mobest_originvectorspacked")
+}
+
+#' @rdname origin_summary
+#' @export
 summarize_origin_vectors <- function(
   origin_vectors, ..., window_start, window_stop, window_width, window_step
 ) {
   .grouping_var <- rlang::ensyms(...)
   # input check
-  checkmate::assert_class(origin_vectors, "mobest_originvectors")
+  checkmate::assert(
+    checkmate::check_class(origin_vectors, "mobest_originvectorspacked"),
+    checkmate::check_class(origin_vectors, "mobest_originvectors")
+  )
   checkmate::assert_number(window_start)
   checkmate::assert_number(window_stop, lower = window_start)
   checkmate::assert_number(window_width)
@@ -56,35 +97,21 @@ summarize_origin_vectors <- function(
             .data[["search_z"]] >= start,
             .data[["search_z"]] < end
           )
-          io_run_grouped <- io %>%
-            dplyr::group_by(.data[["search_id"]]) %>%
-            dplyr::summarise(
-              mean_spatial_distance = mean(.data[["ov_dist"]]),
-              .groups = "drop"
-            )
           if (nrow(io) > 0) {
             io %>%
               dplyr::group_by(
                 !!!.grouping_var
               ) %>%
               dplyr::summarise(
-                z = mean(c(start, end)),
-                undirected_mean_spatial_distance =
-                  mean(.data[["ov_dist"]]),
-                directed_mean_spatial_distance = sqrt(
-                  mean(.data[["field_x"]] - .data[["search_x"]])^2 +
-                    mean(.data[["field_y"]] - .data[["search_y"]])^2
-                ),
-                se_spatial_distance = if (nrow(io_run_grouped) >= 3) {
-                  calculate_standard_error(io_run_grouped$mean_spatial_distance)
-                } else {
-                  Inf
-                },
-                sd_spatial_distance = if (nrow(io_run_grouped) >= 3) {
-                  stats::sd(io_run_grouped$mean_spatial_distance)
-                } else {
-                  Inf
-                }
+                z            = mean(c(start, end)),
+                ov_dist      = sqrt(mean(.data[["ov_x"]])^2 + mean(.data[["ov_y"]])^2),
+                ov_dist_se   = if (dplyr::n() >= 2) {
+                                 calculate_standard_error(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
+                               } else { Inf },
+                ov_dist_sd   = if (dplyr::n() >= 2) {
+                                 stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
+                               } else { Inf },
+                ov_angle_deg = vec2deg(c(mean(.data[["ov_x"]]), mean(.data[["ov_x"]])))
               )
             # tibble::tibble(
             #   fraction_smaller_500 = sum(io$spatial_distance < 500) / nrow(io),
@@ -98,12 +125,11 @@ summarize_origin_vectors <- function(
                 !!!.grouping_var
               ) %>%
               dplyr::summarise(
-                z = mean(c(start, end)),
-                undirected_mean_spatial_distance = NA,
-                directed_mean_spatial_distance = NA,
-                mean_angle_deg = NA,
-                se_spatial_distance = Inf,
-                sd_spatial_distance = Inf
+                z            = mean(c(start, end)),
+                ov_dist      = NA,
+                ov_dist_se   = Inf,
+                ov_dist_sd   = Inf,
+                ov_angle_deg = NA
               )
           }
         }
@@ -127,11 +153,11 @@ find_no_data_windows <- function(origin_summary, ...) {
       !!!.grouping_var
     ) %>%
     dplyr::mutate(
-      usd = tidyr::replace_na(.data[["undirected_mean_spatial_distance"]], 0),
+      usd = tidyr::replace_na(.data[["ov_dist"]], 0),
       cumsum_undir_dist = cumsum(.data[["usd"]])
     ) %>%
     dplyr::filter(
-      is.na(.data[["undirected_mean_spatial_distance"]])
+      is.na(.data[["ov_dist"]])
     ) %>%
     dplyr::group_by(
       !!!.grouping_var,

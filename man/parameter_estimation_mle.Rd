@@ -33,9 +33,9 @@ laGP_jmle_anisotropic(
 )
 }
 \arguments{
-\item{independent}{An object of class mobest_spatiotemporalpositions}
+\item{independent}{An object of class \code{mobest_spatiotemporalpositions}}
 
-\item{dependent}{An object of class mobest_observations}
+\item{dependent}{An object of class \code{mobest_observations}}
 
 \item{iterations}{Integer. Number of mle iterations}
 
@@ -43,7 +43,8 @@ laGP_jmle_anisotropic(
 works better in certain (small) numeric ranges. This scaling factor affects all three
 dimensions (x/scaling_factor)}
 
-\item{g}{Numeric. Fixed value for the nugget term}
+\item{g}{Named numeric vector. Fixed values for the nugget term for each component in
+\code{dependent}}
 
 \item{space_time_scaling_factor_sequence}{Numeric vector. Sequence of space-time
 scaling factors}

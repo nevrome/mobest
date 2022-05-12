@@ -155,54 +155,10 @@ create_obs <- function(..., .names = NULL) {
 
 #' @rdname data_types
 #' @export
-create_obserror <- function(..., .names = NULL) {
-  obs <- list(...)
-  if (!is.null(.names)) { names(obs) <- .names }
-  # check list
-  checkmate::assert_list(obs, types = "numeric", names = "strict")
-  checkmate::assert_true(all(grepl("_sd", names(obs))))
-  checkmate::assert_true(
-    purrr::map_int(obs, length) %>% unique %>% length %>% magrittr::equals(1)
-  )
-  # compile tibble
-  dplyr::bind_cols(obs) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observations_error")
-}
-
-#' @param obs An object of class `mobest_observations`.
-#' @param obserror An object of class `mobest_observations_error`.
-#'
-#' @rdname data_types
-#' @export
-create_obs_obserror <- function(obs, obserror) {
-  # input check
-  checkmate::assert_class(obs, "mobest_observations")
-  checkmate::assert_class(obserror, "mobest_observations_error")
-  checkmate::assert_true(
-    all(names(obserror) == paste0(names(obs), "_sd"))
-  )
-  checkmate::assert_true(nrow(obs) == nrow(obserror))
-  # compile tibble
-  dplyr::bind_cols(obs, obserror) %>%
-    tibble::new_tibble(., nrow = nrow(.), class = "mobest_observationswitherror")
-}
-
-#' @rdname data_types
-#' @export
 create_obs_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
     "mobest_observations",
     "mobest_observations_multi",
-    T,F
-  )(..., .names = .names)
-}
-
-#' @rdname data_types
-#' @export
-create_obs_obserror_multi <- function(..., .names = NULL) {
-  tibble_multi_function_factory(
-    "mobest_observationswitherror",
-    "mobest_observationswitherror_multi",
     T,F
   )(..., .names = .names)
 }
