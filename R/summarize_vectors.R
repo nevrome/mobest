@@ -5,9 +5,8 @@
 #' \code{summarize_origin_vectors} a moving window summary through time.
 #'
 #' @param origin_vectors An object of class \code{mobest_originvectors} as created by
-#' \link{determine_origin_vectors}
-#' @param origin_vectors_packed And object of class \code{mobest_originvectorspacked}
-#' as created by \link{pack_origin_vectors}
+#' \link{determine_origin_vectors} or (for \code{summarize_origin_vectors}) an object
+#' of class \code{mobest_originvectorspacked} as created by \link{pack_origin_vectors}
 #' @param origin_summary An object of class \code{mobest_originsummary}
 #' as created by \link{summarize_origin_vectors}
 #' @param ... (Additional) grouping variables (\code{independent_table_id},
@@ -65,17 +64,20 @@ pack_origin_vectors <- function(origin_vectors, ...) {
 #' @rdname origin_summary
 #' @export
 summarize_origin_vectors <- function(
-  origin_vectors_packed, ..., window_start, window_stop, window_width, window_step
+  origin_vectors, ..., window_start, window_stop, window_width, window_step
 ) {
   .grouping_var <- rlang::ensyms(...)
   # input check
-  checkmate::assert_class(origin_vectors_packed, "mobest_originvectorspacked")
+  checkmate::assert(
+    checkmate::check_class(origin_vectors, "mobest_originvectorspacked"),
+    checkmate::check_class(origin_vectors, "mobest_originvectors")
+  )
   checkmate::assert_number(window_start)
   checkmate::assert_number(window_stop, lower = window_start)
   checkmate::assert_number(window_width)
   checkmate::assert_number(window_step)
   # split vector groups
-  vector_groups <- origin_vectors_packed %>%
+  vector_groups <- origin_vectors %>%
     dplyr::group_split(
       !!!.grouping_var
     )

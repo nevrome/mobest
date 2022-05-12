@@ -10,7 +10,7 @@
 pack_origin_vectors(origin_vectors, ...)
 
 summarize_origin_vectors(
-  origin_vectors_packed,
+  origin_vectors,
   ...,
   window_start,
   window_stop,
@@ -22,13 +22,11 @@ find_no_data_windows(origin_summary, ...)
 }
 \arguments{
 \item{origin_vectors}{An object of class \code{mobest_originvectors} as created by
-\link{determine_origin_vectors}}
+\link{determine_origin_vectors} or (for \code{summarize_origin_vectors}) an object
+of class \code{mobest_originvectorspacked} as created by \link{pack_origin_vectors}}
 
 \item{...}{(Additional) grouping variables (\code{independent_table_id},
 \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)}
-
-\item{origin_vectors_packed}{And object of class \code{mobest_originvectorspacked}
-as created by \link{pack_origin_vectors}}
 
 \item{window_start}{Start date of the moving window sequence}
 
