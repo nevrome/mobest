@@ -1,2 +1,3 @@
-- v0.3.1: removed default values in bin_pairwise_distances
+- v0.4.0: Changes that emerged from adjusting the package again to the research application it was initially written for. Includes many minor adjustments in names and logic.
+- v0.3.1: Removed default values in bin_pairwise_distances.
 - v0.3.0: Rewrite of most of the package to be independently useful beyond the paper it was written for.
