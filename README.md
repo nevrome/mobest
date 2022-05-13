@@ -46,7 +46,7 @@ locate_simple <- mobest::locate(
     z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))       # time
   ),
   # genetic coordinates of the reference samples
-  dependent = observations <- mobest::create_obs(
+  dependent = mobest::create_obs(
     ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # PCA coordinate 1
     ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))  # PCA coordinate 2
   ),
