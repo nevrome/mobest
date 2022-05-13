@@ -14,6 +14,8 @@ and the calculation of a derived measure for **mob**ility
 to support this research compendium:
 <https://github.com/nevrome/mobest.analysis.2022>.
 
+<img align="right" src="man/figures/example_movie.gif" width = 380>
+
 0.  `mobest` assumes you have a set of genetic samples with spatial (two
     coordinates in a projected reference system) and temporal positions
     (years BC/AD) for which you calculated a derived, numeric measure of
