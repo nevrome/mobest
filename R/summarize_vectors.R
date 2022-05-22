@@ -17,6 +17,7 @@
 #' @param window_step Frequency of moving windows. Example:
 #' If the first window starts at -3500 and extends until -3200, should the next
 #' one start at -3450 or -3400, so with window_step = 50 or window_step = 100?
+#' @param quiet Logical. Should a progress indication be printed?
 #'
 #' @return \link{summarize_origin_vectors} returns and object of class
 #' \code{mobest_originsummary}, \link{find_no_data_windows} then
@@ -64,7 +65,8 @@ pack_origin_vectors <- function(origin_vectors, ...) {
 #' @rdname origin_summary
 #' @export
 summarize_origin_vectors <- function(
-  origin_vectors, ..., window_start, window_stop, window_width, window_step
+  origin_vectors, ..., window_start, window_stop, window_width, window_step,
+  quiet = F
 ) {
   .grouping_var <- rlang::ensyms(...)
   # input check
@@ -82,15 +84,21 @@ summarize_origin_vectors <- function(
       !!!.grouping_var
     )
   # loop through units
-  future::plan(future::multisession)
-  origin_summary <- furrr::future_map_dfr(
+  if (!quiet) { message("Summarising groups") }
+  origin_summary <- purrr::imap_dfr(
     vector_groups,
-    function(vector_group) {
+    function(vector_group, i) {
+      # define moving windows and loop through them
+      windows_starts <- seq(window_start, window_stop - window_width, window_step)
+      windows_stops  <- seq(window_start + window_width, window_stop, window_step)
+      if (!quiet) {
+        message("Summarising windows for group ", i, " of ", length(vector_groups))
+        pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = length(windows_starts))
+      }
       purrr::map2_df(
-        # define moving windows and loop through them
-        seq(window_start, window_stop - window_width, window_step),
-        seq(window_start + window_width, window_stop, window_step),
+        windows_starts, windows_stops,
         function(start, end) {
+          if (!quiet) { pb$tick() }
           # prepare window data subsets
           io <- dplyr::filter(
             vector_group,
@@ -136,6 +144,7 @@ summarize_origin_vectors <- function(
       )
     }
   )
+  if (!quiet) { message("Compiling output") }
   origin_summary %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_originsummary")
 }

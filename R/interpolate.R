@@ -106,11 +106,13 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
   # input check
   checkmate::assert_class(model_grid, "mobest_modelgrid")
   # run interpolation for each entry in the model_grid
+  if (!quiet) {
+    message("Running models")
+    pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = nrow(model_grid))
+  }
   prediction <- purrr::map(
     1:nrow(model_grid), function(i) {
-      if (!quiet) {
-        message("running model ", i, " of ", nrow(model_grid))
-      }
+      if (!quiet) { pb$tick() }
       interpolate(
         independent = model_grid[["independent_table"]][[i]],
         dependent = model_grid[["dependent_var"]][[i]],
@@ -124,6 +126,7 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
     }
   )
   # simplify model_grid
+  if (!quiet) { message("Finishing prediction output") }
   model_grid_simplified <- model_grid %>%
     dplyr::mutate(
       dsx = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsx")),

@@ -27,19 +27,19 @@ crossvalidate <- function(
   checkmate::assert_count(iterations)
   checkmate::assert_count(groups)
   # create crossvalidation dataset
+  if (!quiet) { message("Preparing crossvalidation dataset") }
   crossval <- cbind(independent, dependent %>% dplyr::bind_cols())
   # compile randomly reordered versions of crossval
   crossval_mixed_list <- lapply(1:iterations, function(i) {
     dplyr::slice_sample(crossval, n = nrow(crossval), replace = F)
   })
   # run prediction test for each iteration
+  if (!quiet) { message("Running mixing iterations") }
   crossval_interpol_grid <- purrr::map2_dfr(
     1:iterations, # this counter is only passed here to document the run number in the output df
     crossval_mixed_list,
     function(mixing_iteration, crossval_mixed) {
-      if (!quiet) {
-        message("starting mixing iteration ", mixing_iteration, " of ", iterations)
-      }
+      if (!quiet) { message("Starting mixing iteration ", mixing_iteration, " of ", iterations) }
       # split crossval into sections
       n <- groups
       nr <- nrow(crossval_mixed)
@@ -91,6 +91,7 @@ crossvalidate <- function(
     }
   )
   # merge with actually measured information
+  if (!quiet) { message("Comparing estimated with measured information") }
   crossval_interpol_grid %>%
     dplyr::left_join(
       crossval %>% dplyr::select(
