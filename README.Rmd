@@ -411,7 +411,7 @@ locate_simple <- mobest::locate(
       y = seq(100000, 1000000, 100000)
     ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
   search_time = c(0,-100),
-  quiet = F
+  quiet = T
 )
 ```
 
@@ -516,7 +516,8 @@ origin_summary <- mobest::summarize_origin_vectors(
   window_start = -5000,
   window_stop = -3000,
   window_width = 100,
-  window_step = 10
+  window_step = 10,
+  quiet = T
 )
 ```
 
