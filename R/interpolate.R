@@ -34,7 +34,7 @@ create_model_grid <- function(
   checkmate::assert_class(dependent, "mobest_observations_multi")
   checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
   checkmate::assert_class(prediction_grid, "mobest_spatiotemporalpositions_multi")
-  check_compatible_multi(kernel, dependent, check_names_equal)
+  check_compatible_multi(dependent, kernel, check_names_x_in_y)
   check_compatible_multi(independent, dependent, check_df_nrow_equal)
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
@@ -246,6 +246,18 @@ check_compatible_multi <- function(x, y, comp_f, ...) {
 check_df_nrow_equal <- function(x, y, name_x, name_y) {
   if (nrow(x) != nrow(y)) {
     stop(name_x, " and ", name_y, ": Not the same number of lines")
+  }
+}
+
+check_names_x_in_y <- function(x, y, name_x, name_y, ignore_sd_cols = F) {
+  names_x <- names(x)
+  names_y <- names(y)
+  if (ignore_sd_cols) {
+    names_x <- names_x[!grepl("\\_sd$", names_x)]
+    names_y <- names_y[!grepl("\\_sd$", names_y)]
+  }
+  if (!setequal(intersect(names_x, names_y), names_x)) {
+    stop(name_x, " and ", name_y, ": First not a subset of the latter")
   }
 }
 
