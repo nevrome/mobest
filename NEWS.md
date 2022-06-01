@@ -1,3 +1,4 @@
+- v0.5.0: Added extracting/subsetting with `[` for the input list data types
 - v0.4.1: Added better console progress indicators for a number of core functions.
 - v0.4.0: Changes that emerged from adjusting the package again to the research application it was initially written for. Includes many minor adjustments in names and logic.
 - v0.3.1: Removed default values in bin_pairwise_distances.
