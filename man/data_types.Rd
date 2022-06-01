@@ -5,14 +5,19 @@
 \alias{create_geopos}
 \alias{create_prediction_grid}
 \alias{create_geopos_multi}
+\alias{[.mobest_spatialpositions_multi}
 \alias{geopos_to_spatpos}
 \alias{create_spatpos}
 \alias{create_spatpos_multi}
+\alias{[.mobest_spatiotemporalpositions_multi}
 \alias{create_obs}
 \alias{create_obs_multi}
+\alias{[.mobest_observations_multi}
 \alias{create_kernel}
 \alias{create_kernset}
+\alias{[.mobest_kernelsetting}
 \alias{create_kernset_multi}
+\alias{[.mobest_kernelsetting_multi}
 \title{Input data type constructors}
 \usage{
 create_geopos(id, x, y, ...)
@@ -21,21 +26,31 @@ create_prediction_grid(area, spatial_cell_size)
 
 create_geopos_multi(..., .names = NULL)
 
+\method{[}{mobest_spatialpositions_multi}(x, i)
+
 geopos_to_spatpos(geopos, z)
 
 create_spatpos(id, x, y, z, ...)
 
 create_spatpos_multi(..., .names = NULL)
 
+\method{[}{mobest_spatiotemporalpositions_multi}(x, i)
+
 create_obs(..., .names = NULL)
 
 create_obs_multi(..., .names = NULL)
+
+\method{[}{mobest_observations_multi}(x, i)
 
 create_kernel(dsx, dsy, dt, g, on_residuals = T, auto = F)
 
 create_kernset(..., .names = NULL)
 
+\method{[}{mobest_kernelsetting}(x, i)
+
 create_kernset_multi(..., .names = NULL)
+
+\method{[}{mobest_kernelsetting_multi}(x, i)
 }
 \arguments{
 \item{id}{Vector. Identifiers of the individual data points}
