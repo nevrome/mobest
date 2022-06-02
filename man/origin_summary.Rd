@@ -15,7 +15,8 @@ summarize_origin_vectors(
   window_start,
   window_stop,
   window_width,
-  window_step
+  window_step,
+  quiet = F
 )
 
 find_no_data_windows(origin_summary, ...)
@@ -37,6 +38,8 @@ of class \code{mobest_originvectorspacked} as created by \link{pack_origin_vecto
 \item{window_step}{Frequency of moving windows. Example:
 If the first window starts at -3500 and extends until -3200, should the next
 one start at -3450 or -3400, so with window_step = 50 or window_step = 100?}
+
+\item{quiet}{Logical. Should a progress indication be printed?}
 
 \item{origin_summary}{An object of class \code{mobest_originsummary}
 as created by \link{summarize_origin_vectors}}

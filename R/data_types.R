@@ -81,6 +81,15 @@ create_geopos_multi <- function(..., .names = NULL) {
   )(..., .names = .names)
 }
 
+#' @rdname data_types
+#' @export
+#' @noRd
+`[.mobest_spatialpositions_multi` <- function(x, i) {
+  res <- NextMethod()
+  class(res) <- c("mobest_spatialpositions_multi", "list")
+  return(res)
+}
+
 #### spatiotemporal coordinates ####
 
 
@@ -136,6 +145,15 @@ create_spatpos_multi <- function(..., .names = NULL) {
   )(..., .names = .names)
 }
 
+#' @rdname data_types
+#' @export
+#' @noRd
+`[.mobest_spatiotemporalpositions_multi` <- function(x, i) {
+  res <- NextMethod()
+  class(res) <- c("mobest_spatiotemporalpositions_multi", "list")
+  return(res)
+}
+
 #### genetic coordinates ####
 
 #' @rdname data_types
@@ -161,6 +179,15 @@ create_obs_multi <- function(..., .names = NULL) {
     "mobest_observations_multi",
     T,F
   )(..., .names = .names)
+}
+
+#' @rdname data_types
+#' @export
+#' @noRd
+`[.mobest_observations_multi` <- function(x, i) {
+  res <- NextMethod()
+  class(res) <- c("mobest_observations_multi", "list")
+  return(res)
 }
 
 #### kernel settings ####
@@ -199,12 +226,30 @@ create_kernset <- function(..., .names = NULL) {
 
 #' @rdname data_types
 #' @export
+#' @noRd
+`[.mobest_kernelsetting` <- function(x, i) {
+  res <- NextMethod()
+  class(res) <- c("mobest_kernelsetting", "list")
+  return(res)
+}
+
+#' @rdname data_types
+#' @export
 create_kernset_multi <- function(..., .names = NULL) {
   tibble_multi_function_factory(
     "mobest_kernelsetting",
     "mobest_kernelsetting_multi",
     F,F
   )(..., .names = .names)
+}
+
+#' @rdname data_types
+#' @export
+#' @noRd
+`[.mobest_kernelsetting_multi` <- function(x, i) {
+  res <- NextMethod()
+  class(res) <- c("mobest_kernelsetting_multi", "list")
+  return(res)
 }
 
 #### helper functions ####

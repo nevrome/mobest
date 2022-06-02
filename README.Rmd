@@ -477,13 +477,13 @@ mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kerne
 To derive a simple, sample-wise measure of mobility, `mobest::determine_origin_vectors` constructs what we call "origin vectors" from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a sample was found (so for ancient samples that is usually where the respective individual was buried) with the point of **highest genetic similarity** in the interpolated search field and its permutations. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector". Under certain circumstances this vector can serve as a proxy for mobility.
 
 ```{r}
-mobest::determine_origin_vectors(locate_product)
+mobest::determine_origin_vectors(locate_product, quiet = T)
 ```
 
 Just as in `mobest::fold_probabilities_per_group`, the origin vector search can be performed per permutation of the groups introduced above.
 
 ```{r}
-origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id)
+origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id, quiet = T)
 ```
 
 #### Summarising origin vectors
@@ -516,7 +516,8 @@ origin_summary <- mobest::summarize_origin_vectors(
   window_start = -5000,
   window_stop = -3000,
   window_width = 100,
-  window_step = 10
+  window_step = 10,
+  quiet = T
 )
 ```
 

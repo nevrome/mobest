@@ -36,7 +36,9 @@ multiply_dependent_probabilities(locate_overview, omit_dependent_details = T)
 fold_probabilities_per_group(
   locate_product,
   ...,
-  folding_operation = function(x) {     sum(x, na.rm = T) }
+  folding_operation = function(x) {
+     sum(x, na.rm = T)
+ }
 )
 }
 \arguments{

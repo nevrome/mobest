@@ -780,7 +780,7 @@ field and its permutations. The output is of class
 proxy for mobility.
 
 ``` r
-mobest::determine_origin_vectors(locate_product)
+mobest::determine_origin_vectors(locate_product, quiet = T)
 ```
 
     ## # A tibble: 4 × 20
@@ -799,7 +799,7 @@ Just as in `mobest::fold_probabilities_per_group`, the origin vector
 search can be performed per permutation of the groups introduced above.
 
 ``` r
-origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id)
+origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id, quiet = T)
 ```
 
 #### Summarising origin vectors
@@ -874,7 +874,8 @@ origin_summary <- mobest::summarize_origin_vectors(
   window_start = -5000,
   window_stop = -3000,
   window_width = 100,
-  window_step = 10
+  window_step = 10,
+  quiet = T
 )
 ```
 

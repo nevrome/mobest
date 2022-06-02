@@ -19,14 +19,19 @@ determine_origin_vectors <- function(
   # input checks
   checkmate::assert_class(locate_product, "mobest_locateproduct")
   # summarise data
+  if (!quiet) { message("Splitting search groups") }
   locate_groups <- locate_product %>%
     dplyr::group_split(
       !!!.grouping_var,
       .data[["search_id"]]
     )
-  origin_grid <- locate_groups %>%
-    purrr::map_df(
-      function(locate_group) {
+  if (!quiet) {
+    message("Searching in groups")
+    pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = length(locate_groups))
+  }
+  origin_grid <- purrr::map_dfr(
+    locate_groups, function(locate_group) {
+      if (!quiet) { pb$tick() }
       locate_group %>%
         dplyr::mutate(
           ov_x         = .data[["field_x"]] - .data[["search_x"]],
@@ -43,6 +48,7 @@ determine_origin_vectors <- function(
       }
     )
   # compile output
+  if (!quiet) { message("Compiling output") }
   origin_grid %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_originvectors")
 }

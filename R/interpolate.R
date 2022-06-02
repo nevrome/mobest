@@ -34,7 +34,7 @@ create_model_grid <- function(
   checkmate::assert_class(dependent, "mobest_observations_multi")
   checkmate::assert_class(kernel, "mobest_kernelsetting_multi")
   checkmate::assert_class(prediction_grid, "mobest_spatiotemporalpositions_multi")
-  check_compatible_multi(kernel, dependent, check_names_equal)
+  check_compatible_multi(dependent, kernel, check_names_x_in_y)
   check_compatible_multi(independent, dependent, check_df_nrow_equal)
   # fill create general structure and id columns
   independent_tables <- tibble::tibble(
@@ -57,7 +57,7 @@ create_model_grid <- function(
       tibble::tibble(
         kernel_setting_id = kernel_name,
         dependent_var_id = names(one_kernel),
-        kernel_setting = one_kernel[1:length(one_kernel)]
+        kernel_setting = unname(one_kernel[1:length(one_kernel)])
       )
     }
   )
@@ -106,11 +106,13 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
   # input check
   checkmate::assert_class(model_grid, "mobest_modelgrid")
   # run interpolation for each entry in the model_grid
+  if (!quiet) {
+    message("Running models")
+    pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = nrow(model_grid))
+  }
   prediction <- purrr::map(
     1:nrow(model_grid), function(i) {
-      if (!quiet) {
-        message("running model ", i, " of ", nrow(model_grid))
-      }
+      if (!quiet) { pb$tick() }
       interpolate(
         independent = model_grid[["independent_table"]][[i]],
         dependent = model_grid[["dependent_var"]][[i]],
@@ -124,6 +126,7 @@ run_model_grid <- function(model_grid, unnest = T, quiet = F) {
     }
   )
   # simplify model_grid
+  if (!quiet) { message("Finishing prediction output") }
   model_grid_simplified <- model_grid %>%
     dplyr::mutate(
       dsx = purrr::map_dbl(model_grid$kernel_setting, purrr::pluck("dsx")),
@@ -243,6 +246,18 @@ check_compatible_multi <- function(x, y, comp_f, ...) {
 check_df_nrow_equal <- function(x, y, name_x, name_y) {
   if (nrow(x) != nrow(y)) {
     stop(name_x, " and ", name_y, ": Not the same number of lines")
+  }
+}
+
+check_names_x_in_y <- function(x, y, name_x, name_y, ignore_sd_cols = F) {
+  names_x <- names(x)
+  names_y <- names(y)
+  if (ignore_sd_cols) {
+    names_x <- names_x[!grepl("\\_sd$", names_x)]
+    names_y <- names_y[!grepl("\\_sd$", names_y)]
+  }
+  if (!setequal(intersect(names_x, names_y), names_x)) {
+    stop(name_x, " and ", name_y, ": First not a subset of the latter")
   }
 }
 
