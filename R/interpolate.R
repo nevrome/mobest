@@ -57,7 +57,7 @@ create_model_grid <- function(
       tibble::tibble(
         kernel_setting_id = kernel_name,
         dependent_var_id = names(one_kernel),
-        kernel_setting = one_kernel[1:length(one_kernel)]
+        kernel_setting = unname(one_kernel[1:length(one_kernel)])
       )
     }
   )
