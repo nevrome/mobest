@@ -64,7 +64,7 @@ crossvalidate <- function(
               dependent = mobest::create_obs_multi(
                 do.call(
                   mobest::create_obs,
-                  training[, names(dependent)]
+                  training[names(dependent)]
                 ),
                 .names = paste0("obs_crossval_run_", run_id)
               ),
