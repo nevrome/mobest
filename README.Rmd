@@ -397,7 +397,7 @@ interpol_grid
 
 ### Origin search
 
-`mobest::locate` uses the spatiotemporal interpolation to calculate a similarity probability between a set of "search" samples and an interpolation field. It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`.
+`mobest::locate` uses the spatiotemporal interpolation to calculate a similarity probability between a set of "search" samples and an interpolation field. It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`. These probabilities are normalized for each search sample and grid (with the default `normalize = TRUE`).
 
 ```{r}
 locate_simple <- mobest::locate(
@@ -415,7 +415,7 @@ locate_simple <- mobest::locate(
 )
 ```
 
-The spatiotemporal probability grids `locate` returns are calculated are per ancestry component (as put in via `dependent`/`search_dependent`). To multiply the ancestry componentn grids, `mobest` provides `mobest::multiply_dependent_probabilities`, which yields an object of class `mobest_locateproduct`.
+The spatiotemporal probability grids `locate` returns are calculated are per ancestry component (as put in via `dependent`/`search_dependent`). To multiply the ancestry component grids, `mobest` provides `mobest::multiply_dependent_probabilities`, which yields an object of class `mobest_locateproduct`. The output probabilities are normalized per permutation.
 
 ```{r}
 mobest::multiply_dependent_probabilities(locate_simple)
@@ -460,7 +460,7 @@ locate_overview <- mobest::locate_multi(
 locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
 ```
 
-`mobest::locate_multi` produces many probability grids for each sample. Even after `mobest::multiply_dependent_probabilities` merges the per-ancestry component iterations, that still leaves many parameter permutations. `mobest::fold_probabilities_per_group` is a convenient function to combine these to a single, merged probability grid of class `mobest_locatefold`. The folding operation can be set in the argument `folding_operation`, where the default is a simple sum.
+`mobest::locate_multi` produces many probability grids for each sample. Even after `mobest::multiply_dependent_probabilities` merges the per-ancestry component iterations, that still leaves many parameter permutations. `mobest::fold_probabilities_per_group` is a convenient function to combine these to a single, merged probability grid of class `mobest_locatefold`. The folding operation can be set in the argument `folding_operation`, where the default is a simple sum. Again, in the default setting, the output probabilities are normalized per permutation.
 
 ```{r}
 mobest::fold_probabilities_per_group(locate_product)

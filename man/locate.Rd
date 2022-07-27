@@ -16,6 +16,7 @@ locate(
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
+  normalize = T,
   quiet = F
 )
 
@@ -28,17 +29,23 @@ locate_multi(
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
+  normalize = T,
   quiet = F
 )
 
-multiply_dependent_probabilities(locate_overview, omit_dependent_details = T)
+multiply_dependent_probabilities(
+  locate_overview,
+  normalize = T,
+  omit_dependent_details = T
+)
 
 fold_probabilities_per_group(
   locate_product,
   ...,
   folding_operation = function(x) {
      sum(x, na.rm = T)
- }
+ },
+  normalize = T
 )
 }
 \arguments{
@@ -79,6 +86,9 @@ the search time be relative to the dating of the samples of interest or just abs
 points in time? The default for \code{search_time} and \code{search_time_mode} is
 "relative" and 0, which causes the probabilities to be calculated for the exact dating
 of the samples of interest.}
+
+\item{normalize}{Logical. Should the output probability distribution for one permutation
+be normalized?}
 
 \item{quiet}{Logical. Should a progress indication be printed?}
 

@@ -591,7 +591,7 @@ model_grid <- mobest::create_model_grid(
     ## 10 dating_2             obs1                 ac1              kernel_2         
     ## # … with 22 more rows, and 5 more variables: pred_grid_id <chr>,
     ## #   independent_table <mbst_sp_>, dependent_var <named list>,
-    ## #   kernel_setting <named list>, pred_grid <mbst_sp_>
+    ## #   kernel_setting <mbst_krn>, pred_grid <mbst_sp_>
 
 `mobest::run_model_grid` runs each model and returns an unnested table
 of interpolation results for each prediction grid point and each model
@@ -626,7 +626,9 @@ interpolation field. It requires the necessary reference sample input to
 perform the interpolation, which internally employs
 `mobest::create_model_grid` and `mobest::run_model_grid`. The search
 then yields a similarity probability value for each grid cell and for
-each search sample in an object of class `mobest_locateoverview`.
+each search sample in an object of class `mobest_locateoverview`. These
+probabilities are normalized for each search sample and grid (with the
+default `normalize = TRUE`).
 
 ``` r
 locate_simple <- mobest::locate(
@@ -646,9 +648,10 @@ locate_simple <- mobest::locate(
 
 The spatiotemporal probability grids `locate` returns are calculated are
 per ancestry component (as put in via `dependent`/`search_dependent`).
-To multiply the ancestry componentn grids, `mobest` provides
+To multiply the ancestry component grids, `mobest` provides
 `mobest::multiply_dependent_probabilities`, which yields an object of
-class `mobest_locateproduct`.
+class `mobest_locateproduct`. The output probabilities are normalized
+per permutation.
 
 ``` r
 mobest::multiply_dependent_probabilities(locate_simple)
@@ -722,7 +725,9 @@ per-ancestry component iterations, that still leaves many parameter
 permutations. `mobest::fold_probabilities_per_group` is a convenient
 function to combine these to a single, merged probability grid of class
 `mobest_locatefold`. The folding operation can be set in the argument
-`folding_operation`, where the default is a simple sum.
+`folding_operation`, where the default is a simple sum. Again, in the
+default setting, the output probabilities are normalized per
+permutation.
 
 ``` r
 mobest::fold_probabilities_per_group(locate_product)
@@ -786,10 +791,10 @@ mobest::determine_origin_vectors(locate_product, quiet = T)
     ## # A tibble: 4 × 20
     ##   independent_table_id dependent_setting… kernel_setting_… pred_grid_id field_id
     ##   <chr>                <chr>              <chr>            <chr>           <int>
-    ## 1 dating2              obs1               kernel_1         time_slice_1       43
+    ## 1 dating1              obs1               kernel_1         time_slice_1       16
     ## 2 dating1              obs1               kernel_1         time_slice_2       43
     ## 3 dating1              obs1               kernel_1         time_slice_3       44
-    ## 4 dating1              obs1               kernel_2         time_slice_4       14
+    ## 4 dating2              obs1               kernel_1         time_slice_4       13
     ## # … with 15 more variables: field_x <dbl>, field_y <dbl>, field_z <dbl>,
     ## #   field_geo_id <int>, search_id <int>, search_x <int>, search_y <int>,
     ## #   search_z <int>, probability <dbl>, ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>,
@@ -823,7 +828,7 @@ mobest::pack_origin_vectors(origin_vectors, independent_table_id)
     ##   search_id independent_tabl… field_x field_y field_z search_x search_y search_z
     ##       <int> <chr>               <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>
     ## 1         1 dating1            600000  200000   -3586   593039   372080    -3586
-    ## 2         1 dating2            300000  500000   -3586   593039   372080    -3586
+    ## 2         1 dating2            200000  500000   -3586   593039   372080    -3586
     ## 3         2 dating1            300000  500000   -4501   326494   513740    -4501
     ## 4         2 dating2            300000  400000   -4501   326494   513740    -4501
     ## 5         3 dating1            400000  500000   -4272   636281   563535    -4272
@@ -840,7 +845,7 @@ packed_origin_vectors <- mobest::pack_origin_vectors(origin_vectors)
     ## # A tibble: 4 × 13
     ##   search_id field_x field_y field_z search_x search_y search_z    ov_x   ov_y
     ##       <int>   <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>   <dbl>  <dbl>
-    ## 1         1  450000  350000   -3586   593039   372080    -3586 -143039 -22080
+    ## 1         1  400000  350000   -3586   593039   372080    -3586 -193039 -22080
     ## 2         2  300000  450000   -4501   326494   513740    -4501  -26494 -63740
     ## 3         3  400000  550000   -4272   636281   563535    -4272 -236281 -13535
     ## 4         4  350000  200000   -3975   122139   171731    -3975  227861  28269
