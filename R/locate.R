@@ -197,7 +197,9 @@ locate_multi <- function(
         .data[["dependent_setting_id"]],
         .data[["dependent_var_id"]],
         .data[["kernel_setting_id"]],
-        .data[["pred_grid_id"]]
+        .data[["pred_grid_id"]],
+        .data[["search_id"]],
+        .data[["search_z"]]
       ) %>%
       dplyr::mutate(
         probability = .data[["probability"]]/sum(.data[["probability"]])
@@ -241,7 +243,9 @@ multiply_dependent_probabilities <- function(locate_overview, normalize = T, omi
         .data[["independent_table_id"]],
         .data[["dependent_setting_id"]],
         .data[["kernel_setting_id"]],
-        .data[["pred_grid_id"]]
+        .data[["pred_grid_id"]],
+        .data[["search_id"]],
+        .data[["search_z"]]
       ) %>%
       dplyr::mutate(
         probability = .data[["probability"]]/sum(.data[["probability"]])
