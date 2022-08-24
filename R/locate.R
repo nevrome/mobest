@@ -116,20 +116,19 @@ locate_multi <- function(
       function(x) { paste0("search_", x) },
       tidyselect::any_of(c("id", "x", "y", "z", "independent_table_id"))
     ) %>%
-    tidyr::crossing(tibble::tibble(t = search_time)) %>%
+    tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
     dplyr::mutate(field_z =
       if (search_time_mode == "relative") {
-        .data[["search_z"]] + .data[["t"]]
+        .data[["search_z"]] + .data[["search_time"]]
       } else if (search_time_mode == "absolute") {
-        .data[["t"]]
+        .data[["search_time"]]
       }
     ) %>%
-    dplyr::select(-.data[["t"]]) %>%
     tidyr::pivot_longer(
       cols = -c(
         "search_id", "search_x", "search_y", "search_z",
         "search_independent_table_id",
-        "dependent_setting_id", "field_z"
+        "dependent_setting_id", "field_z", "search_time"
       ),
       names_to = "dependent_var_id",
       values_to = "search_measured"
@@ -199,7 +198,8 @@ locate_multi <- function(
         .data[["kernel_setting_id"]],
         .data[["pred_grid_id"]],
         .data[["search_id"]],
-        .data[["search_z"]]
+        .data[["search_z"]],
+        .data[["search_time"]]
       ) %>%
       dplyr::mutate(
         probability = .data[["probability"]]/sum(.data[["probability"]])
@@ -245,7 +245,8 @@ multiply_dependent_probabilities <- function(locate_overview, normalize = T, omi
         .data[["kernel_setting_id"]],
         .data[["pred_grid_id"]],
         .data[["search_id"]],
-        .data[["search_z"]]
+        .data[["search_z"]],
+        .data[["search_time"]]
       ) %>%
       dplyr::mutate(
         probability = .data[["probability"]]/sum(.data[["probability"]])
