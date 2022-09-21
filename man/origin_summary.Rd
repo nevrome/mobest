@@ -16,6 +16,7 @@ summarize_origin_vectors(
   window_stop,
   window_width,
   window_step,
+  dist_fraction_width = NA,
   quiet = F
 )
 
@@ -38,6 +39,10 @@ of class \code{mobest_originvectorspacked} as created by \link{pack_origin_vecto
 \item{window_step}{Frequency of moving windows. Example:
 If the first window starts at -3500 and extends until -3200, should the next
 one start at -3450 or -3400, so with window_step = 50 or window_step = 100?}
+
+\item{dist_fraction_width}{Bin width of origin vector distance fractions to cross-tabulate
+for each moving window. Default is NA, which yields only NULL in the output list column
+\code{ov_dist_fractions}}
 
 \item{quiet}{Logical. Should a progress indication be printed?}
 
