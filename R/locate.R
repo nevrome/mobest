@@ -34,6 +34,8 @@
 #' points in time? The default for \code{search_time} and \code{search_time_mode} is
 #' "relative" and 0, which causes the probabilities to be calculated for the exact dating
 #' of the samples of interest.
+#' @param normalize Logical. Should the output probability distribution for one permutation
+#' be normalized?
 #' @param quiet Logical. Should a progress indication be printed?
 #' @param locate_overview An object of class \code{mobest_locateoverview} as created by
 #' \link{locate} and \link{locate_multi}.
@@ -52,6 +54,7 @@ locate <- function(
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
+  normalize = T,
   quiet = F
 ) {
   locate_multi(
@@ -63,6 +66,7 @@ locate <- function(
     search_space_grid = search_space_grid,
     search_time = search_time,
     search_time_mode = search_time_mode,
+    normalize = normalize,
     quiet = quiet
   )# %>%
     # dplyr::select(
@@ -84,6 +88,7 @@ locate_multi <- function(
   search_space_grid,
   search_time = 0,
   search_time_mode = "relative",
+  normalize = T,
   quiet = F
 ) {
   # input checks
@@ -111,20 +116,19 @@ locate_multi <- function(
       function(x) { paste0("search_", x) },
       tidyselect::any_of(c("id", "x", "y", "z", "independent_table_id"))
     ) %>%
-    tidyr::crossing(tibble::tibble(t = search_time)) %>%
+    tidyr::crossing(tibble::tibble(search_time = search_time)) %>%
     dplyr::mutate(field_z =
       if (search_time_mode == "relative") {
-        .data[["search_z"]] + .data[["t"]]
+        .data[["search_z"]] + .data[["search_time"]]
       } else if (search_time_mode == "absolute") {
-        .data[["t"]]
+        .data[["search_time"]]
       }
     ) %>%
-    dplyr::select(-.data[["t"]]) %>%
     tidyr::pivot_longer(
       cols = -c(
         "search_id", "search_x", "search_y", "search_z",
         "search_independent_table_id",
-        "dependent_setting_id", "field_z"
+        "dependent_setting_id", "field_z", "search_time"
       ),
       names_to = "dependent_var_id",
       values_to = "search_measured"
@@ -174,7 +178,7 @@ locate_multi <- function(
       "field_z"
     )
   )
-  # calculate overlap probability
+  # calculate overlap probabilities
   if (!quiet) { message("Calculating probabilities") }
   full_search_table_prob <- full_search_table %>%
     dplyr::mutate(
@@ -184,6 +188,24 @@ locate_multi <- function(
         sd = .data[["field_sd"]]
       )
     )
+  # normalise output probabilities per permutation
+  if (normalize) {
+    full_search_table_prob <- full_search_table_prob %>%
+      dplyr::group_by(
+        .data[["independent_table_id"]],
+        .data[["dependent_setting_id"]],
+        .data[["dependent_var_id"]],
+        .data[["kernel_setting_id"]],
+        .data[["pred_grid_id"]],
+        .data[["search_id"]],
+        .data[["search_z"]],
+        .data[["search_time"]]
+      ) %>%
+      dplyr::mutate(
+        probability = .data[["probability"]]/sum(.data[["probability"]])
+      ) %>%
+      dplyr::ungroup()
+  }
   # output
   full_search_table_prob %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locateoverview") %>%
@@ -195,7 +217,7 @@ locate_multi <- function(
 #'
 #' @rdname locate
 #' @export
-multiply_dependent_probabilities <- function(locate_overview, omit_dependent_details = T) {
+multiply_dependent_probabilities <- function(locate_overview, normalize = T, omit_dependent_details = T) {
   # input checks
   checkmate::assert_class(locate_overview, classes = "mobest_locateoverview")
   # data transformation
@@ -214,6 +236,23 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
         as.matrix() %>%
         apply(1, prod)
     )
+  # normalise output probabilities per permutation
+  if (normalize) {
+    locate_summary <- locate_summary %>%
+      dplyr::group_by(
+        .data[["independent_table_id"]],
+        .data[["dependent_setting_id"]],
+        .data[["kernel_setting_id"]],
+        .data[["pred_grid_id"]],
+        .data[["search_id"]],
+        .data[["search_z"]],
+        .data[["search_time"]]
+      ) %>%
+      dplyr::mutate(
+        probability = .data[["probability"]]/sum(.data[["probability"]])
+      ) %>%
+      dplyr::ungroup()
+  }
   # prepare output
   if (omit_dependent_details) {
     losum <- locate_summary %>%
@@ -238,7 +277,8 @@ multiply_dependent_probabilities <- function(locate_overview, omit_dependent_det
 fold_probabilities_per_group <- function(
   locate_product,
   ...,
-  folding_operation = function(x) { sum(x, na.rm = T) }
+  folding_operation = function(x) { sum(x, na.rm = T) },
+  normalize = T
 ) {
   .grouping_var <- rlang::ensyms(...)
   # input checks
@@ -249,7 +289,7 @@ fold_probabilities_per_group <- function(
       !!!.grouping_var,
       .data[["search_id"]],
       .data[["field_id"]],
-      .data[["search_z"]],
+      .data[["search_z"]]
     ) %>%
     dplyr::summarise(
       search_x = dplyr::first(.data[["search_x"]]),
@@ -260,6 +300,19 @@ fold_probabilities_per_group <- function(
       probability = folding_operation(.data[["probability"]]),
       .groups = "drop"
     )
+  # normalise output probabilities per permutation
+  if (normalize) {
+    locate_summary <- locate_summary %>%
+      dplyr::group_by(
+        !!!.grouping_var,
+        .data[["search_id"]],
+        .data[["search_z"]]
+      ) %>%
+      dplyr::mutate(
+        probability = .data[["probability"]]/sum(.data[["probability"]])
+      ) %>%
+      dplyr::ungroup()
+  }
   # prepare output
   locate_summary %>%
     tibble::new_tibble(., nrow = nrow(.), class = "mobest_locatefold")
