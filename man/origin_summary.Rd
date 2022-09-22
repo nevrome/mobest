@@ -16,7 +16,7 @@ summarize_origin_vectors(
   window_stop,
   window_width,
   window_step,
-  dist_fraction_width = NA,
+  dist_fraction_breaks = NA,
   quiet = F
 )
 
@@ -30,18 +30,19 @@ of class \code{mobest_originvectorspacked} as created by \link{pack_origin_vecto
 \item{...}{(Additional) grouping variables (\code{independent_table_id},
 \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)}
 
-\item{window_start}{Start date of the moving window sequence}
+\item{window_start}{Numeric. Start date of the moving window sequence}
 
-\item{window_stop}{Stop date of the moving window sequence}
+\item{window_stop}{Numeric. Stop date of the moving window sequence}
 
-\item{window_width}{Width of each individual moving window}
+\item{window_width}{Numeric. Width of each individual moving window}
 
-\item{window_step}{Frequency of moving windows. Example:
+\item{window_step}{Numeric. Frequency of moving windows. Example:
 If the first window starts at -3500 and extends until -3200, should the next
 one start at -3450 or -3400, so with window_step = 50 or window_step = 100?}
 
-\item{dist_fraction_width}{Bin width of origin vector distance fractions to cross-tabulate
-for each moving window. Default is NA, which yields only NULL in the output list column
+\item{dist_fraction_breaks}{Numeric vector. Cutting breaks of distance fractions to cross-tabulate
+for each moving window. If set, then a list column \code{ov_dist_fractions} is added to the output,
+which features a tibble with the sample counts and fractions for each moving window
 \code{ov_dist_fractions}}
 
 \item{quiet}{Logical. Should a progress indication be printed?}
