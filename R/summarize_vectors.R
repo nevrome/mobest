@@ -11,12 +11,16 @@
 #' as created by \link{summarize_origin_vectors}
 #' @param ... (Additional) grouping variables (\code{independent_table_id},
 #' \code{dependent_setting_id}, \code{kernel_setting_id}, \code{pred_grid_id}, ...)
-#' @param window_start Start date of the moving window sequence
-#' @param window_stop Stop date of the moving window sequence
-#' @param window_width Width of each individual moving window
-#' @param window_step Frequency of moving windows. Example:
+#' @param window_start Numeric. Start date of the moving window sequence
+#' @param window_stop Numeric. Stop date of the moving window sequence
+#' @param window_width Numeric. Width of each individual moving window
+#' @param window_step Numeric. Frequency of moving windows. Example:
 #' If the first window starts at -3500 and extends until -3200, should the next
 #' one start at -3450 or -3400, so with window_step = 50 or window_step = 100?
+#' @param dist_fraction_breaks Numeric vector. Cutting breaks of distance fractions to cross-tabulate
+#' for each moving window. If set, then a list column \code{ov_dist_fractions} is added to the output,
+#' which features a tibble with the sample counts and fractions for each moving window
+#' \code{ov_dist_fractions}
 #' @param quiet Logical. Should a progress indication be printed?
 #'
 #' @return \link{summarize_origin_vectors} returns and object of class
@@ -66,6 +70,7 @@ pack_origin_vectors <- function(origin_vectors, ...) {
 #' @export
 summarize_origin_vectors <- function(
   origin_vectors, ..., window_start, window_stop, window_width, window_step,
+  dist_fraction_breaks = NA,
   quiet = F
 ) {
   .grouping_var <- rlang::ensyms(...)
@@ -80,9 +85,7 @@ summarize_origin_vectors <- function(
   checkmate::assert_number(window_step)
   # split vector groups
   vector_groups <- origin_vectors %>%
-    dplyr::group_split(
-      !!!.grouping_var
-    )
+    dplyr::group_split(!!!.grouping_var)
   # loop through units
   if (!quiet) { message("Summarising groups") }
   origin_summary <- purrr::imap_dfr(
@@ -105,11 +108,10 @@ summarize_origin_vectors <- function(
             .data[["search_z"]] >= start,
             .data[["search_z"]] < end
           )
+          # check if there are any samples in this window
           if (nrow(io) > 0) {
             io %>%
-              dplyr::group_by(
-                !!!.grouping_var
-              ) %>%
+              dplyr::group_by(!!!.grouping_var) %>%
               dplyr::summarise(
                 z            = mean(c(start, end)),
                 ov_dist      = sqrt(mean(.data[["ov_x"]])^2 + mean(.data[["ov_y"]])^2),
@@ -119,14 +121,15 @@ summarize_origin_vectors <- function(
                 ov_dist_sd   = if (dplyr::n() >= 2) {
                                  stats::sd(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2))
                                } else { Inf },
-                ov_angle_deg = vec2deg(c(mean(.data[["ov_x"]]), mean(.data[["ov_x"]])))
+                ov_angle_deg = vec2deg(c(mean(.data[["ov_x"]]), mean(.data[["ov_x"]]))),
+                ov_dist_fractions =
+                  # check if dist_fraction_breaks is set
+                  if (!any(is.na(dist_fraction_breaks))) {
+                    list(determine_dist_fractions(sqrt(.data[["ov_x"]]^2 + .data[["ov_y"]]^2), dist_fraction_breaks))
+                  } else {
+                    NULL
+                  }
               )
-            # tibble::tibble(
-            #   fraction_smaller_500 = sum(io$spatial_distance < 500) / nrow(io),
-            #   fraction_bigger_500 = sum(io$spatial_distance >= 500 & io$spatial_distance < 1000) / nrow(io),
-            #   fraction_bigger_1000 = sum(io$spatial_distance >= 1000 & io$spatial_distance < 2000) / nrow(io),
-            #   fraction_bigger_2000 = sum(io$spatial_distance >= 2000) / nrow(io)
-            # )
           } else {
             vector_group %>%
               dplyr::group_by(
@@ -137,7 +140,14 @@ summarize_origin_vectors <- function(
                 ov_dist      = NA,
                 ov_dist_se   = Inf,
                 ov_dist_sd   = Inf,
-                ov_angle_deg = NA
+                ov_angle_deg = NA,
+                ov_dist_fractions =
+                  if (!any(is.na(dist_fraction_breaks))) {
+                    # to get a proper df back for every time window
+                    list(determine_dist_fractions(c(), dist_fraction_breaks))
+                  } else {
+                    NULL
+                  }
               )
           }
         }
@@ -184,3 +194,29 @@ find_no_data_windows <- function(origin_summary, ...) {
 #### helper functions ####
 
 calculate_standard_error <- function(x) { stats::sd(x)/sqrt(length(x)) }
+
+determine_dist_fractions <- function(x, cutting_points) {
+  x_cut <- if (length(x) != 0) {
+    cutting_points[cut(x, cutting_points, labels = F, include.lowest = T)]
+  } else {
+    c()
+  }
+  # to get all fraction levels for each window, even if they don't occur
+  x_cut_factor <- factor(x_cut, levels = head(cutting_points, -1))
+  x_cut_factor %>%
+    base::table() %>%
+    unclass() %>%
+    tibble::enframe(name = "ov_dist_length_lower_end", value = "count") %>%
+    dplyr::mutate(
+      ov_dist_length_lower_end = as.numeric(.data[["ov_dist_length_lower_end"]]),
+      fraction = if (sum(.data[["count"]]) != 0) {
+        .data[["count"]]/sum(.data[["count"]])
+      } else {
+        0
+      }
+    ) %>%
+    tibble::add_column(
+      ov_dist_length_upper_end = tail(cutting_points, -1),
+      .after = "ov_dist_length_lower_end"
+    )
+}
