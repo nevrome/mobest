@@ -202,7 +202,7 @@ determine_dist_fractions <- function(x, cutting_points) {
     c()
   }
   # to get all fraction levels for each window, even if they don't occur
-  x_cut_factor <- factor(x_cut, levels = head(cutting_points, -1))
+  x_cut_factor <- factor(x_cut, levels = utils::head(cutting_points, -1))
   x_cut_factor %>%
     base::table() %>%
     unclass() %>%
@@ -216,7 +216,7 @@ determine_dist_fractions <- function(x, cutting_points) {
       }
     ) %>%
     tibble::add_column(
-      ov_dist_length_upper_end = tail(cutting_points, -1),
+      ov_dist_length_upper_end = utils::tail(cutting_points, -1),
       .after = "ov_dist_length_lower_end"
     )
 }
