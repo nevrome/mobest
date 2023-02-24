@@ -10,7 +10,7 @@ version](https://img.shields.io/github/r-package/v/nevrome/mobest)
 This R package provides types and functions for spatiotemporal
 interpolation of human genetic ancestry components, similarity search
 and the calculation of a derived measure for **mob**ility
-**est**imation. The workflow in version X.X.X was specifically developed
+**est**imation. The workflow in version 1.0.0 was specifically developed
 to support this research compendium:
 <https://github.com/nevrome/mobest.analysis.2022>.
 
@@ -28,7 +28,7 @@ to support this research compendium:
 2.  `mobest` allows to derive a similarity probability for samples of
     interest within the interpolated field, which – under certain
     circumstances – can be interpreted as an origin probability. See the
-    [example gif](man/figures/) on the right.
+    [example GIF](man/figures/) on the right.
 3.  `mobest` finally introduces functions to estimate and summarize a
     measure of mobility for the samples of interest, based on the
     similarity probability field.
