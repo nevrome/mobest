@@ -27,7 +27,8 @@ to support this research compendium:
     provided.
 2.  `mobest` allows to derive a similarity probability for samples of
     interest within the interpolated field, which – under certain
-    circumstances – can be interpreted as an origin probability.
+    circumstances – can be interpreted as an origin probability. See the
+    [example gif](man/figures/) on the right.
 3.  `mobest` finally introduces functions to estimate and summarize a
     measure of mobility for the samples of interest, based on the
     similarity probability field.
@@ -300,11 +301,11 @@ lists.
 
 Available are:
 
--   `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
--   `mobest_spatiotemporalpositions_multi`
-    (`mobest::create_spatpos_multi`)
--   `mobest_observations_multi` (`mobest::create_obs_multi`)
--   `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
+- `mobest_spatialpositions_multi` (`mobest::create_geopos_multi`)
+- `mobest_spatiotemporalpositions_multi`
+  (`mobest::create_spatpos_multi`)
+- `mobest_observations_multi` (`mobest::create_obs_multi`)
+- `mobest_kernelsetting_multi` (`mobest::create_kernset_multi`)
 
 And here is an example how they can be filled with named arguments:
 
@@ -345,20 +346,20 @@ pairwise_distances <- mobest::calculate_pairwise_distances(
 ```
 
     ## # A tibble: 10,000 × 9
-    ##      id1   id2 geo_dist time_dist obs_dist_total ac1_dist ac1_dist_resid
-    ##    <int> <int>    <dbl>     <dbl>          <dbl>    <dbl>          <dbl>
-    ##  1     1     1      0           0         0        0             0      
-    ##  2     2     1    302.        915         0.0697   0.0391        0.0776 
-    ##  3     3     1    196.        686         0.0881   0.0845        0.0631 
-    ##  4     4     1    512.        389         0.256    0.256         0.00965
-    ##  5     5     1     58.7      1205         0.195    0.193         0.343  
-    ##  6     6     1    334.        375         0.332    0.283         0.0898 
-    ##  7     7     1    239.        282         0.238    0.167         0.0402 
-    ##  8     8     1    393.       1052         0.180    0.168         0.473  
-    ##  9     9     1    227.       1193         0.186    0.0546        0.0230 
-    ## 10    10     1    184.        697         0.250    0.208         0.236  
-    ## # … with 9,990 more rows, and 2 more variables: ac2_dist <dbl>,
-    ## #   ac2_dist_resid <dbl>
+    ##      id1   id2 geo_dist time_dist obs_dist_total ac1_d…¹ ac1_d…² ac2_d…³ ac2_d…⁴
+    ##    <int> <int>    <dbl>     <dbl>          <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
+    ##  1     1     1      0           0         0       0      0        0      0      
+    ##  2     2     1    302.        915         0.0697  0.0391 0.0776   0.0577 0.183  
+    ##  3     3     1    196.        686         0.0881  0.0845 0.0631   0.0249 0.00299
+    ##  4     4     1    512.        389         0.256   0.256  0.00965  0.0145 0.385  
+    ##  5     5     1     58.7      1205         0.195   0.193  0.343    0.0313 0.304  
+    ##  6     6     1    334.        375         0.332   0.283  0.0898   0.173  0.119  
+    ##  7     7     1    239.        282         0.238   0.167  0.0402   0.170  0.0297 
+    ##  8     8     1    393.       1052         0.180   0.168  0.473    0.0639 0.536  
+    ##  9     9     1    227.       1193         0.186   0.0546 0.0230   0.178  0.0192 
+    ## 10    10     1    184.        697         0.250   0.208  0.236    0.139  0.0415 
+    ## # … with 9,990 more rows, and abbreviated variable names ¹​ac1_dist,
+    ## #   ²​ac1_dist_resid, ³​ac2_dist, ⁴​ac2_dist_resid
 
 Helper functions are available to calculate the individual components of
 this table:
@@ -381,19 +382,20 @@ variogram <- mobest::bin_pairwise_distances(
 ```
 
     ## # A tibble: 198 × 8
-    ##    geo_dist_cut time_dist_cut obs_dist_total ac1_dist ac1_dist_resid ac2_dist
-    ##           <dbl>         <dbl>          <dbl>    <dbl>          <dbl>    <dbl>
-    ##  1           50            50         0.0314   0.0195         0.0193   0.0119
-    ##  2           50           150         0.0722   0.0282         0.0260   0.0440
-    ##  3           50           250         0.0887   0.0312         0.0320   0.0575
-    ##  4           50           350         0.0937   0.0438         0.0476   0.0499
-    ##  5           50           450         0.0939   0.0336         0.0331   0.0602
-    ##  6           50           550         0.0974   0.0461         0.0428   0.0514
-    ##  7           50           650         0.0907   0.0482         0.0533   0.0425
-    ##  8           50           750         0.0802   0.0320         0.0351   0.0482
-    ##  9           50           850         0.112    0.0265         0.0302   0.0856
-    ## 10           50           950         0.0916   0.0367         0.0360   0.0550
-    ## # … with 188 more rows, and 2 more variables: ac2_dist_resid <dbl>, n <int>
+    ##    geo_dist_cut time_dist_cut obs_dist_t…¹ ac1_d…² ac1_d…³ ac2_d…⁴ ac2_d…⁵     n
+    ##           <dbl>         <dbl>        <dbl>   <dbl>   <dbl>   <dbl>   <dbl> <int>
+    ##  1           50            50       0.0314  0.0195  0.0193  0.0119  0.0115   152
+    ##  2           50           150       0.0722  0.0282  0.0260  0.0440  0.0478    58
+    ##  3           50           250       0.0887  0.0312  0.0320  0.0575  0.0522    38
+    ##  4           50           350       0.0937  0.0438  0.0476  0.0499  0.0523    36
+    ##  5           50           450       0.0939  0.0336  0.0331  0.0602  0.0529    44
+    ##  6           50           550       0.0974  0.0461  0.0428  0.0514  0.0401    42
+    ##  7           50           650       0.0907  0.0482  0.0533  0.0425  0.0566    12
+    ##  8           50           750       0.0802  0.0320  0.0351  0.0482  0.0470    30
+    ##  9           50           850       0.112   0.0265  0.0302  0.0856  0.0719    28
+    ## 10           50           950       0.0916  0.0367  0.0360  0.0550  0.0445    18
+    ## # … with 188 more rows, and abbreviated variable names ¹​obs_dist_total,
+    ## #   ²​ac1_dist, ³​ac1_dist_resid, ⁴​ac2_dist, ⁵​ac2_dist_resid
 
 This variogram can for example be used to estimate the nugget parameter
 of the GPR kernel settings, by filtering for pairwise “genetic”
@@ -415,13 +417,13 @@ mleGPsep_out <- mobest::laGP_mle_anisotropic(
 ```
 
     ## # A tibble: 4 × 9
-    ##   mle_method dependent_var_id   dsx   dsy    dt      g optimizer_iterat… message
-    ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>             <int> <chr>  
-    ## 1 mleGPsep   ac1              1318. 1378. 1353. 0.0627                50 CONVER…
-    ## 2 mleGPsep   ac1              1318. 1378. 1353. 0.0627                50 CONVER…
-    ## 3 mleGPsep   ac2              1182. 1276. 1431. 0.0903                34 CONVER…
-    ## 4 mleGPsep   ac2              1182. 1276. 1431. 0.0903                34 CONVER…
-    ## # … with 1 more variable: converged <int>
+    ##   mle_method dependent_var_id   dsx   dsy    dt      g optimiz…¹ message conve…²
+    ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>     <int> <chr>     <int>
+    ## 1 mleGPsep   ac1              1318. 1378. 1353. 0.0627        50 CONVER…       0
+    ## 2 mleGPsep   ac1              1318. 1378. 1353. 0.0627        50 CONVER…       0
+    ## 3 mleGPsep   ac2              1182. 1276. 1431. 0.0903        34 CONVER…       0
+    ## 4 mleGPsep   ac2              1182. 1276. 1431. 0.0903        34 CONVER…       0
+    ## # … with abbreviated variable names ¹​optimizer_iterations, ²​converged
 
 `mobest::laGP_jmle_anisotropic` does the same, but for joint maximum
 likelihood inference.
@@ -436,13 +438,13 @@ jmleGPsep_out <- mobest::laGP_jmle_anisotropic(
 ```
 
     ## # A tibble: 4 × 9
-    ##   mle_method dependent_var_id   dsx   dsy    dt      g optimizer_iterat… message
-    ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>             <int> <chr>  
-    ## 1 jmleGPsep  ac1              1318. 1378. 1353. 0.0627                82 <NA>   
-    ## 2 jmleGPsep  ac1              1318. 1378. 1353. 0.0627                82 <NA>   
-    ## 3 jmleGPsep  ac2              1182. 1276. 1431. 0.0903                61 <NA>   
-    ## 4 jmleGPsep  ac2              1182. 1276. 1431. 0.0903                61 <NA>   
-    ## # … with 1 more variable: converged <int>
+    ##   mle_method dependent_var_id   dsx   dsy    dt      g optimiz…¹ message conve…²
+    ##   <chr>      <chr>            <dbl> <dbl> <dbl>  <dbl>     <int> <chr>     <int>
+    ## 1 jmleGPsep  ac1              1318. 1378. 1353. 0.0627        82 <NA>          0
+    ## 2 jmleGPsep  ac1              1318. 1378. 1353. 0.0627        82 <NA>          0
+    ## 3 jmleGPsep  ac2              1182. 1276. 1431. 0.0903        61 <NA>          0
+    ## 4 jmleGPsep  ac2              1182. 1276. 1431. 0.0903        61 <NA>          0
+    ## # … with abbreviated variable names ¹​optimizer_iterations, ²​converged
 
 `mobest::laGP_mle_sequence_isotropic_fixed_g` implements a very specific
 approach, where the mle is performed under the assumption of an
@@ -461,20 +463,21 @@ mle_sequence <- mobest::laGP_mle_sequence_isotropic_fixed_g(
 ```
 
     ## # A tibble: 80 × 10
-    ##    iteration dependent_var_id scaling_factor scaling_factor_fr… scaling_factor_…
-    ##        <int> <chr>                     <dbl> <fractinl>         <fct>           
-    ##  1         1 ac1                         0.1 0.1                1/10            
-    ##  2         1 ac1                         0.2 0.2                1/5             
-    ##  3         1 ac1                         0.3 0.3                3/10            
-    ##  4         1 ac1                         0.4 0.4                2/5             
-    ##  5         1 ac1                         0.5 0.5                1/2             
-    ##  6         1 ac1                         0.6 0.6                3/5             
-    ##  7         1 ac1                         0.7 0.7                7/10            
-    ##  8         1 ac1                         0.8 0.8                4/5             
-    ##  9         1 ac1                         0.9 0.9                9/10            
-    ## 10         1 ac1                         1   1.0                1               
-    ## # … with 70 more rows, and 5 more variables: d <dbl>, l <dbl>,
-    ## #   optimizer_iterations <int>, ds <dbl>, dt <dbl>
+    ##    iteration dependent…¹ scali…² scali…³ scali…⁴     d     l optim…⁵    ds    dt
+    ##        <int> <chr>         <dbl> <fract> <fct>   <dbl> <dbl>   <int> <dbl> <dbl>
+    ##  1         1 ac1             0.1 0.1     1/10     883. -52.1      11  883. 8831.
+    ##  2         1 ac1             0.2 0.2     1/5      960. -52.8      11  960. 4802.
+    ##  3         1 ac1             0.3 0.3     3/10    1041. -53.3      11 1041. 3471.
+    ##  4         1 ac1             0.4 0.4     2/5     1123. -53.6      10 1123. 2809.
+    ##  5         1 ac1             0.5 0.5     1/2     1196. -53.8      10 1196. 2392.
+    ##  6         1 ac1             0.6 0.6     3/5     1255. -53.8      10 1255. 2092.
+    ##  7         1 ac1             0.7 0.7     7/10    1307. -53.8      11 1307. 1867.
+    ##  8         1 ac1             0.8 0.8     4/5     1365. -53.7      11 1365. 1707.
+    ##  9         1 ac1             0.9 0.9     9/10    1436. -53.7      11 1436. 1596.
+    ## 10         1 ac1             1   1.0     1       1520. -53.6      11 1520. 1520.
+    ## # … with 70 more rows, and abbreviated variable names ¹​dependent_var_id,
+    ## #   ²​scaling_factor, ³​scaling_factor_fractional, ⁴​scaling_factor_label,
+    ## #   ⁵​optimizer_iterations
 
 #### Crossvalidation
 
@@ -510,22 +513,22 @@ interpol_comparison <- mobest::crossvalidate(
 ```
 
     ## # A tibble: 3,600 × 18
-    ##    independent_table_id dependent_setting_id dependent_var_id kernel_setting_id
-    ##    <chr>                <chr>                <chr>            <chr>            
-    ##  1 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  2 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  3 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  4 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  5 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  6 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  7 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  8 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ##  9 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ## 10 ind_crossval_run_1   obs_crossval_run_1   ac1              kernel_1         
-    ## # … with 3,590 more rows, and 14 more variables: pred_grid_id <chr>,
-    ## #   mixing_iteration <int>, dsx <dbl>, dsy <dbl>, dt <dbl>, g <dbl>, id <int>,
-    ## #   x <int>, y <int>, z <int>, mean <dbl>, sd <dbl>, measured <dbl>,
-    ## #   difference <dbl>
+    ##    indep…¹ depen…² depen…³ kerne…⁴ pred_…⁵ mixin…⁶   dsx   dsy    dt     g    id
+    ##    <chr>   <chr>   <chr>   <chr>   <chr>     <int> <dbl> <dbl> <dbl> <dbl> <int>
+    ##  1 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    45
+    ##  2 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    16
+    ##  3 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    43
+    ##  4 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    96
+    ##  5 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    61
+    ##  6 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    93
+    ##  7 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    24
+    ##  8 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    21
+    ##  9 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    42
+    ## 10 ind_cr… obs_cr… ac1     kernel… pred_c…       1   1e5   1e5   100 0.065    15
+    ## # … with 3,590 more rows, 7 more variables: x <int>, y <int>, z <int>,
+    ## #   mean <dbl>, sd <dbl>, measured <dbl>, difference <dbl>, and abbreviated
+    ## #   variable names ¹​independent_table_id, ²​dependent_setting_id,
+    ## #   ³​dependent_var_id, ⁴​kernel_setting_id, ⁵​pred_grid_id, ⁶​mixing_iteration
 
 ### Spatiotemporal interpolation
 
@@ -577,21 +580,22 @@ model_grid <- mobest::create_model_grid(
 ```
 
     ## # A tibble: 32 × 9
-    ##    independent_table_id dependent_setting_id dependent_var_id kernel_setting_id
-    ##    <chr>                <chr>                <chr>            <chr>            
-    ##  1 dating_1             obs1                 ac1              kernel_1         
-    ##  2 dating_2             obs1                 ac1              kernel_1         
-    ##  3 dating_1             obs2                 ac1              kernel_1         
-    ##  4 dating_2             obs2                 ac1              kernel_1         
-    ##  5 dating_1             obs1                 ac2              kernel_1         
-    ##  6 dating_2             obs1                 ac2              kernel_1         
-    ##  7 dating_1             obs2                 ac2              kernel_1         
-    ##  8 dating_2             obs2                 ac2              kernel_1         
-    ##  9 dating_1             obs1                 ac1              kernel_2         
-    ## 10 dating_2             obs1                 ac1              kernel_2         
-    ## # … with 22 more rows, and 5 more variables: pred_grid_id <chr>,
-    ## #   independent_table <mbst_sp_>, dependent_var <named list>,
-    ## #   kernel_setting <mbst_krn>, pred_grid <mbst_sp_>
+    ##    independent_t…¹ depen…² depen…³ kerne…⁴ pred_…⁵ independ…⁶ depen…⁷ kernel_s…⁸
+    ##    <chr>           <chr>   <chr>   <chr>   <chr>   <mbst_sp_> <named> <mbst_krn>
+    ##  1 dating_1        obs1    ac1     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  2 dating_2        obs1    ac1     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  3 dating_1        obs2    ac1     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  4 dating_2        obs2    ac1     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  5 dating_1        obs1    ac2     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  6 dating_2        obs1    ac2     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  7 dating_1        obs2    ac2     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  8 dating_2        obs2    ac2     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ##  9 dating_1        obs1    ac1     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ## 10 dating_2        obs1    ac1     kernel… pred_g… <mbst_spt> <dbl>   <mbst_krn>
+    ## # … with 22 more rows, 1 more variable: pred_grid <mbst_sp_>, and abbreviated
+    ## #   variable names ¹​independent_table_id, ²​dependent_setting_id,
+    ## #   ³​dependent_var_id, ⁴​kernel_setting_id, ⁵​pred_grid_id, ⁶​independent_table,
+    ## #   ⁷​dependent_var, ⁸​kernel_setting
 
 `mobest::run_model_grid` runs each model and returns an unnested table
 of interpolation results for each prediction grid point and each model
@@ -602,21 +606,21 @@ interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 ```
 
     ## # A tibble: 19,200 × 15
-    ##    independent_table_id dependent_setting_id dependent_var_id kernel_setting_id
-    ##    <chr>                <chr>                <chr>            <chr>            
-    ##  1 dating_1             obs1                 ac1              kernel_1         
-    ##  2 dating_1             obs1                 ac1              kernel_1         
-    ##  3 dating_1             obs1                 ac1              kernel_1         
-    ##  4 dating_1             obs1                 ac1              kernel_1         
-    ##  5 dating_1             obs1                 ac1              kernel_1         
-    ##  6 dating_1             obs1                 ac1              kernel_1         
-    ##  7 dating_1             obs1                 ac1              kernel_1         
-    ##  8 dating_1             obs1                 ac1              kernel_1         
-    ##  9 dating_1             obs1                 ac1              kernel_1         
-    ## 10 dating_1             obs1                 ac1              kernel_1         
-    ## # … with 19,190 more rows, and 11 more variables: pred_grid_id <chr>,
-    ## #   dsx <dbl>, dsy <dbl>, dt <dbl>, g <dbl>, id <int>, x <dbl>, y <dbl>,
-    ## #   z <dbl>, mean <dbl>, sd <dbl>
+    ##    indepen…¹ depen…² depen…³ kerne…⁴ pred_…⁵   dsx   dsy    dt     g    id     x
+    ##    <chr>     <chr>   <chr>   <chr>   <chr>   <dbl> <dbl> <dbl> <dbl> <int> <dbl>
+    ##  1 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     1   1e5
+    ##  2 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     2   2e5
+    ##  3 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     3   3e5
+    ##  4 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     4   4e5
+    ##  5 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     5   5e5
+    ##  6 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     6   6e5
+    ##  7 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     7   7e5
+    ##  8 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     8   8e5
+    ##  9 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1     9   9e5
+    ## 10 dating_1  obs1    ac1     kernel… pred_g…   1e6   1e6   200   0.1    10   1e6
+    ## # … with 19,190 more rows, 4 more variables: y <dbl>, z <dbl>, mean <dbl>,
+    ## #   sd <dbl>, and abbreviated variable names ¹​independent_table_id,
+    ## #   ²​dependent_setting_id, ³​dependent_var_id, ⁴​kernel_setting_id, ⁵​pred_grid_id
 
 ### Origin search
 
@@ -657,22 +661,23 @@ per permutation.
 mobest::multiply_dependent_probabilities(locate_simple)
 ```
 
-    ## # A tibble: 800 × 14
-    ##    independent_table_id dependent_settin… kernel_setting_… pred_grid_id field_id
-    ##    <chr>                <chr>             <chr>            <chr>           <int>
-    ##  1 i                    d                 k                time_slice_1        1
-    ##  2 i                    d                 k                time_slice_1        2
-    ##  3 i                    d                 k                time_slice_1        3
-    ##  4 i                    d                 k                time_slice_1        4
-    ##  5 i                    d                 k                time_slice_1        5
-    ##  6 i                    d                 k                time_slice_1        6
-    ##  7 i                    d                 k                time_slice_1        7
-    ##  8 i                    d                 k                time_slice_1        8
-    ##  9 i                    d                 k                time_slice_1        9
-    ## 10 i                    d                 k                time_slice_1       10
-    ## # … with 790 more rows, and 9 more variables: field_x <dbl>, field_y <dbl>,
-    ## #   field_z <dbl>, field_geo_id <int>, search_id <int>, search_x <int>,
-    ## #   search_y <int>, search_z <int>, probability <dbl>
+    ## # A tibble: 800 × 15
+    ##    independent…¹ depen…² kerne…³ pred_…⁴ field…⁵ field_x field_y field_z field…⁶
+    ##    <chr>         <chr>   <chr>   <chr>     <int>   <dbl>   <dbl>   <dbl>   <int>
+    ##  1 i             d       k       time_s…       1  100000  100000   -3686       1
+    ##  2 i             d       k       time_s…       2  200000  100000   -3686       2
+    ##  3 i             d       k       time_s…       3  300000  100000   -3686       3
+    ##  4 i             d       k       time_s…       4  400000  100000   -3686       4
+    ##  5 i             d       k       time_s…       5  500000  100000   -3686       5
+    ##  6 i             d       k       time_s…       6  600000  100000   -3686       6
+    ##  7 i             d       k       time_s…       7  700000  100000   -3686       7
+    ##  8 i             d       k       time_s…       8  800000  100000   -3686       8
+    ##  9 i             d       k       time_s…       9  900000  100000   -3686       9
+    ## 10 i             d       k       time_s…      10 1000000  100000   -3686      10
+    ## # … with 790 more rows, 6 more variables: search_id <int>, search_x <int>,
+    ## #   search_y <int>, search_z <int>, search_time <dbl>, probability <dbl>, and
+    ## #   abbreviated variable names ¹​independent_table_id, ²​dependent_setting_id,
+    ## #   ³​kernel_setting_id, ⁴​pred_grid_id, ⁵​field_id, ⁶​field_geo_id
 
 `mobest::locate` is actually just a special, simplified interface to
 `mobest::locate_multi`, which adds another level of complexity. It
@@ -734,19 +739,19 @@ mobest::fold_probabilities_per_group(locate_product)
 ```
 
     ## # A tibble: 400 × 9
-    ##    search_id field_id search_z search_x search_y field_x field_y field_z
-    ##        <int>    <int>    <int>    <int>    <int>   <dbl>   <dbl>   <dbl>
-    ##  1         1        1    -3586   593039   372080  100000  100000   -3586
-    ##  2         1        2    -3586   593039   372080  200000  100000   -3586
-    ##  3         1        3    -3586   593039   372080  300000  100000   -3586
-    ##  4         1        4    -3586   593039   372080  400000  100000   -3586
-    ##  5         1        5    -3586   593039   372080  500000  100000   -3586
-    ##  6         1        6    -3586   593039   372080  600000  100000   -3586
-    ##  7         1        7    -3586   593039   372080  700000  100000   -3586
-    ##  8         1        8    -3586   593039   372080  800000  100000   -3586
-    ##  9         1        9    -3586   593039   372080  900000  100000   -3586
-    ## 10         1       10    -3586   593039   372080 1000000  100000   -3586
-    ## # … with 390 more rows, and 1 more variable: probability <dbl>
+    ##    search_id field_id search_z search_x search_y field_x field_y field_z proba…¹
+    ##        <int>    <int>    <int>    <int>    <int>   <dbl>   <dbl>   <dbl>   <dbl>
+    ##  1         1        1    -3586   593039   372080  100000  100000   -3586  0.0124
+    ##  2         1        2    -3586   593039   372080  200000  100000   -3586  0.0136
+    ##  3         1        3    -3586   593039   372080  300000  100000   -3586  0.0149
+    ##  4         1        4    -3586   593039   372080  400000  100000   -3586  0.0166
+    ##  5         1        5    -3586   593039   372080  500000  100000   -3586  0.0186
+    ##  6         1        6    -3586   593039   372080  600000  100000   -3586  0.0203
+    ##  7         1        7    -3586   593039   372080  700000  100000   -3586  0.0208
+    ##  8         1        8    -3586   593039   372080  800000  100000   -3586  0.0190
+    ##  9         1        9    -3586   593039   372080  900000  100000   -3586  0.0155
+    ## 10         1       10    -3586   593039   372080 1000000  100000   -3586  0.0115
+    ## # … with 390 more rows, and abbreviated variable name ¹​probability
 
 `fold_probabilities_per_group` also allows to maintain the the
 permutation groups, in case a full summary is not desired:
@@ -756,20 +761,21 @@ mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kerne
 ```
 
     ## # A tibble: 1,600 × 11
-    ##    dependent_setting_id kernel_setting_id search_id field_id search_z search_x
-    ##    <chr>                <chr>                 <int>    <int>    <int>    <int>
-    ##  1 obs1                 kernel_1                  1        1    -3586   593039
-    ##  2 obs1                 kernel_1                  1        2    -3586   593039
-    ##  3 obs1                 kernel_1                  1        3    -3586   593039
-    ##  4 obs1                 kernel_1                  1        4    -3586   593039
-    ##  5 obs1                 kernel_1                  1        5    -3586   593039
-    ##  6 obs1                 kernel_1                  1        6    -3586   593039
-    ##  7 obs1                 kernel_1                  1        7    -3586   593039
-    ##  8 obs1                 kernel_1                  1        8    -3586   593039
-    ##  9 obs1                 kernel_1                  1        9    -3586   593039
-    ## 10 obs1                 kernel_1                  1       10    -3586   593039
-    ## # … with 1,590 more rows, and 5 more variables: search_y <int>, field_x <dbl>,
-    ## #   field_y <dbl>, field_z <dbl>, probability <dbl>
+    ##    dependent_s…¹ kerne…² searc…³ field…⁴ searc…⁵ searc…⁶ searc…⁷ field_x field_y
+    ##    <chr>         <chr>     <int>   <int>   <int>   <int>   <int>   <dbl>   <dbl>
+    ##  1 obs1          kernel…       1       1   -3586  593039  372080  100000  100000
+    ##  2 obs1          kernel…       1       2   -3586  593039  372080  200000  100000
+    ##  3 obs1          kernel…       1       3   -3586  593039  372080  300000  100000
+    ##  4 obs1          kernel…       1       4   -3586  593039  372080  400000  100000
+    ##  5 obs1          kernel…       1       5   -3586  593039  372080  500000  100000
+    ##  6 obs1          kernel…       1       6   -3586  593039  372080  600000  100000
+    ##  7 obs1          kernel…       1       7   -3586  593039  372080  700000  100000
+    ##  8 obs1          kernel…       1       8   -3586  593039  372080  800000  100000
+    ##  9 obs1          kernel…       1       9   -3586  593039  372080  900000  100000
+    ## 10 obs1          kernel…       1      10   -3586  593039  372080 1000000  100000
+    ## # … with 1,590 more rows, 2 more variables: field_z <dbl>, probability <dbl>,
+    ## #   and abbreviated variable names ¹​dependent_setting_id, ²​kernel_setting_id,
+    ## #   ³​search_id, ⁴​field_id, ⁵​search_z, ⁶​search_x, ⁷​search_y
 
 ### Origin vectors
 
@@ -788,17 +794,19 @@ proxy for mobility.
 mobest::determine_origin_vectors(locate_product, quiet = T)
 ```
 
-    ## # A tibble: 4 × 20
-    ##   independent_table_id dependent_setting… kernel_setting_… pred_grid_id field_id
-    ##   <chr>                <chr>              <chr>            <chr>           <int>
-    ## 1 dating1              obs1               kernel_1         time_slice_1       16
-    ## 2 dating1              obs1               kernel_1         time_slice_2       43
-    ## 3 dating1              obs1               kernel_1         time_slice_3       44
-    ## 4 dating2              obs1               kernel_1         time_slice_4       13
-    ## # … with 15 more variables: field_x <dbl>, field_y <dbl>, field_z <dbl>,
-    ## #   field_geo_id <int>, search_id <int>, search_x <int>, search_y <int>,
-    ## #   search_z <int>, probability <dbl>, ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>,
-    ## #   ov_dist_se <dbl>, ov_dist_sd <dbl>, ov_angle_deg <dbl>
+    ## # A tibble: 4 × 21
+    ##   independent_…¹ depen…² kerne…³ pred_…⁴ field…⁵ field_x field_y field_z field…⁶
+    ##   <chr>          <chr>   <chr>   <chr>     <int>   <dbl>   <dbl>   <dbl>   <int>
+    ## 1 dating1        obs1    kernel… time_s…      16  600000  200000   -3586      16
+    ## 2 dating1        obs1    kernel… time_s…      43  300000  500000   -4501      43
+    ## 3 dating1        obs1    kernel… time_s…      44  400000  500000   -4272      44
+    ## 4 dating2        obs1    kernel… time_s…      13  300000  200000   -3975      13
+    ## # … with 12 more variables: search_id <int>, search_x <int>, search_y <int>,
+    ## #   search_z <int>, search_time <dbl>, probability <dbl>, ov_x <dbl>,
+    ## #   ov_y <dbl>, ov_dist <dbl>, ov_dist_se <dbl>, ov_dist_sd <dbl>,
+    ## #   ov_angle_deg <dbl>, and abbreviated variable names ¹​independent_table_id,
+    ## #   ²​dependent_setting_id, ³​kernel_setting_id, ⁴​pred_grid_id, ⁵​field_id,
+    ## #   ⁶​field_geo_id
 
 Just as in `mobest::fold_probabilities_per_group`, the origin vector
 search can be performed per permutation of the groups introduced above.
@@ -825,32 +833,34 @@ mobest::pack_origin_vectors(origin_vectors, independent_table_id)
 ```
 
     ## # A tibble: 8 × 14
-    ##   search_id independent_tabl… field_x field_y field_z search_x search_y search_z
-    ##       <int> <chr>               <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>
-    ## 1         1 dating1            600000  200000   -3586   593039   372080    -3586
-    ## 2         1 dating2            200000  500000   -3586   593039   372080    -3586
-    ## 3         2 dating1            300000  500000   -4501   326494   513740    -4501
-    ## 4         2 dating2            300000  400000   -4501   326494   513740    -4501
-    ## 5         3 dating1            400000  500000   -4272   636281   563535    -4272
-    ## 6         3 dating2            400000  600000   -4272   636281   563535    -4272
-    ## 7         4 dating1            400000  200000   -3975   122139   171731    -3975
-    ## 8         4 dating2            300000  200000   -3975   122139   171731    -3975
-    ## # … with 6 more variables: ov_x <dbl>, ov_y <dbl>, ov_dist <dbl>,
-    ## #   ov_dist_se <dbl>, ov_dist_sd <dbl>, ov_angle_deg <dbl>
+    ##   search_id independen…¹ field_x field_y field_z searc…² searc…³ searc…⁴    ov_x
+    ##       <int> <chr>          <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
+    ## 1         1 dating1       600000  200000   -3586  593039  372080   -3586    6961
+    ## 2         1 dating2       200000  500000   -3586  593039  372080   -3586 -393039
+    ## 3         2 dating1       300000  500000   -4501  326494  513740   -4501  -26494
+    ## 4         2 dating2       300000  400000   -4501  326494  513740   -4501  -26494
+    ## 5         3 dating1       400000  500000   -4272  636281  563535   -4272 -236281
+    ## 6         3 dating2       400000  600000   -4272  636281  563535   -4272 -236281
+    ## 7         4 dating1       400000  200000   -3975  122139  171731   -3975  277861
+    ## 8         4 dating2       300000  200000   -3975  122139  171731   -3975  177861
+    ## # … with 5 more variables: ov_y <dbl>, ov_dist <dbl>, ov_dist_se <dbl>,
+    ## #   ov_dist_sd <dbl>, ov_angle_deg <dbl>, and abbreviated variable names
+    ## #   ¹​independent_table_id, ²​search_x, ³​search_y, ⁴​search_z
 
 ``` r
 packed_origin_vectors <- mobest::pack_origin_vectors(origin_vectors)
 ```
 
     ## # A tibble: 4 × 13
-    ##   search_id field_x field_y field_z search_x search_y search_z    ov_x   ov_y
-    ##       <int>   <dbl>   <dbl>   <dbl>    <dbl>    <dbl>    <dbl>   <dbl>  <dbl>
-    ## 1         1  400000  350000   -3586   593039   372080    -3586 -193039 -22080
-    ## 2         2  300000  450000   -4501   326494   513740    -4501  -26494 -63740
-    ## 3         3  400000  550000   -4272   636281   563535    -4272 -236281 -13535
-    ## 4         4  350000  200000   -3975   122139   171731    -3975  227861  28269
-    ## # … with 4 more variables: ov_dist <dbl>, ov_dist_se <dbl>, ov_dist_sd <dbl>,
-    ## #   ov_angle_deg <dbl>
+    ##   searc…¹ field_x field_y field_z searc…² searc…³ searc…⁴    ov_x   ov_y ov_dist
+    ##     <int>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>  <dbl>   <dbl>
+    ## 1       1  400000  350000   -3586  593039  372080   -3586 -193039 -22080 194298.
+    ## 2       2  300000  450000   -4501  326494  513740   -4501  -26494 -63740  69027.
+    ## 3       3  400000  550000   -4272  636281  563535   -4272 -236281 -13535 236668.
+    ## 4       4  350000  200000   -3975  122139  171731   -3975  227861  28269 229608.
+    ## # … with 3 more variables: ov_dist_se <dbl>, ov_dist_sd <dbl>,
+    ## #   ov_angle_deg <dbl>, and abbreviated variable names ¹​search_id, ²​search_x,
+    ## #   ³​search_y, ⁴​search_z
 
 An important limitation of `pack_origin_vectors`: The standard deviation
 (`ov_dist_sd`) and standard error of the mean (`ov_dist_se`) are

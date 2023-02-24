@@ -1,3 +1,4 @@
+- v1.0.0: Version bump for the publication with some minor changes in the documentation
 - v0.7.0: Brought back a now more flexible option to calculate distance fractions in `summarize_origin_vectors()`
 - v0.6.0: Implemented normalization (as a default) for `locate(_multi)()`, `multiply_dependent_probabilities()` and `fold_probabilities_per_group()`
 - v0.5.0: Added extracting/subsetting with `[` for the input list data types
