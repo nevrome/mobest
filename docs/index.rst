@@ -12,4 +12,8 @@ mobest - Spatiotemporal Ancestry Interpolation and Search
    :caption: Contents:
 
    Install <install.md>
+   Basic application <basic.md>
+   Parameter estimation <estimation.md>
+   Advanced features <advanced.md>
+   Data types <types.md>
    Bibliography <bibliography.md>
