@@ -1,0 +1,5 @@
+# sphinx build folder
+_build
+
+# singularity images
+*.sif

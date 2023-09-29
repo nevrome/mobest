@@ -1,0 +1,10 @@
+Bootstrap: docker
+From: python:alpine3.17
+
+%post
+  # install git
+  apk add git
+  # install sphinx python tools
+  pip install sphinx myst-parser sphinx_rtd_theme sphinx-multiversion
+
+
