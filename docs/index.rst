@@ -13,12 +13,3 @@ mobest - Spatiotemporal Ancestry Interpolation and Search
 
    Install <install.md>
    Bibliography <bibliography.md>
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
