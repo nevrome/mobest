@@ -15,5 +15,6 @@ mobest - Spatiotemporal Ancestry Interpolation and Search
    Basic application <basic.md>
    Parameter estimation <estimation.md>
    Advanced features <advanced.md>
+   Mobility estimation <mobility.md>
    Data types <types.md>
    Bibliography <bibliography.md>
