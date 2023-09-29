@@ -9,7 +9,7 @@ if(!require('remotes')) install.packages('remotes')
 remotes::install_github('nevrome/mobest')
 ```
 
-You can also install specific/older versions of mobest with the following syntax in `remotes::install_github`: `nevrome/mobest[@ref|#pull|@*release]`, so e.g. `nevrome/mobest@1.0.0` to install the publication release version.
+You can also install specific/older versions of mobest with the following syntax: `nevrome/mobest[@ref|#pull|@*release]`. To install the publication release version you can run `remotes::install_github('nevrome/mobest@1.0.0')`, for example.
 
 For any of this too work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for the `sf` package. The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
 
