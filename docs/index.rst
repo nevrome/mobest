@@ -2,14 +2,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to mobest2's documentation!
-==================================
+mobest - Spatiotemporal Ancestry Interpolation and Search
+=========================================================
+
+.. include:: welcome.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    Install <install.md>
+   Bibliography <bibliography.md>
 
 
 
