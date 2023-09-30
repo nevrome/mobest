@@ -1,6 +1,6 @@
 # Installing mobest
 
-## Directly as an R package
+## Install mobest directly as an R package
 
 mobest is an R package and can be **installed directly from GitHub on the R console** with
 
@@ -22,7 +22,7 @@ For any of this too work a number of **system libraries** (mostly for processing
 
 The `sf` package maintainers provide a good explanation how to install these: <https://r-spatial.github.io/sf/#installing>
 
-## With apptainer
+## Create an apptainer image to run mobest
 
 If installing system libraries is not possible (for example because you don't have root access) or desirable, then mobest can also be run through a virtualization layer. One option is the high performance computing container system [apptainer](https://apptainer.org) (formerly ["singularity"](https://apptainer.org/news/community-announcement-20211130)). To do this you can follow these steps:
 
