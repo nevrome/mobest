@@ -34,9 +34,11 @@ library(ggplot2)
 
 ## Preparing the input data
 
-### Spatial context
+### Generating the the spatial prediction grid
 
 mobest's similarity search is typically run for a regular grid of spatial positions in the area of interest. It provides a function (`mobest::create_prediction_grid()`) to create such a grid, given a specification of the desired area. This area is typically (based on how we imagine mobest to be used) the land area in a certain part of planet Earth.
+
+#### Defining the research area
 
 In a first step we therefore have to define the research area for our analysis as a polygon in space. One way of doing this is to provide a list of latitude and longitude coordinates (extracted e.g. from Google Maps). The following code defines a simple research area covering large parts of Western Eurasia.
 
@@ -78,13 +80,30 @@ research_land_outline_4326 <- sf::st_intersection(
 We can plot the resulting spatial multi-polygon with ggplot2.
 
 ```r
-ggplot() +
-  geom_sf(data = research_land_outline_4326)
+ggplot() + geom_sf(data = research_land_outline_4326)
 ```
 
 ```{figure} img/basic/research_area_land_outline_4326.png
 The research area land polygon.
 ```
+
+#### Projecting the spatial data
+
+At this point we run into a specific issue of mobest: It requires its "independent" spatial and temporal coordinates to be coordinates in a [cartesian system](https://en.wikipedia.org/wiki/Cartesian_coordinate_system) describing [Euclidean space](https://en.wikipedia.org/wiki/Euclidean_space). For the spatial coordinates that means we can not work with latitude and longitude coordinates on a sphere, but have to apply [map projection](https://en.wikipedia.org/wiki/Map_projection) to represent the curved, two dimensional surface of our planet on a simple plane.
+
+The question how exactly this should be done and which CRS to choose depends on the position, size and shape of your research area. Each map projection algorithm has different properties regarding whether they manage to preserve or distort size, shape, distances and directions of areas and lines compared to the actual properties on Earth. Generally the larger the research area, the bigger the distortion of these properties becomes and for mobest we ideally want to represent all them accurately. mobest is therefore unfit for origin search on a global scale, but can usually be well applied for individual countries with the projections recommended by their cartographic agencies. For an intermedite, continental scale, as in this example, we have to choose our CRS wisely. 
+
+We decided to follow the recommendation of {cite:p}`Annoni2003`.
+
+> The Workshop recommends that the European Commission:    
+> Uses for statistical analysis and display a ETRS89 Lambert Azimuthal Equal Area coordinate reference system of 2001 [ETRS -LAEA11 ], that is specified by ETRS89 as datum and the Lambert Azimuthal Equal Area map projection.    
+> ...
+
+This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our decision comes at the price of increased inaccuracy especially in the North- and South-East of the research area where we get very far away from the center at 52° latitude and 10° longitude (see {cite:p}`Tsoulos2003` p.53 for a visualization of the deformation).
+
+
+
+#### Creating the prediction grid
 
 ## Artifical example
 
