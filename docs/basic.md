@@ -11,11 +11,12 @@ We use a simplified version of the data and code used for the publication that i
 
 ## Preparing the computational environment
 
-For this script we use various packages beyond base R:
+For this script we use various packages beyond base R, among which the following ones are required:
 
 - `readr` for loading .csv input data
 - `magrittr` for the pipe operator `%>%`
 - `sf` for loading and manipulating spatial data
+- `rnaturalearth` for downloading geodata
 - `ggplot2` to visualize intermediate and final results
 - `dplyr` for data manipulation of `data.frame`s
 - `mobest` (obviously)
@@ -35,17 +36,62 @@ library(ggplot2)
 
 ### Spatial context
 
-`mobest`'s similarity search is typically a spatial query applied to a spatial prediction grid - which has to be supplied by the user.
+mobest's similarity search is typically run for a regular grid of spatial positions in the area of interest. It provides a function (`mobest::create_prediction_grid()`) to create such a grid, given a specification of the desired area. This area is typically (based on how we imagine mobest to be used) the land area in a certain part of planet Earth.
 
+In a first step we therefore have to define the research area for our analysis as a polygon in space. One way of doing this is to provide a list of latitude and longitude coordinates (extracted e.g. from Google Maps). The following code defines a simple research area covering large parts of Western Eurasia.
 
+```r
+research_area_4326 <- sf::st_polygon(
+  list(
+    cbind(
+      c(35.91,11.73,-11.74,-15.47,37.06,49.26,49.56,35.91), # longitudes
+      c(25.61,28.94, 31.77, 62.73,65.67,44.56,28.55,25.61)  # latitudes
+    )
+  )
+) %>% sf::st_sfc(crs = 4326)
+```
+
+Spatial coordinates require a coordinate references system (CRS). For lat-lon coordinates we typically use [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System#WGS84) with the [EPSG code](https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset) 4326. `st_polygon()` creates a simple polygon as a clockwise arrangement of individual coordinates and `st_sfc()` properly defines this polygon as a geographic area on Earth. A simple way to interactively inspect this polygon on a world map in R is provided by the mapview package: `mapview::mapview(research_area_4326)`.
+
+```{figure} img/basic/mapview_research_area.png
+The defined research area plotted on top of a map.
+```
+
+With the research area properly defined we can move to the next challenge and extract the land area in the research area. For that we have to obtain a dataset with polygons that trace the coastlines for all around the world. The [naturalearthdata](https://www.naturalearthdata.com) project provides open worldwide geodata in different resolutions and in easy to use data formats. The `rnaturalearth` package makes it easy to download this data right into `sf` objects in R.
+
+```r
+worldwide_land_outline_4326 <- rnaturalearth::ne_download(
+  scale = 50, type = 'land', category = 'physical',
+  returnclass = "sf"
+)
+```
+
+We can then crop the land outline to the research area to obtain the land area we are interested in.
+
+```r
+research_land_outline_4326 <- sf::st_intersection(
+  worldwide_land_outline_4326,
+  research_area_4326
+)
+```
+
+We can plot the resulting spatial multi-polygon with ggplot2.
+
+```r
+ggplot() +
+  geom_sf(data = research_land_outline_4326)
+```
+
+```{figure} img/basic/research_area_land_outline_4326.png
+The research area land polygon.
+```
 
 ## Artifical example
 
 Here is a simple, artificial example how 2. can be used:
 
 ```r
-library(magrittr)
-set.seed(145)
+
 
 # a function to calculate the similarity probability for one particular sample
 locate_simple <- mobest::locate(
