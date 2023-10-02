@@ -101,9 +101,47 @@ We decided to follow the recommendation of {cite:p}`Annoni2003`.
 
 This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our decision comes at the price of increased inaccuracy especially in the North- and South-East of the research area where we get very far away from the center at 52° latitude and 10° longitude (see {cite:p}`Tsoulos2003` p.53 for a visualization of the deformation).
 
+To transform the the land outline in the research area from EPSG:4326 to EPSG:3035 we can apply `sf::st_transform()`.
 
+```r
+research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(3035)
+```
+
+Note how the change in the coordinate system affects the map plot.
+
+```r
+ggplot() + geom_sf(data = research_land_outline_3035)
+```
+
+```{figure} img/basic/research_area_land_outline_3035.png
+The research area land polygon now transformed to EPSG:3035.
+```
 
 #### Creating the prediction grid
+
+```r
+spatial_pred_grid <- mobest::create_prediction_grid(
+  research_land_outline_3035,
+  spatial_cell_size = 50000
+)
+```
+
+```r
+ggplot() +
+  geom_point(data = spatial_pred_grid, mapping = aes(x, y), color = "red")
+```
+
+### Reading the input samples
+
+## Running mobest's interpolation and search function
+
+### Building the input data structures
+
+### Calling `mobest::locate`
+
+## Inspecting the computed results
+
+<!--
 
 ## Artifical example
 
@@ -193,3 +231,5 @@ The spatiotemporal probability grids `locate` returns are calculated are per anc
 ```r
 mobest::multiply_dependent_probabilities(locate_simple)
 ```
+
+-->
