@@ -119,6 +119,8 @@ The research area land polygon now transformed to EPSG:3035.
 
 #### Creating the prediction grid
 
+To finally create the prediction grid we can use `mobest::create_prediction_grid()`. It takes the land outline polygon and overlays its bounding box with a regular grid (using `sf::st_make_grid()`), where each cell has the size corresponding to the `spatial_cell_size` parameter. It then determines the centers of each grid cell and crops the resulting, regular point cloud with the land area. Note that `spatial_cell_size` uses the unit of the CRS, so in our case for EPSG:3035 meters. That means a value of 50000 translates to one point every 50km. The total number of resulting spatial prediction positions is 4738 in this example.
+
 ```r
 spatial_pred_grid <- mobest::create_prediction_grid(
   research_land_outline_3035,
@@ -126,9 +128,21 @@ spatial_pred_grid <- mobest::create_prediction_grid(
 )
 ```
 
+`create_prediction_grid` returns an object of class `mobest_spatialpositions`, which is derived from `tibble::tibble`. That means we can print it on the R console and it will behave as a tibble. It will also work seamlessly as an input for ggplot2, which we can now use to visualize the point cloud.
+
 ```r
 ggplot() +
-  geom_point(data = spatial_pred_grid, mapping = aes(x, y), color = "red")
+  geom_sf(data = research_land_outline_3035) +
+  geom_point(
+    data = spatial_pred_grid,
+    mapping = aes(x, y),
+    color = "red",
+    size = 0.25
+  )
+```
+
+```{figure} img/basic/spatial_prediction_grid.png
+The spatial prediction grid points plotted on top of the land area.
 ```
 
 ### Reading the input samples
