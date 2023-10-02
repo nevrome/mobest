@@ -1,5 +1,44 @@
 # A basic similarity search workflow
 
+This section explains the setup for a basic ancestry similarity search with mobest in R. 
+
+We use a simplified version of the data and code used for the publication that introduced mobest, {cite:p}`Schmid2023`. The script explained in the following sections as well as the data required for it can be downloaded in its entirety here:
+
+- [simple_similarity_search.R](data/simple_similarity_search.R)
+- [epsg3035.?]()
+- [extended_area.?]()
+- [input.csv]()
+
+## Preparing the computational environment
+
+For this script we use various packages beyond base R:
+
+- `readr` for loading .csv input data
+- `magrittr` for the pipe operator `%>%`
+- `sf` for loading and manipulating spatial data
+- `ggplot2` to visualize intermediate and final results
+- `dplyr` for data manipulation of `data.frame`s
+- `mobest` (obviously)
+
+`readr`, `magrittr`, `ggplot2` and `dplyr` are all in the [tidyverse](https://www.tidyverse.org) and can be installed in one go with `install.packages("tidyverse")` on the R console.
+
+For the installation of `sf` and `mobest` please see the instructions in the [Install section](install.md).
+
+We will generally call functions explicitly with their namespace using `::` (so e.g. `readr::read_csv()`). The only exceptions are `magrittr` and `ggplot2`, because we will use their functions so often that it becomes tedious to type them out. Instead we load them at the beginning.
+
+```r
+library(magrittr)
+library(ggplot2)
+```
+
+## Preparing the input data
+
+### Spatial context
+
+`mobest`'s similarity search is typically a spatial query applied to a spatial prediction grid - which has to be supplied by the user.
+
+
+
 ## Artifical example
 
 Here is a simple, artificial example how 2. can be used:
