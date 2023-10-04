@@ -104,7 +104,7 @@ This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our de
 To transform the the land outline in the research area from EPSG:4326 to EPSG:3035 we can apply `sf::st_transform()`.
 
 ```r
-research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(3035)
+research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(crs = 3035)
 ```
 
 Note how the change in the coordinate system affects the map plot.
@@ -191,7 +191,7 @@ readr::write_csv(samples_basic, file = "docs/data/samples_basic.csv")
 
 You do not have to run this and can instead download the example table `samples_basic.csv` from [here](data/samples_basic.csv).
 
-When you have download the input data file you can load it into R.
+When you have download the input data file you can load it into a [`tibble`](https://tibble.tidyverse.org) in R.
 
 ```r
 samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
@@ -210,6 +210,45 @@ samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
 | MDS_C2            | dbl  | The coordinate of this sample on MDS dimension 2                                                                         |
 
 These variables are a minimum for a meaningful mobest run and must be known for all samples. Samples that are missing information in any of these columns have to excluded from the input data table.
+
+Before we move on, we have to apply one more change to the sample table: Just as for the research area (see {ref}`Projecting the spatial data <basic:projecting the spatial data>`) above) we have to transform the coordinates from longitude and latitude coordinates to a projected system, specifically the same we selected above. To do this we can construct an `sf` object from the sample `tibble`, apply `sf::st_transform` and then transform this result back to a `tibble` with the x and y coordinates of EPSG:3035 in extra columns. This last step makes the code a bit awkward.
+
+
+```r
+samples_projected <- samples_basic %>%
+  # make the tibble an sf object
+  sf::st_as_sf(
+    coords = c("Longitude", "Latitude"),
+    crs = 4326
+  ) %>%
+  # transform the coordinates
+  sf::st_transform(crs = 3035) %>% 
+  # reshape the sf object back into a simple tibble
+  dplyr::mutate(
+    x = sf::st_coordinates(.)[,1],
+    y = sf::st_coordinates(.)[,2]
+  ) %>%
+  sf::st_drop_geometry()
+```
+
+With the coordinates in the same reference system as the land outline we prepared above we can combine both in a figure:
+
+```
+ggplot() +
+  geom_sf(data = research_land_outline_3035) +
+  geom_point(
+    data = samples_projected,
+    mapping = aes(x, y),
+    color = "darkgreen",
+    size = 0.25
+  )
+```
+
+```{figure} img/basic/samples_map.png
+The spatial distribution of the informative samples.
+```
+
+A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely undersampled. That is something we have to keep in mind for later when we interpret the results of the similarity search.
 
 ## Running mobest's interpolation and search function
 
