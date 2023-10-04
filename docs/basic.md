@@ -2,12 +2,12 @@
 
 This section explains the setup for a basic ancestry similarity search with mobest in R. 
 
-We use a simplified version of the data and code used for the publication that introduced mobest, {cite:p}`Schmid2023`. The script explained in the following sections as well as the data required for it can be downloaded in its entirety here:
+For didactic purposes we use a simplified version of the data and code used for the publication that introduced mobest: {cite:p}`Schmid2023`. This is a fairly generic setup you can adjust to the needs of other and more specific projects.
+
+The script explained in the following sections as well as the data required for it can be downloaded in its entirety here:
 
 - [simple_similarity_search.R](data/simple_similarity_search.R)
-- [epsg3035.?]()
-- [extended_area.?]()
-- [input.csv]()
+- [samples_basic.csv](data/samples_basic.csv)
 
 ## Preparing the computational environment
 
@@ -149,7 +149,7 @@ The spatial prediction grid points plotted on top of the land area.
 
 mobest requires a set of data points, observations, to inform the ancestry field interpolation. For each observation the position in space, time and a dependent variable space (e.g. the coordinates in a PCA analysis) must be known. This information must be provided in a specific format. A typical workflow would involve preparing this information in a .xlsx or (better) .csv table, which could then be read into R.
 
-For this tutorial we rely on the data used and published in {cite:p}`Schmid2023`. The following, hidden section includes the code to prepare the sample table we need here directly from the supplementarty tables published with the paper. You do not have to run this and can instead download the example from [here]().
+For this tutorial we rely on the data used and published in {cite:p}`Schmid2023`. The following, hidden section includes the code to prepare the sample table we need here directly from the supplementarty tables published with the paper.
 
 <details>
 <summary>Code to prepare the input data table.</summary>
@@ -189,12 +189,25 @@ readr::write_csv(samples_basic, file = "docs/data/samples_basic.csv")
 
 </details>
 
+You do not have to run this and can instead download the example table `samples_basic.csv` from [here](data/samples_basic.csv).
+
 When you have download the input data file you can load it into R.
 
 ```r
 samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
 # you have to replace "data/docs/" with the path to your file
 ```
+
+`samples_basic` is a tibble that includes the following columns/variables:
+
+| Variable          | Type | Description                                                                                                              |
+|-------------------|------|--------------------------------------------------------------------------------------------------------------------------|
+| Sample_ID         | chr  | A sample identifier                                                                                                      |
+| Latitude          | dbl  | The latitude coordinate where this sample was recovered                                                                  |
+| Longitude         | dbl  | The longitude coordinate                                                                                                 |
+| Date_BC_AD_Median | int  | The median age of this sample in years                                                                                   |
+| MDS_C1            | dbl  | The coordinate of this sample on dimension 1 of an MDS analysis.<br>See the paper for more details on how this was obtained |
+| MDS_C2            | dbl  | The coordinate of this sample on MDS dimension 2                                                                         |
 
 ## Running mobest's interpolation and search function
 
