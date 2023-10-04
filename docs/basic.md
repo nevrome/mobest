@@ -250,15 +250,28 @@ The spatial distribution of the informative samples.
 
 A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely undersampled. That is something we have to keep in mind for later when we interpret the results of the similarity search.
 
+## Specifying the search sample
+
+mobest's similarity search always takes the perspective of an indiviual sample for which we want to determine similarity probabilities for a spatial prediction grid at a specific time. For this sample, the "search sample" we require the same information as for the input samples: The position in space, time and the dependent variable space (e.g. PCA or MDS space).
+
+Technically this is only a requirement of the mobest interface. Conceptionally such a similarity search only really requires the dependent variable space position of interest. The added benefit of having all information there is the relative time setting (see below) and a very comprehensive output table for the typical usecase.
+
+In this example we will use one specific sample with a pretty well studied ancestry history: The sample named `Stuttgart` published in {cite}`Lazaridis2014`. We can select it as a subset of our sample table:
+
+```r
+search_samples <- samples_projected %>%
+  dplyr::filter(
+    Sample_ID == "Stuttgart_published.DG"
+  )
+```
+
+With this setup the search sample itself will be part of the samples used to inform the ancestry field interpolation. This is no problem - the search sample is a known data point in space and time that can very well be employed to build a better model of the past ancestry distribution. There may be research questions for which this might not be desired, though. Then it can just as well be excluded from the `samples_projected` table.
+
 ## Running mobest's interpolation and search function
 
 With the input data, both the spatial prediction grid and the samples to inform the ancestry field interpolation, prepared and ready, we can now run `mobest::locate`. For that we first have to split and transform the input data into the required data structures.
 
-### Building the input data structures
-
-
-
-### Specifying the search sample(s)
+### Building the input data for the interpolation
 
 ### Calling `mobest::locate`
 
