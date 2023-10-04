@@ -147,6 +147,55 @@ The spatial prediction grid points plotted on top of the land area.
 
 ### Reading the input samples
 
+mobest requires a set of data points, observations, to inform the ancestry field interpolation. For each observation the position in space, time and a dependent variable space (e.g. the coordinates in a PCA analysis) must be known. This information must be provided in a specific format. A typical workflow would involve preparing this information in a .xlsx or (better) .csv table, which could then be read into R.
+
+For this tutorial we rely on the data used and published in {cite:p}`Schmid2023`. The following, hidden section includes the code to prepare the sample table we need here directly from the supplementarty tables published with the paper. You do not have to run this and can instead download the example from [here]().
+
+<details>
+<summary>Code to prepare the input data table.</summary>
+
+```r
+# download .zip archives with tables from https://doi.org/10.17605/OSF.IO/6UWM5
+utils::download.file(
+  url = "https://osf.io/download/kej4s/",
+  destfile = "docs/data/pnas_tables.zip"
+)
+# extract the relevant tables
+utils::unzip(
+  "docs/data/pnas_tables.zip",
+  files = c("Dataset_S1.csv", "Dataset_S2.csv"),
+  exdir = "docs/data/"
+)
+# read data files
+samples_context_raw <- readr::read_csv("docs/data/Dataset_S1.csv")
+samples_genetic_space_raw <- readr::read_csv("docs/data/Dataset_S2.csv")
+# join them by sample name
+samples_raw <- dplyr::left_join(
+  samples_context_raw,
+  samples_genetic_space_raw,
+  by = "Sample_ID"
+)
+# create different useful subsets of this table
+## most basic selection of variables
+samples_basic <- samples_raw %>%
+  dplyr::select(
+    Sample_ID,
+    Latitude, Longitude,
+    Date_BC_AD_Median,
+    MDS_C1 = C1_mds_u, MDS_C2 = C2_mds_u
+  )
+readr::write_csv(samples_basic, file = "docs/data/samples_basic.csv")
+```
+
+</details>
+
+When you have download the input data file you can load it into R.
+
+```r
+samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
+# you have to replace "data/docs/" with the path to your file
+```
+
 ## Running mobest's interpolation and search function
 
 ### Building the input data structures
