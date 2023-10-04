@@ -209,13 +209,23 @@ samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
 | MDS_C1            | dbl  | The coordinate of this sample on dimension 1 of an MDS analysis.<br>See the paper for more details on how this was obtained |
 | MDS_C2            | dbl  | The coordinate of this sample on MDS dimension 2                                                                         |
 
+These variables are a minimum for a meaningful mobest run and must be known for all samples. Samples that are missing information in any of these columns have to excluded from the input data table.
+
 ## Running mobest's interpolation and search function
 
+With the input data, both the spatial prediction grid and the samples to inform the ancestry field interpolation, prepared and ready, we can now run `mobest::locate`. For that we first have to split and transform the input data into the required data structures.
+
 ### Building the input data structures
+
+
+
+### Specifying the search sample(s)
 
 ### Calling `mobest::locate`
 
 ## Inspecting the computed results
+
+## Simple permutations (multiple search samples, multiple search time slices)
 
 <!--
 

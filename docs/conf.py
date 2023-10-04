@@ -13,7 +13,13 @@ author = 'Clemens Schmid'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['myst_parser','sphinx_rtd_theme','sphinx_multiversion','sphinxcontrib.bibtex']
+extensions = [
+  'myst_parser',
+  'sphinx_rtd_theme',
+  'sphinx_multiversion',
+  'sphinxcontrib.bibtex',
+  'sphinx.ext.autosectionlabel'
+]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -21,6 +27,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 exclude_patterns = ['README.md']
 
 bibtex_bibfiles = ['references.bib']
+
+# make sure the autosectionlabel targets are unique
+autosectionlabel_prefix_document = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

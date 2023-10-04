@@ -1,6 +1,6 @@
 # Data types in the mobest R package
 
-The following guide briefly lists the data types and functions of `mobest` loosely in the order one would usually call them.
+The following guide briefly lists the main `mobest` data types with their constructors loosely in the order one would usually call them.
 
 ## Basic data types
 
@@ -8,7 +8,7 @@ The following guide briefly lists the data types and functions of `mobest` loose
 
 ### Spatial coordinates
 
-`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `sf::st_transform`): `mobest` can not be used with longitude and latitude coordinates.
+`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `sf::st_transform`): `mobest` can not be used with longitude and latitude coordinates (also see See {ref}`Projecting the spatial data <basic:projecting the spatial data>`).
 
 ```r
 mobest::create_geopos(
