@@ -273,6 +273,59 @@ With the input data, both the spatial prediction grid and the samples to inform 
 
 ### Building the input data for the interpolation
 
+Here is how the interface of `mobest::locate` looks:
+
+```r
+mobest::locate(
+  # spatiotemporal coordinates of the reference samples informing the ancestry field
+  independent = ...,
+  # genetic coordinates of the reference samples
+  dependent   = ...,
+  # ---
+  # field properties for each ancestry component
+  kernel = ...,
+  # ---
+  # spatiotemporal coordinates of the sample of interest
+  search_independent = ...,
+  # genetic coordinates of the sample of interest
+  search_dependent   = ...,
+  # ---
+  # spatial search grid: Where to search
+  search_space_grid  = ...,
+  # search time: When to search
+  search_time      = ...,
+  search_time_mode = ...,
+  # ---
+  # should the result be normalized
+  normalize = ...
+)
+```
+
+Each of these arguments requires specific input.
+
+#### Independent and dependent positions
+
+The `locest()` arguments `independent` and `dependent` take the spatiotemporal and "genetic" (e.g. MDS/PCA) positions of the interpolation-informing samples. The terms *independent* and *dependent* allude to the notion and terminology of a statistical model, where positions in dependent, genetic space are predicted based on positions in independent, spatiotemporal space.
+
+Spatiotemporal positions are encoded in `mobest` with a custom data type: {ref}`mobest_spatiotemporalpositions <types:spatiotemporal coordinates>`. For the `independent` argument of `locest()` we have to construct an object of this type with `mobest::create_spatpos()` to represent the positions of the input samples in `samples_projected`.
+
+```r
+mobest::create_spatpos(
+  id = input_final$Poseidon_ID,
+  x = input_final$x,
+  y = input_final$y,
+  z = input_final$Date_BC_AD_Median_Derived
+)
+```
+
+...
+
+#### Kernel parameter settings
+
+#### Search positions
+
+#### Normalization
+
 ### Calling `mobest::locate`
 
 ## Inspecting the computed results
