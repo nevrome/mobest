@@ -12,28 +12,13 @@ The following guide briefly lists the main `mobest` data types with their constr
 
 ```r
 mobest::create_geopos(
-  id = 1:100,
-  x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
-  y = c(sample(100000:700000, 50), sample(300000:1000000, 50))
+  id = 1:10,                   # ID columns
+  x  = c(2,4,5,6,2,3,6,7,8,5), # spatial x coordinate
+  y  = c(9,5,9,4,3,6,2,6,7,3)  # spatial y coordinate
 )
 ```
 
 For the interpolation fields we often want regular, spatial grids covering a specific spatial area. These can be constructed with `mobest::create_prediction_grid`, which takes an object of class `sf` with polygons in a projected coordinate system. It also yields an object of class `mobest_spatialpositions`.
-
-Here is an example for the landmass of Europe, covered in a 250km grid:
-
-```r
-rnaturalearthdata::countries50 %>%
-  sf::st_as_sf() %>%
-  sf::st_make_valid() %>%
-  sf::st_crop(xmin = -10.8, ymin = 33.6, xmax = 34.5, ymax = 61.3) %>%
-  sf::st_transform(3857) %>%
-  mobest::create_prediction_grid(250000) %>%
-  ggplot() +
-    geom_raster(aes(x, y)) +
-    geom_text(aes(x,y,label = id), colour = "white", size = 2.5) +
-    coord_fixed()
-```
 
 ### Spatiotemporal coordinates
 
@@ -41,23 +26,23 @@ rnaturalearthdata::countries50 %>%
 
 ```r
 mobest::geopos_to_spatpos(
-  mobest::create_geopos(
-    id = 1:100,
-    x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
-    y = c(sample(100000:700000, 50), sample(300000:1000000, 50))
+  geopos = mobest::create_geopos(
+    id = 1:10,
+    x  = c(2,4,5,6,2,3,6,7,8,5),
+    y  = c(9,5,9,4,3,6,2,6,7,3)
   ),
-  c(-5000, -4900, -4800)
+  z = c(-5, -4, -3)
 )
 ```
 
 `mobest::create_spatpos` directly creates `mobest_spatiotemporalpositions` objects to represent spatiotemporal positions.
 
 ```r
-positions <- mobest::create_spatpos(
-  id = 1:100,
-  x = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
-  y = c(sample(100000:700000, 50), sample(300000:1000000, 50)),
-  z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))
+mobest::create_spatpos(
+  id = 1:10,                   # ID column
+  x  = c(2,4,5,6,2,3,6,7,8,5), # spatial x coordinate
+  y  = c(9,5,9,4,3,6,2,6,7,3), # spatial y coordinate
+  z  = c(1,1,1,1,1,2,2,2,2,2)  # temporal coordinate
 )
 ```
 
@@ -66,17 +51,17 @@ positions <- mobest::create_spatpos(
 `mobest::create_obs` creates an object `mobest_observations`, which is a `tibble` with genetic coordinates. Genetic coordinates can be any simple numeric measure of ancestry, for example the position of the samples in PCA space.
 
 ```r
-observations <- mobest::create_obs(
-  ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # "ac" here for "ancestry component", e.g. PCA coordinate 1
-  ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1)) # e.g. PCA coordinate 2
+mobest::create_obs(
+  ac1 = runif(10, 0, 1), # "ac" here for "ancestry component", e.g. PCA coordinate 1
+  ac2 = runif(10, 0, 1), # e.g. PCA coordinate 2
 )
 ```
 
-Names and number of the components are freely selectable, so instead of `ac1` + `ac2` as in the example here, one could, for example, also have `PC1` + `PC2` + `PC3`, or `MDS1` + `MDS2`.
+Names and number of the components can be choosen freely, so instead of `ac1` + `ac2` as in the example here, one could, for example, also have `PC1` + `PC2` + `PC3`, or `MDS1` + `MDS2`.
 
 ### Kernel parameter settings
 
-Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific ancestry component (e.g. `ac1`). Given that an analysis typically involves multiple genetic coordinates `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`.
+Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific dependent variable (e.g. an ancestry component `ac1`). Given that an analysis typically involves multiple genetic dimensions `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`.
 
 ```r
 kernset <- mobest::create_kernset(

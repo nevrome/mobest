@@ -282,7 +282,7 @@ mobest::locate(
   # genetic coordinates of the reference samples
   dependent   = ...,
   # ---
-  # field properties for each ancestry component
+  # interpolation settings for each ancestry component
   kernel = ...,
   # ---
   # spatiotemporal coordinates of the sample of interest
@@ -311,16 +311,65 @@ Spatiotemporal positions are encoded in `mobest` with a custom data type: {ref}`
 
 ```r
 mobest::create_spatpos(
-  id = input_final$Poseidon_ID,
-  x = input_final$x,
-  y = input_final$y,
-  z = input_final$Date_BC_AD_Median_Derived
+  id = samples_projected$Sample_ID,
+  x  = samples_projected$x,
+  y  = samples_projected$y,
+  z  = samples_projected$Date_BC_AD_Median
 )
 ```
 
-...
+The dependent, genetic variables are also encoded in a custom, tabular type: {ref}`mobest_observations <types:genetic coordinates>` with the constructor function `mobest::create_observations`.
+
+```r
+mobest::create_obs(
+  C1 = samples_projected$MDS_C1,
+  C2 = samples_projected$MDS_C2
+)
+```
+
+Note that you can have an arbitrary amount of these components with arbitrary names. The only condition is, that the very same names are used below for the search samples and for the kernel parameter settings of each dependent variable.
+
+The lengths of the vectors (`samples_projected$...`) used for `create_spatpos` and `create_obs` all have to be identical. And their order has to be the same as well: although the input is distributed over two constructors they describe the same samples.
+
+For the search sample we have to construct objects of the same type and structure.
+
+```r
+mobest::create_spatpos(
+  id = search_samples$Sample_ID,
+  x  = search_samples$x,
+  y  = search_samples$y,
+  z  = search_samples$Date_BC_AD_Median
+)
+mobest::create_obs(
+  C1 = search_samples$MDS_C1,
+  C2 = search_samples$MDS_C2
+)
+```
 
 #### Kernel parameter settings
+
+The `locest()` argument `kernel` takes an object of the class {ref}`mobest_kernelsetting <types:kernel parameter settings>`. This type encodes kernel configurations for each dependent variable, so the parameters for the Gaussian process regression interpolation that should be used for this variable. These include mostly the lengthscale parameters in space (x and y) and time, as well as the nugget parameter. In very simple terms the former specify how far in space and time an individual sample's genetic position should inform the interpolated field. The nugget, on the other hand, is an error term to model local (for observations from the same position in space and time) variability. See {cite:p}`Gramacy2020`, specifically [here](https://bookdown.org/rbg/surrogates/chap5.html#chap5hyper), for more details.
+
+Here is a possible configuration for our example. We construct two kernel settings, one for each ancestry component, with `mobest::create_kernel()` in `mobest::create_kernset()`. 
+
+```
+mobest::create_kernset(
+  C1 = mobest::create_kernel(
+    dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+    g = 0.1
+  ),
+  C2 = mobest::create_kernel(
+    dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+    g = 0.1
+  )
+)
+```
+
+Note how we scale the lengthscale parameters: `dsx` and `dsy` are set in meters (800 * 1000m = 800km) and `dt` in years (800y). `g` is dimensionless. With the setting specified here both dependent variables will be interpolated with the same, very smooth (several hundred kilomenters and years in diameter) kernel.
+
+The main question naturally arising from this, is how to set these parameters for a given dataset and research question. There are various empirical ways to find optimal values through numerical optimization. See Supplementary Text 2 of {cite:p}`Schmid2023` for the approaches we applied. One concrete workflow to estimate the nugget from the variogram and the lengthscale parameters through crossvalidation is explained in {doc}`Interpolation parameter estimation <estimation>`.
+
+We would argue, though, that this computationally expensive workflow is not necessary for basic applications of mobest. The analysis in {cite:p}`Schmid2023` showed that Gaussian process regression returns reasonably accurate interpolation results for a large range of kernel parameter settings, as long as they reflect a plausible intution about the mobility behaviour of human ancestry, which generally operates on a scale of hundreds of kilometers and years. mobest is primarily a visualization method and adjusting its parameters to ones liking is legitimate if the choices are communicated transparently.
 
 #### Search positions
 
