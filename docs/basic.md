@@ -373,6 +373,24 @@ We would argue, though, that this computationally expensive workflow is not nece
 
 #### Search positions
 
+With input data and settings out of the way we can now specify the points in space and time where we actually want to perform the search. For these positions the GPR model is queried to return a mean and error, which are in turn used to calculate the probability density of a specific dependent variable space position, e.g. a specific coordinate on the first coordinate of an MDS analysis.
+
+We already performed all necessary work for the `search_space_grid` argument, so the spatial positions of the prediction grid, in {ref}`Generating the the spatial prediction grid <basic:generating the the spatial prediction grid>`. We can just enter `spatial_pred_grid` here.
+
+The search time can be specified as an integer vector of years: e.g. `search_time = c(-500, -200, 100)`. This vector gets interpreted by `mobest::locate()` in two different ways, which can be selected with the switch argument `search_time_mode`. `search_time_mode` can either be `"relative"` (which is the default!) or `absolute`.
+
+- With the `"relative"` mode the `search_time` is interpreted as a $\Delta t$ relative to the age of the search sample(s). Negative values point to ages that are older then the sample age, so in their relative past, and positive ones to younger ages in their relative future. In this example `-500` would be interpreted as 500 years prior to the year the Stuttgart sample presumably died (so -5242-500 = -5742 BC/AD), and 100 as an age 100 years after their death (so -5242+100 = -5142 BC/AD).
+- The `"absolute"` mode is more straight forward. In this case the values in `search_time` are just interpreted as absolute ages in years BC/AD.
+
+For this example we will set the search time to one absolute value.
+
+```r
+search_time = -6500
+search_time_mode = "relative"
+```
+
+This will search at exactly one point in time; a single timeslice 6500 BC.
+
 #### Normalization
 
 ### Calling `mobest::locate`

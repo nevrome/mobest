@@ -61,16 +61,34 @@ Names and number of the components can be choosen freely, so instead of `ac1` + 
 
 ### Kernel parameter settings
 
-Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`. `mobest_kernel` only represents one specific kernel, though, for one specific dependent variable (e.g. an ancestry component `ac1`). Given that an analysis typically involves multiple genetic dimensions `mobest::create_kernset` provides a wrapper to bundle multiple kernels directly in an object of class `mobest_kernelsetting`.
+Gaussian process regression requires a parametrized covariance function: a "kernel". One `mobest_kernel` can be constructed with `mobest::create_kernel`.
 
 ```r
-kernset <- mobest::create_kernset(
+mobest::create_kernel(
+  dsx = 800 * 1000, # lengthscale parameter spatial x dimension
+  dsy = 800 * 1000, # lengthscale parameter spatial y dimension
+  dsx = 800,        # lengthscale parameter temporal dimension
+  g = 0.1,          # nugget parameter
+  on_residuals = T, # Should a linear model take over the main trends
+                    # before the kriging interpolation? Default: TRUE
+  auto = F          # Should the lengthscale and nugget values be 
+                    # automatically determined by laGPs maximum likelihood
+                    # algorithm? Default: FALSE
+)
+```
+
+`mobest_kernel` includes these input paramaters in the form of an R `list`. It only represents one specific kernel, though, for one specific dependent variable (e.g. an ancestry component `ac1`). To account for the fact that a mobest analysis typically involves multiple genetic dimensions `mobest::create_kernset` provides a wrapper to bundle multiple named (by the dependent variable name) kernels directly in an object of class `mobest_kernelsetting`.
+
+```r
+mobest::create_kernset(
   ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
   ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
 )
 ```
 
 If a function requires both input of type `mobest_observations` and `mobest_kernelsetting`, then the names of the individual ancestry components must be identical, i.e. fit to each other.
+
+## Result types
 
 ## Variability and permutations
 
