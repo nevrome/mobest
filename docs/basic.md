@@ -441,9 +441,41 @@ search_result <- mobest::locate(
 )
 ```
 
-This typically runs for a couple of seconds, uses every available processor core and returns an object `search_result` of class `mobest_observations`, which we will inspect below.
+This typically runs for a couple of seconds, uses every available processor core and returns an object `search_result` of class `mobest_locateoverview`, which we will inspect below.
 
 ## Inspecting the computed results
+
+The output data type `mobest_locateoverview` is derived from `tibble` and has a large set of columns, many not immediatelly relevant to the basic example here. This applies especially for the variables documenting the excessive permutation mechanics hidden behind the relatively simple interface of `mobest::locate()`. `locate()` is, in fact, a wrapper function for the more flexible function `mobest::locate_multi()`, which can handle permutations in various additional input parameters (see {doc}`Advanced mobest features <advanced>`).
+
+Spelled out this means, each row of the `mobest_locateoverview` table stores the calculated interpolated mean, error and similarity probability (`field_mean`, `field_sd`, `probability`) for one permutation of the input point positions in independent and depedendent variable space (`independent_table_id` and `dependent_setting_id`), one dependent variable `dependent_var_id`, one iteration of the kernel settings (`kernel_setting_id`: `dsx`, `dsy`, `dt`, `g`), one prediction grid point emerging as a combination of spatial grid and search timeslice (`pred_grid_id`: `field_id`, `field_geo_id`, `field_x`, `field_y`, `field_z`, `search_time`) and finally one search sample (`search_id`, `search_x`, `search_y`, `search_z`, `search_measured`).
+ 
+ Here is a list of the variables returned in `mobest_observations`.
+
+|Column               |Description |
+|:--------------------|:-----------|
+|independent_table_id |Identifier of the spatiotemporal position permutation|
+|dependent_setting_id |Identifier of the dependent variable space position permutation|
+|dependent_var_id     |Identifier of the dependent variable|
+|kernel_setting_id    |Identifier of the kernel setting permutation|
+|pred_grid_id         |Identifier of the spatiotemporal prediction grid|
+|dsx                  |NA          |
+|dsy                  |NA          |
+|dt                   |NA          |
+|g                    |NA          |
+|field_id             |NA          |
+|field_x              |NA          |
+|field_y              |NA          |
+|field_z              |NA          |
+|field_geo_id         |NA          |
+|field_mean           |NA          |
+|field_sd             |NA          |
+|search_id            |NA          |
+|search_x             |NA          |
+|search_y             |NA          |
+|search_z             |NA          |
+|search_time          |NA          |
+|search_measured      |NA          |
+|probability          |NA          |
 
 ## Simple permutations (multiple search samples, multiple search time slices)
 
@@ -454,49 +486,6 @@ This typically runs for a couple of seconds, uses every available processor core
 Here is a simple, artificial example how 2. can be used:
 
 ```r
-
-
-# a function to calculate the similarity probability for one particular sample
-locate_simple <- mobest::locate(
-  # spatiotemporal coordinates of the reference samples informing the ancestry field
-  independent = mobest::create_spatpos(
-    id = 1:100,
-    x = c(sample(100000:700000, 50), sample(300000:1000000, 50)), # space x
-    y = c(sample(100000:700000, 50), sample(300000:1000000, 50)), # space y
-    z = c(sample(-5000:-3500, 50), sample(-4500:-3000, 50))       # time
-  ),
-  # genetic coordinates of the reference samples
-  dependent = mobest::create_obs(
-    ac1 = c(runif(50, 0, 0.6), runif(50, 0.4, 1)), # PCA coordinate 1
-    ac2 = c(runif(50, 0, 0.3), runif(50, 0.5, 1))  # PCA coordinate 2
-  ),
-  # field properties for each ancestry component
-  kernel = mobest::create_kernset(
-    ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
-    ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
-  ),
-  # spatiotemporal coordinates of the sample of interest
-  search_independent = mobest::create_spatpos(
-    id = 1,
-    x = sample(100000:1000000, 1), # space x
-    y = sample(100000:1000000, 1), # space y
-    z = sample(-5000:-3000, 1)     # time
-  ),
-  # genetic coordinates of the sample of interest
-  search_dependent = mobest::create_obs(
-    ac1 = runif(1, 0, 0.6), # PCA coordinate 1
-    ac2 = runif(1, 0, 0.5)  # PCA coordinate 2
-  ),
-  # spatial search grid: Where to search
-  search_space_grid = expand.grid(
-      x = seq(100000, 1000000, 100000), 
-      y = seq(100000, 1000000, 100000)
-    ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
-  # search time: When to search
-  search_time = -500,
-  quiet = T
-)
-
 # multiply probabilities for PCA coordinate 1 and PCA coordinate 2
 locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
 
