@@ -382,7 +382,7 @@ The search time can be specified as an integer vector of years: e.g. `search_tim
 - With the `"relative"` mode the `search_time` is interpreted as a $\Delta t$ relative to the age of the search sample(s). Negative values point to ages that are older then the sample age, so in their relative past, and positive ones to younger ages in their relative future. In this example `-500` would be interpreted as 500 years prior to the year the Stuttgart sample presumably died (so -5242-500 = -5742 BC/AD), and 100 as an age 100 years after their death (so -5242+100 = -5142 BC/AD).
 - The `"absolute"` mode is more straight forward. In this case the values in `search_time` are just interpreted as absolute ages in years BC/AD.
 
-For this example we will set the search time to one absolute value.
+For this example we will set the search time to an `"absolute"` value.
 
 ```r
 search_time = -6500
@@ -393,7 +393,15 @@ This will search at exactly one point in time; a single timeslice 6500 BC.
 
 #### Normalization
 
+The last relevant option of `locate()`, `normalize`, concerns the normalization of the output. mobest's search calculates probability densities for each search point. This is a dimensionless measure that is hard to compare across multiple runs with different parameter settings. If `normalize` is set to `TRUE`, then the densities for sets of spatial points that share all other parameters (including the timeslice) are rescaled to sum to one.
+
+We assume users generally want to use mobest, specifically `locate()`, to calculate similarity probability density maps for individual samples, time slices and parameter settings. The most natural normalization for this case is to unify the scaling of these maps. This renders them comparable.
+
+`normalize` should therefore be set to `TRUE` for basic applications. This is also encoded as the the default setting.
+
 ### Calling `mobest::locate`
+
+In the previous sections we have thoroughly prepared the input for a first, simple run of `mobest::locate()`.
 
 ## Inspecting the computed results
 
