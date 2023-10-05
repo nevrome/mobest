@@ -401,7 +401,47 @@ We assume users generally want to use mobest, specifically `locate()`, to calcul
 
 ### Calling `mobest::locate`
 
-In the previous sections we have thoroughly prepared the input for a first, simple run of `mobest::locate()`.
+In the previous sections we have thoroughly prepared the input for a first, simple run of `mobest::locate()`. We can now call the function.
+
+```r
+search_result <- mobest::locate(
+    independent = mobest::create_spatpos(
+    id = samples_projected$Sample_ID,
+    x  = samples_projected$x,
+    y  = samples_projected$y,
+    z  = samples_projected$Date_BC_AD_Median
+  ),
+  dependent = mobest::create_obs(
+    C1 = samples_projected$MDS_C1,
+    C2 = samples_projected$MDS_C2
+  ),
+  kernel = mobest::create_kernset(
+    C1 = mobest::create_kernel(
+      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+      g = 0.1
+    ),
+    C2 = mobest::create_kernel(
+      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+      g = 0.1
+    )
+  ),
+  search_independent = mobest::create_spatpos(
+    id = search_samples$Sample_ID,
+    x  = search_samples$x,
+    y  = search_samples$y,
+    z  = search_samples$Date_BC_AD_Median
+  ),
+  search_dependent = mobest::create_obs(
+    C1 = search_samples$MDS_C1,
+    C2 = search_samples$MDS_C2
+  ),
+  search_space_grid = spatial_pred_grid,
+  search_time = -6500,
+  search_time_mode = "absolute"
+)
+```
+
+This typically runs for a couple of seconds, uses every available processor core and returns an object `search_result` of class `mobest_observations`, which we will inspect below.
 
 ## Inspecting the computed results
 
