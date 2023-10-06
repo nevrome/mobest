@@ -505,21 +505,25 @@ result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
 ```
 
 ```r
-ggplot() +
+p_C1 <- ggplot() +
+  geom_sf(data = research_land_outline_3035) +
   geom_raster(
     data = result_C1,
     mapping = aes(x = field_x, y = field_y, fill = probability)
   ) +
-  scale_fill_viridis_c()
+  scale_fill_viridis_c(option = "D")
 
-locate_product %>% ggplot() +
-  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
-  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
-  coord_fixed() +
-  ggtitle(paste0(
-    "t for sample of interest = ", unique(locate_product$search_z), "\n",
-    "t field time slice = ", unique(locate_product$field_z)
-  ))
+p_C2 <- ggplot() +
+  geom_sf(data = research_land_outline_3035) +
+  geom_raster(
+    data = result_C2,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c(option = "A")
+```
+
+```r
+cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
 ```
 
 ### Combining the information from multiple dependent variables
@@ -541,6 +545,15 @@ Here is a simple, artificial example how 2. can be used:
 ```r
 # multiply probabilities for PCA coordinate 1 and PCA coordinate 2
 locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
+
+locate_product %>% ggplot() +
+  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
+  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
+  coord_fixed() +
+  ggtitle(paste0(
+    "t for sample of interest = ", unique(locate_product$search_z), "\n",
+    "t field time slice = ", unique(locate_product$field_z)
+  ))
 
 ```
 
