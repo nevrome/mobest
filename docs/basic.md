@@ -532,6 +532,31 @@ The similarity probability search results for the sample Stuttgart for 6500 BC.
 
 ### Combining the information from multiple dependent variables
 
+The results for individual dependent variables, so ancestry components like MDS or PCA dimensions, can be informative, but are usually underpowered to exclude highly improbable search results. Generally combining them improves the accuracy of the results for individual samples, and we think this is best done by multiplying the results for the different dependent variables. This way spatial areas with high similarity probability for all dependent variables are naturally upweighted, whereas areas that are unlikely similar for some dependent variables are downweighted.
+
+To perform the multiplication (and the renormalization afterwards), mobest includes a function `mobest::multiply_dependent_probabilities()`. It works on objects of type `mobest_locateoverview` and yields tabular objects of type `mobest_locateproduct`. For this transformation it is aware of the parameter permutations potentially encoded in the `mobest_locateoverview` overview table. It only combines the probabilities for dependent variables that share all other parameters. That means the number of rows in `mobest_locateproduct` will be $\frac{1}{\text{Number of dependent variables}}$ times the number of rows in the input `mobest_locateoverview` table.
+
+If we call it for `search_result` the output will have again $9476/2=4738$ rows. 
+
+```r
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+```
+
+`mobest_locateproduct` tables have a perfect subset of the columns of `mobest_locateoverview`. We can plot the combined similarity probability map with the code already applied for individual dependent variables.
+
+```r
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  coord_fixed()
+```
+
+```{figure} img/basic/search_map_simple_combined.png
+The combined ($\text{C1}*\text{C2}$) similarity probability search results for the sample Stuttgart for 6500 BC.
+```
+
 ## Simple permutations
 
 ### Multiple search time slices

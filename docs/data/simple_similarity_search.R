@@ -105,3 +105,21 @@ search_result <- mobest::locate(
   search_time = -6500,
   search_time_mode = "absolute"
 )
+
+result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
+p_C1 <- ggplot() +
+  geom_raster(
+    data = result_C1,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  coord_fixed()
+
+result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
+p_C2 <- ggplot() +
+  geom_raster(
+    data = result_C2,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  coord_fixed()
+
+cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
