@@ -30,7 +30,7 @@ research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(cr
 
 spatial_pred_grid <- mobest::create_prediction_grid(
   research_land_outline_3035,
-  spatial_cell_size = 50000
+  spatial_cell_size = 50000 # or 20000
 )
 
 # ggplot() +
@@ -107,19 +107,28 @@ search_result <- mobest::locate(
 )
 
 result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
-p_C1 <- ggplot() +
-  geom_raster(
-    data = result_C1,
-    mapping = aes(x = field_x, y = field_y, fill = probability)
-  ) +
-  coord_fixed()
+# p_C1 <- ggplot() +
+#   geom_raster(
+#     data = result_C1,
+#     mapping = aes(x = field_x, y = field_y, fill = probability)
+#   ) +
+#   coord_fixed()
 
 result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
-p_C2 <- ggplot() +
-  geom_raster(
-    data = result_C2,
-    mapping = aes(x = field_x, y = field_y, fill = probability)
-  ) +
-  coord_fixed()
+# p_C2 <- ggplot() +
+#   geom_raster(
+#     data = result_C2,
+#     mapping = aes(x = field_x, y = field_y, fill = probability)
+#   ) +
+#   coord_fixed()
+#
+# cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
 
-cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+
+# ggplot() +
+#   geom_raster(
+#     data = search_product,
+#     mapping = aes(x = field_x, y = field_y, fill = probability)
+#   ) +
+#   coord_fixed()
