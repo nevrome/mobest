@@ -449,7 +449,7 @@ The output data type `mobest_locateoverview` is derived from `tibble` and has a 
 
 Spelled out this means, each row of the `mobest_locateoverview` table stores the calculated interpolated mean, error and similarity probability (`field_mean`, `field_sd`, `probability`) for one permutation of the input point positions in independent and depedendent variable space (`independent_table_id` and `dependent_setting_id`), one dependent variable `dependent_var_id`, one iteration of the kernel settings (`kernel_setting_id`: `dsx`, `dsy`, `dt`, `g`), one prediction grid point emerging as a combination of spatial grid and search timeslice (`pred_grid_id`: `field_id`, `field_geo_id`, `field_x`, `field_y`, `field_z`, `search_time`) and finally one search sample (`search_id`, `search_x`, `search_y`, `search_z`, `search_measured`).
  
- Here is a list of the variables returned in `mobest_observations`.
+Here is a list of the variables returned in `mobest_observations` for each of these result iterations.
 
 |Column               |Description |
 |:--------------------|:-----------|
@@ -458,24 +458,24 @@ Spelled out this means, each row of the `mobest_locateoverview` table stores the
 |dependent_var_id     |Identifier of the dependent variable|
 |kernel_setting_id    |Identifier of the kernel setting permutation|
 |pred_grid_id         |Identifier of the spatiotemporal prediction grid|
-|dsx                  |NA          |
-|dsy                  |NA          |
-|dt                   |NA          |
-|g                    |NA          |
-|field_id             |NA          |
-|field_x              |NA          |
-|field_y              |NA          |
-|field_z              |NA          |
-|field_geo_id         |NA          |
-|field_mean           |NA          |
-|field_sd             |NA          |
-|search_id            |NA          |
-|search_x             |NA          |
-|search_y             |NA          |
-|search_z             |NA          |
-|search_time          |NA          |
-|search_measured      |NA          |
-|probability          |NA          |
+|dsx                  |Kernel lengthscale parameter on the spatial x axis|
+|dsy                  |Kernel lengthscale parameter on the spatial y axis|
+|dt                   |Kernel lengthscale parameter on the temporal axis|
+|g                    |Kernel nugget parameter|
+|field_id             |Identifier of the spatiotemporal prediction point|
+|field_x              |Spatial x axis coordinate of the prediction point|
+|field_y              |Spatial y axis coordinate of the prediction point|
+|field_z              |Temporal coordinate (age) of the prediction point|
+|field_geo_id         |Identifier of the spatial prediction point|
+|field_mean           |Mean value predicted by the GPR model for the relevant dependent variable|
+|field_sd             |Uncertainty predicted by the GPR model for the relevant dependent variable|
+|search_id            |Identifier of the search sample|
+|search_x             |Spatial x axis coordinate of the search sample|
+|search_y             |Spatial y axis coordinate of the search sample|
+|search_z             |Temporal coordinate (age) of the search sample|
+|search_time          |Search time as provided by the user in `locate()`'s `search_time` argument|
+|search_measured      |Genetic coordinate of the search sample in the dependent variable space|
+|probability          |Probability density for `search_measured` given all other parameters|
 
 ## Simple permutations (multiple search samples, multiple search time slices)
 
