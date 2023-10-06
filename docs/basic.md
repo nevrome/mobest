@@ -501,29 +501,33 @@ The most basic similarity probability map we can create with `search_result` is 
 
 ```r
 result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
-result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
 ```
+
+And this is then easy to plot with `geom_raster()`. We can also plot C1 and C2 together using `cowplot::plot_grid()`.
 
 ```r
 p_C1 <- ggplot() +
-  geom_sf(data = research_land_outline_3035) +
   geom_raster(
     data = result_C1,
     mapping = aes(x = field_x, y = field_y, fill = probability)
   ) +
-  scale_fill_viridis_c(option = "D")
+  coord_fixed()
 
+# for C2
+result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
 p_C2 <- ggplot() +
-  geom_sf(data = research_land_outline_3035) +
   geom_raster(
     data = result_C2,
     mapping = aes(x = field_x, y = field_y, fill = probability)
   ) +
-  scale_fill_viridis_c(option = "A")
+  coord_fixed()
+
+# arrange both plots together
+cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
 ```
 
-```r
-cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
+```{figure} img/basic/search_map_simple_C1_C2.png
+The similarity probability search results for the sample Stuttgart for 6500 BC.
 ```
 
 ### Combining the information from multiple dependent variables
