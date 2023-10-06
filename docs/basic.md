@@ -557,6 +557,14 @@ ggplot() +
 The combined ($\text{C1}*\text{C2}$) similarity probability search results for the sample Stuttgart for 6500 BC.
 ```
 
+This figure is the main result of this write-up.
+
+***
+
+## Improving the similarity search map plot
+
+This figure is not particularly beautiful, though. We can and should apply some changes to this plot to make it more readable and visually pleasing.
+
 ## Simple permutations
 
 ### Multiple search time slices
