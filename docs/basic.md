@@ -441,13 +441,17 @@ search_result <- mobest::locate(
 )
 ```
 
-This typically runs for a couple of seconds, uses every available processor core and returns an object `search_result` of class `mobest_locateoverview`, which we will inspect below.
+This typically runs for a couple of seconds, uses every available processor core and returns an object `search_result`, which we will inspect below.
 
 ## Inspecting the computed results
 
+`mobest::locate()` returns an object of class `mobest_locateoverview`. It includes the relevant information for visualization and further processing of the analysis results.
+
+### The `mobest_locateoverview` table
+
 The output data type `mobest_locateoverview` is derived from `tibble` and has a large set of columns, many not immediatelly relevant to the basic example here. This applies especially for the variables documenting the excessive permutation mechanics hidden behind the relatively simple interface of `mobest::locate()`. `locate()` is, in fact, a wrapper function for the more flexible function `mobest::locate_multi()`, which can handle permutations in various additional input parameters (see {doc}`Advanced mobest features <advanced>`).
 
-Spelled out this means, each row of the `mobest_locateoverview` table stores the calculated interpolated mean, error and similarity probability (`field_mean`, `field_sd`, `probability`) for one permutation of the input point positions in independent and depedendent variable space (`independent_table_id` and `dependent_setting_id`), one dependent variable `dependent_var_id`, one iteration of the kernel settings (`kernel_setting_id`: `dsx`, `dsy`, `dt`, `g`), one prediction grid point emerging as a combination of spatial grid and search timeslice (`pred_grid_id`: `field_id`, `field_geo_id`, `field_x`, `field_y`, `field_z`, `search_time`) and finally one search sample (`search_id`, `search_x`, `search_y`, `search_z`, `search_measured`).
+Spelled out this means, each row of the `mobest_locateoverview` table stores the calculated interpolated mean, error and similarity probability (`field_mean`, `field_sd`, `probability`) for one permutation of the input point positions in independent and dependent variable space (`independent_table_id` and `dependent_setting_id`), one dependent variable `dependent_var_id`, one iteration of the kernel settings (`kernel_setting_id`: `dsx`, `dsy`, `dt`, `g`), one prediction grid point emerging as a combination of spatial grid and search timeslice (`pred_grid_id`: `field_id`, `field_geo_id`, `field_x`, `field_y`, `field_z`, `search_time`) and finally one search sample (`search_id`, `search_x`, `search_y`, `search_z`, `search_measured`).
  
 Here is a list of the variables returned in `mobest_observations` for each of these result iterations.
 
@@ -477,7 +481,56 @@ Here is a list of the variables returned in `mobest_observations` for each of th
 |search_measured      |Genetic coordinate of the search sample in the dependent variable space|
 |probability          |Probability density for `search_measured` given all other parameters|
 
-## Simple permutations (multiple search samples, multiple search time slices)
+As a result of the permutation of paramaters, prediction grid and search points the number of rows of `mobest_locateoverview` table can be calculated as a product of the individual counts of all relevant entities. One way to quickly validate the output of `locate()` and `locate_multi()` is to calculate the number of expected results based on the input and compare it with the actual number of rows in the output. For our example this calculation is fairly simple:
+
+We have:
+
+- $1$ set of input point positions in independent variable space
+- $1$ set of input point positions in dependent variable space
+- $2$ dependent variables
+- $1$ set of kernel parameter settings
+- $4738$ spatial prediction grid positions
+- $1$ time slice of interest
+- $1$ search sample
+
+This means we expect exactly $2 * 4738 = 9476$ rows in `search_result`, which we can confirm with `nrow(search_result)`. 
+
+### Creating similarity probability maps for individual dependent variables
+
+The most basic similarity probability map we can create with `search_result` is a map for just one parameter permutation, including only one dependent variable. In this case the relevant similarity probability observations are easy to obtain. We can just filter by `dependent_var_id` to only include either `C1` or `C2`.
+
+```r
+result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
+result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
+```
+
+```r
+ggplot() +
+  geom_raster(
+    data = result_C1,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c()
+
+locate_product %>% ggplot() +
+  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
+  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
+  coord_fixed() +
+  ggtitle(paste0(
+    "t for sample of interest = ", unique(locate_product$search_z), "\n",
+    "t field time slice = ", unique(locate_product$field_z)
+  ))
+```
+
+### Combining the information from multiple dependent variables
+
+## Simple permutations
+
+### Multiple search time slices
+
+### Multiple search samples
+
+
 
 <!--
 
@@ -489,16 +542,6 @@ Here is a simple, artificial example how 2. can be used:
 # multiply probabilities for PCA coordinate 1 and PCA coordinate 2
 locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
 
-# plot the resulting probability surface
-library(ggplot2)
-locate_product %>% ggplot() +
-  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
-  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
-  coord_fixed() +
-  ggtitle(paste0(
-    "t for sample of interest = ", unique(locate_product$search_z), "\n",
-    "t field time slice = ", unique(locate_product$field_z)
-  ))
 ```
 
 ## Origin search
