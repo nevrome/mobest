@@ -190,6 +190,6 @@ ggplot() +
   facet_wrap(
     ~search_time,
     labeller = \(variable, value) {
-      paste("Search time ", abs(value), "BC")
+      paste0("Search time: ", abs(value), "BC")
     }
   )
