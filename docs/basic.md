@@ -89,9 +89,9 @@ The research area land polygon.
 
 #### Projecting the spatial data
 
-At this point we run into a specific issue of mobest: It requires its "independent" spatial and temporal coordinates to be coordinates in a [cartesian system](https://en.wikipedia.org/wiki/Cartesian_coordinate_system) describing [Euclidean space](https://en.wikipedia.org/wiki/Euclidean_space). For the spatial coordinates that means we can not work with latitude and longitude coordinates on a sphere, but have to apply [map projection](https://en.wikipedia.org/wiki/Map_projection) to represent the curved, two dimensional surface of our planet on a simple plane.
+At this point we run into a specific issue of mobest: It requires its "independent" spatial and temporal coordinates to be coordinates in a [Cartesian system](https://en.wikipedia.org/wiki/Cartesian_coordinate_system) describing [Euclidean space](https://en.wikipedia.org/wiki/Euclidean_space). For the spatial coordinates that means we can not work with latitude and longitude coordinates on a sphere, but have to apply [map projection](https://en.wikipedia.org/wiki/Map_projection) to represent the curved, two dimensional surface of our planet on a simple plane.
 
-The question how exactly this should be done and which CRS to choose depends on the position, size and shape of your research area. Each map projection algorithm has different properties regarding whether they manage to preserve or distort size, shape, distances and directions of areas and lines compared to the actual properties on Earth. Generally the larger the research area, the bigger the distortion of these properties becomes and for mobest we ideally want to represent all them accurately. mobest is therefore unfit for origin search on a global scale, but can usually be well applied for individual countries with the projections recommended by their cartographic agencies. For an intermedite, continental scale, as in this example, we have to choose our CRS wisely. 
+The question how exactly this should be done and which CRS to choose depends on the position, size and shape of your research area. Each map projection algorithm has different properties regarding whether they manage to preserve or distort size, shape, distances and directions of areas and lines compared to the actual properties on Earth. Generally the larger the research area, the bigger the distortion of these properties becomes and for mobest we ideally want to represent all them accurately. mobest is therefore unfit for origin search on a global scale, but can usually be well applied for individual countries with the projections recommended by their cartographic agencies. For an intermediate, continental scale, as in this example, we have to choose our CRS wisely. 
 
 We decided to follow the recommendation of {cite:p}`Annoni2003`.
 
@@ -248,13 +248,13 @@ ggplot() +
 The spatial distribution of the informative samples.
 ```
 
-A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely undersampled. That is something we have to keep in mind for later when we interpret the results of the similarity search.
+A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely under-sampled. That is something we have to keep in mind for later when we interpret the results of the similarity search.
 
 ## Specifying the search sample
 
-mobest's similarity search always takes the perspective of an indiviual sample for which we want to determine similarity probabilities for a spatial prediction grid at a specific time. For this sample, the "search sample" we require the same information as for the input samples: The position in space, time and the dependent variable space (e.g. PCA or MDS space).
+mobest's similarity search always takes the perspective of an individual sample for which we want to determine similarity probabilities for a spatial prediction grid at a specific time. For this sample, the "search sample" we require the same information as for the input samples: The position in space, time and the dependent variable space (e.g. PCA or MDS space).
 
-Technically this is only a requirement of the mobest interface. Conceptionally such a similarity search only really requires the dependent variable space position of interest. The added benefit of having all information there is the relative time setting (see below) and a very comprehensive output table for the typical usecase.
+Technically this is only a requirement of the mobest interface. Conceptually such a similarity search only really requires the dependent variable space position of interest. The added benefit of having all information there is the relative time setting (see below) and a very comprehensive output table for the typical use-case.
 
 In this example we will use one specific sample with a pretty well studied ancestry history: The sample named `Stuttgart` published in {cite}`Lazaridis2014`. We can select it as a subset of our sample table:
 
@@ -365,11 +365,11 @@ mobest::create_kernset(
 )
 ```
 
-Note how we scale the lengthscale parameters: `dsx` and `dsy` are set in meters (800 * 1000m = 800km) and `dt` in years (800y). `g` is dimensionless. With the setting specified here both dependent variables will be interpolated with the same, very smooth (several hundred kilomenters and years in diameter) kernel.
+Note how we scale the lengthscale parameters: `dsx` and `dsy` are set in meters (800 * 1000m = 800km) and `dt` in years (800y). `g` is dimensionless. With the setting specified here both dependent variables will be interpolated with the same, very smooth (several hundred kilometers and years in diameter) kernel.
 
 The main question naturally arising from this, is how to set these parameters for a given dataset and research question. There are various empirical ways to find optimal values through numerical optimization. See Supplementary Text 2 of {cite:p}`Schmid2023` for the approaches we applied. One concrete workflow to estimate the nugget from the variogram and the lengthscale parameters through crossvalidation is explained in {doc}`Interpolation parameter estimation <estimation>`.
 
-We would argue, though, that this computationally expensive workflow is not necessary for basic applications of mobest. The analysis in {cite:p}`Schmid2023` showed that Gaussian process regression returns reasonably accurate interpolation results for a large range of kernel parameter settings, as long as they reflect a plausible intution about the mobility behaviour of human ancestry, which generally operates on a scale of hundreds of kilometers and years. mobest is primarily a visualization method and adjusting its parameters to ones liking is legitimate if the choices are communicated transparently.
+We would argue, though, that this computationally expensive workflow is not necessary for basic applications of mobest. The analysis in {cite:p}`Schmid2023` showed that Gaussian process regression returns reasonably accurate interpolation results for a large range of kernel parameter settings, as long as they reflect a plausible intuition about the mobility behaviour of human ancestry, which generally operates on a scale of hundreds of kilometers and years. mobest is primarily a visualization method and adjusting its parameters to ones liking is legitimate if the choices are communicated transparently.
 
 #### Search positions
 
@@ -481,7 +481,7 @@ Here is a list of the variables returned in `mobest_observations` for each of th
 |search_measured      |Genetic coordinate of the search sample in the dependent variable space|
 |probability          |Probability density for `search_measured` given all other parameters|
 
-As a result of the permutation of paramaters, prediction grid and search points the number of rows of `mobest_locateoverview` table can be calculated as a product of the individual counts of all relevant entities. One way to quickly validate the output of `locate()` and `locate_multi()` is to calculate the number of expected results based on the input and compare it with the actual number of rows in the output. For our example this calculation is fairly simple:
+As a result of the permutation of parameters, prediction grid and search points the number of rows of `mobest_locateoverview` table can be calculated as a product of the individual counts of all relevant entities. One way to quickly validate the output of `locate()` and `locate_multi()` is to calculate the number of expected results based on the input and compare it with the actual number of rows in the output. For our example this calculation is fairly simple:
 
 We have:
 
@@ -532,9 +532,9 @@ The similarity probability search results for the sample Stuttgart for 6500 BC.
 
 ### Combining the information from multiple dependent variables
 
-The results for individual dependent variables, so ancestry components like MDS or PCA dimensions, can be informative, but are usually underpowered to exclude highly improbable search results. Generally combining them improves the accuracy of the results for individual samples, and we think this is best done by multiplying the results for the different dependent variables. This way spatial areas with high similarity probability for all dependent variables are naturally upweighted, whereas areas that are unlikely similar for some dependent variables are downweighted.
+The results for individual dependent variables, so ancestry components like MDS or PCA dimensions, can be informative, but are usually under-powered to exclude highly improbable search results. Generally combining them improves the accuracy of the results for individual samples, and we think this is best done by multiplying the results for the different dependent variables. This way spatial areas with high similarity probability for all dependent variables are naturally up-weighted, whereas areas that are unlikely similar for some dependent variables are down-weighted.
 
-To perform the multiplication (and the renormalization afterwards), mobest includes a function `mobest::multiply_dependent_probabilities()`. It works on objects of type `mobest_locateoverview` and yields tabular objects of type `mobest_locateproduct`. For this transformation it is aware of the parameter permutations potentially encoded in the `mobest_locateoverview` overview table. It only combines the probabilities for dependent variables that share all other parameters. That means the number of rows in `mobest_locateproduct` will be $\frac{1}{\text{Number of dependent variables}}$ times the number of rows in the input `mobest_locateoverview` table.
+To perform the multiplication (and the re-normalization afterwards), mobest includes a function `mobest::multiply_dependent_probabilities()`. It works on objects of type `mobest_locateoverview` and yields tabular objects of type `mobest_locateproduct`. For this transformation it is aware of the parameter permutations potentially encoded in the `mobest_locateoverview` overview table. It only combines the probabilities for dependent variables that share all other parameters. That means the number of rows in `mobest_locateproduct` will be $\frac{1}{\text{Number of dependent variables}}$ times the number of rows in the input `mobest_locateoverview` table.
 
 If we call it for `search_result` the output will have again $9476/2=4738$ rows. 
 
@@ -565,7 +565,7 @@ This figure is the main result of this write-up.
 
 This figure is not particularly beautiful, though. We can and should apply some changes to this plot to make it more readable and visually pleasing.
 
-1. Increase the spatial resolution of the prediction grid. `locate()` takes more time to compute with this change, but for individual samples and time slices it is generally very much affortable to go to higher resolutions. Here we go from the 50km grid above to a much finer 20km grid. The number of spatial prediction points increases from 4738 to 29583.
+1. Increase the spatial resolution of the prediction grid. `locate()` takes more time to compute with this change, but for individual samples and time slices it is generally very much affordable to go to higher resolutions. Here we go from the 50km grid above to a much finer 20km grid. The number of spatial prediction points increases from 4738 to 29583.
 
 ```r
 spatial_pred_grid <- mobest::create_prediction_grid(
@@ -645,7 +645,7 @@ Please note that all parameter permutations will be multiplied with all other pe
 
 ### Multiple search time slices
 
-As explained in {ref}`Search positions` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices at with one call to `locate`.
+As explained in {ref}`Search positions <basic:search positions>` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices at with one call to `locate`.
 
 Here is an example with three time slices.
 
