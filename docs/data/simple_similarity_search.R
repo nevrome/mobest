@@ -70,40 +70,48 @@ search_samples <- samples_projected %>%
     Sample_ID == "Stuttgart_published.DG"
   )
 
+ind <- mobest::create_spatpos(
+  id = samples_projected$Sample_ID,
+  x  = samples_projected$x,
+  y  = samples_projected$y,
+  z  = samples_projected$Date_BC_AD_Median
+)
+dep <- mobest::create_obs(
+  C1 = samples_projected$MDS_C1,
+  C2 = samples_projected$MDS_C2
+)
+
+search_ind <- mobest::create_spatpos(
+  id = search_samples$Sample_ID,
+  x  = search_samples$x,
+  y  = search_samples$y,
+  z  = search_samples$Date_BC_AD_Median
+)
+search_dep <- mobest::create_obs(
+  C1 = search_samples$MDS_C1,
+  C2 = search_samples$MDS_C2
+)
+
+kernset <- mobest::create_kernset(
+  C1 = mobest::create_kernel(
+    dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+    g = 0.1
+  ),
+  C2 = mobest::create_kernel(
+    dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+    g = 0.1
+  )
+)
+
 search_result <- mobest::locate(
-  independent = mobest::create_spatpos(
-    id = samples_projected$Sample_ID,
-    x  = samples_projected$x,
-    y  = samples_projected$y,
-    z  = samples_projected$Date_BC_AD_Median
-  ),
-  dependent = mobest::create_obs(
-    C1 = samples_projected$MDS_C1,
-    C2 = samples_projected$MDS_C2
-  ),
-  kernel = mobest::create_kernset(
-    C1 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    ),
-    C2 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    )
-  ),
-  search_independent = mobest::create_spatpos(
-    id = search_samples$Sample_ID,
-    x  = search_samples$x,
-    y  = search_samples$y,
-    z  = search_samples$Date_BC_AD_Median
-  ),
-  search_dependent = mobest::create_obs(
-    C1 = search_samples$MDS_C1,
-    C2 = search_samples$MDS_C2
-  ),
-  search_space_grid = spatial_pred_grid,
-  search_time = -6500,
-  search_time_mode = "absolute"
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = -6500,
+  search_time_mode   = "absolute"
 )
 
 result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
@@ -132,3 +140,56 @@ search_product <- mobest::multiply_dependent_probabilities(search_result)
 #     mapping = aes(x = field_x, y = field_y, fill = probability)
 #   ) +
 #   coord_fixed()
+
+spatial_pred_grid <- mobest::create_prediction_grid(
+  research_land_outline_3035,
+  spatial_cell_size = 20000
+)
+
+research_area_3035 <- research_area_4326 %>% sf::st_transform(3035)
+
+search_result <- mobest::locate(
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = c(-6500, -5700),
+  search_time_mode   = "absolute"
+)
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture) - Lazaridis et al. 2014"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  facet_wrap(
+    ~search_time,
+    labeller = \(variable, value) {
+      paste("Search time ", abs(value), "BC")
+    }
+  )

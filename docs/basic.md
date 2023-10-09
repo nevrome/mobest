@@ -310,7 +310,7 @@ The `locest()` arguments `independent` and `dependent` take the spatiotemporal a
 Spatiotemporal positions are encoded in `mobest` with a custom data type: {ref}`mobest_spatiotemporalpositions <types:spatiotemporal coordinates>`. For the `independent` argument of `locest()` we have to construct an object of this type with `mobest::create_spatpos()` to represent the positions of the input samples in `samples_projected`.
 
 ```r
-mobest::create_spatpos(
+ind <- mobest::create_spatpos(
   id = samples_projected$Sample_ID,
   x  = samples_projected$x,
   y  = samples_projected$y,
@@ -321,7 +321,7 @@ mobest::create_spatpos(
 The dependent, genetic variables are also encoded in a custom, tabular type: {ref}`mobest_observations <types:genetic coordinates>` with the constructor function `mobest::create_observations`.
 
 ```r
-mobest::create_obs(
+dep <- mobest::create_obs(
   C1 = samples_projected$MDS_C1,
   C2 = samples_projected$MDS_C2
 )
@@ -334,13 +334,13 @@ The lengths of the vectors (`samples_projected$...`) used for `create_spatpos` a
 For the search sample we have to construct objects of the same type and structure.
 
 ```r
-mobest::create_spatpos(
+search_ind <- mobest::create_spatpos(
   id = search_samples$Sample_ID,
   x  = search_samples$x,
   y  = search_samples$y,
   z  = search_samples$Date_BC_AD_Median
 )
-mobest::create_obs(
+search_dep <- mobest::create_obs(
   C1 = search_samples$MDS_C1,
   C2 = search_samples$MDS_C2
 )
@@ -353,7 +353,7 @@ The `locest()` argument `kernel` takes an object of the class {ref}`mobest_kerne
 Here is a possible configuration for our example. We construct two kernel settings, one for each ancestry component, with `mobest::create_kernel()` in `mobest::create_kernset()`. 
 
 ```
-mobest::create_kernset(
+kernset <- mobest::create_kernset(
   C1 = mobest::create_kernel(
     dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
     g = 0.1
@@ -386,7 +386,7 @@ For this example we will set the search time to an `"absolute"` value.
 
 ```r
 search_time = -6500
-search_time_mode = "relative"
+search_time_mode = "absolute"
 ```
 
 This will search at exactly one point in time; a single timeslice 6500 BC.
@@ -405,39 +405,14 @@ In the previous sections we have thoroughly prepared the input for a first, simp
 
 ```r
 search_result <- mobest::locate(
-    independent = mobest::create_spatpos(
-    id = samples_projected$Sample_ID,
-    x  = samples_projected$x,
-    y  = samples_projected$y,
-    z  = samples_projected$Date_BC_AD_Median
-  ),
-  dependent = mobest::create_obs(
-    C1 = samples_projected$MDS_C1,
-    C2 = samples_projected$MDS_C2
-  ),
-  kernel = mobest::create_kernset(
-    C1 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    ),
-    C2 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    )
-  ),
-  search_independent = mobest::create_spatpos(
-    id = search_samples$Sample_ID,
-    x  = search_samples$x,
-    y  = search_samples$y,
-    z  = search_samples$Date_BC_AD_Median
-  ),
-  search_dependent = mobest::create_obs(
-    C1 = search_samples$MDS_C1,
-    C2 = search_samples$MDS_C2
-  ),
-  search_space_grid = spatial_pred_grid,
-  search_time = -6500,
-  search_time_mode = "absolute"
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = -6500,
+  search_time_mode   = "absolute"
 )
 ```
 
@@ -647,9 +622,59 @@ Please note that all parameter permutations will be multiplied with all other pe
 
 As explained in {ref}`Search positions <basic:search positions>` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices at with one call to `locate`.
 
-Here is an example with three time slices.
+Here is an example with two time slices.
 
+```r
+search_result <- mobest::locate(
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = c(-6500, -5700),
+  search_time_mode   = "absolute"
+)
+search_product <- mobest::multiply_dependent_probabilities(search_result)
 
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture) - Lazaridis et al. 2014"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  facet_wrap(
+    ~search_time,
+    labeller = \(variable, value) {
+      paste0("Search time: ", abs(value), "BC")
+    }
+  )
+```
+
+```{figure} img/basic/search_map_two_timeslices.png
+Similarity search map plot for two different time slices.
+```
 
 ### Multiple search samples
 
