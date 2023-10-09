@@ -447,7 +447,7 @@ This typically runs for a couple of seconds, uses every available processor core
 
 `mobest::locate()` returns an object of class `mobest_locateoverview`. It includes the relevant information for visualization and further processing of the analysis results.
 
-### The `mobest_locateoverview` table
+### The mobest_locateoverview table
 
 The output data type `mobest_locateoverview` is derived from `tibble` and has a large set of columns, many not immediatelly relevant to the basic example here. This applies especially for the variables documenting the excessive permutation mechanics hidden behind the relatively simple interface of `mobest::locate()`. `locate()` is, in fact, a wrapper function for the more flexible function `mobest::locate_multi()`, which can handle permutations in various additional input parameters (see {doc}`Advanced mobest features <advanced>`).
 
@@ -639,7 +639,17 @@ A more beautiful and informative version of the result plot.
 
 ## Simple permutations
 
+In the example above we performed the similarity search with `mobest::locate()` for only one parameter permutation, keeping everything constant except the two dependent variables. But as already laid out above in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`, mobest can automatically consider more parameter permutations, the most basic of which are directly available in `locate()`.
+
+Please note that all parameter permutations will be multiplied with all other permutations, causing the number of runs to grow rapidly. If you, for example, submit five time slices and five search samples, the number of runs will be $5*5=25$ times bigger than for one time slice and sample.
+
 ### Multiple search time slices
+
+As explained in {ref}`Search positions` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices at with one call to `locate`.
+
+Here is an example with three time slices.
+
+
 
 ### Multiple search samples
 
