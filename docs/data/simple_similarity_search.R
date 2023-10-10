@@ -223,8 +223,8 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = c(-6800, -5500),
-  search_time_mode   = "absolute"
+  search_time        = -700,
+  search_time_mode   = "relative"
 )
 search_product <- mobest::multiply_dependent_probabilities(search_result)
 
@@ -252,27 +252,23 @@ ggplot() +
     fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
   ) +
   facet_wrap(
-    search_id~search_time,
+    ~search_id,
     ncol = 2,
     labeller = labeller(
       search_id = c(
         "Stuttgart_published.DG" = paste(
           "<Stuttgart> ~5250BC",
           "Early Neolithic (Linear Pottery culture) - Lazaridis et al. 2014",
+          "Search time: ~5950BC",
           sep = "\n"
         ),
         "I5411" = paste(
           "<I5411> ~6650BC",
           "Mesolithic (Iron Gates) - Mathieson et al. 2018",
+          "Search time: ~7350BC",
           sep = "\n"
         )
-      ),
-      search_time = {
-        times <- c(-6800, -5500)
-        labels <- paste0("Search time: ", abs(times), "BC")
-        names(labels) <- times
-        labels
-      }
+      )
     )
   )
 
