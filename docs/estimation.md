@@ -37,7 +37,7 @@ distances_all <- mobest::calculate_pairwise_distances(
 )
 ```
 
-Helper functions are available to calculate the individual components of this table, if this is desired.
+Helper functions are available to calculate the individual types of distances, if this is desired.
 
 ```r
 geo_dist  <- mobest::calculate_geo_pairwise_distances(positions)
@@ -45,11 +45,27 @@ time_dist <- mobest::calculate_time_pairwise_distances(positions)
 obs_dist  <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
 ```
 
-```{warning}
-Note that `mobest::calculate_pairwise_distances()` by default calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions. This behaviour can be turned off by setting `with_resid = FALSE`
+`mobest_pairwisedistances` includes the following columns/variables.
+
+|Column         |Description |
+|:--------------|:-----------|
+|id1            ||
+|id2            ||
+|geo_dist       ||
+|time_dist      ||
+|obs_dist_total ||
+|C\*_dist       ||
+|C\*_dist_resid ||
+
+Note that `mobest::calculate_pairwise_distances()` also calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions. This behaviour can be turned off by setting `with_resid = FALSE`.
+
+This table allows us to easily visualize and analyse the pairwise distance properties of our dataset, for example with a set of correlation plots.
+
+```{figure} img/estimation/....png
+...
 ```
 
-### Summarizing distances in an emirical variogram
+### Summarizing distances in an empirical variogram
 
 `mobest::bin_pairwise_distances` bins the pairwise distances in an `mobest_pairwisedistances` object and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
 
@@ -58,6 +74,23 @@ variogram <- mobest::bin_pairwise_distances(
   distances_all,
   geo_bin = 100, time_bin = 100
 )
+```
+
+`mobest_empiricalvariogram` includes these columns/variables.
+
+|Column         |Description |
+|:--------------|:-----------|
+|geo_dist_cut   ||
+|time_dist_cut  ||
+|obs_dist_total ||
+|C\*_dist       ||
+|C\*_dist_resid ||
+|n              ||
+
+This variogram can be visualized in various ways, one of which is a simple raster of the sample counts.
+
+```{figure} img/estimation/....png
+...
 ```
 
 ### Estimating the nugget parameter
@@ -103,6 +136,10 @@ estimated_nuggets <- lower_left_variogram %>%
   )
 ```
 
+```{figure} img/estimation/....png
+...
+```
+
 ## Finding optimal lengthscale parameters with crossvalidation
 
 `mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below). Crossvalidation is computationally expensive, but in our experience the best method for the kernel parameter estimation.
@@ -134,6 +171,10 @@ interpol_comparison <- mobest::crossvalidate(
 ```
 
 ### Analyzing the crossvalidation results
+
+```{figure} img/estimation/....png
+...
+```
 
 ### HPC setup for large lengthscale parameter spaces
 

@@ -18,3 +18,14 @@ distances_all <- mobest::calculate_pairwise_distances(
     C2 = samples_projected$MDS_C2
   )
 )
+
+### Summarizing distances in an empirical variogram
+
+variogram <- mobest::bin_pairwise_distances(
+  distances_all,
+  geo_bin = 100, time_bin = 100
+)
+
+
+
+
