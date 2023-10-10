@@ -148,6 +148,10 @@ spatial_pred_grid <- mobest::create_prediction_grid(
 
 research_area_3035 <- research_area_4326 %>% sf::st_transform(3035)
 
+## Simple permutations
+
+### Multiple search time slices
+
 search_result <- mobest::locate(
   independent        = ind,
   dependent          = dep,
@@ -193,3 +197,82 @@ ggplot() +
       paste0("Search time: ", abs(value), "BC")
     }
   )
+
+### Multiple search samples
+
+search_samples <- samples_projected %>%
+  dplyr::filter(
+    Sample_ID %in% c("Stuttgart_published.DG", "I5411")
+  )
+
+search_ind <- mobest::create_spatpos(
+  id = search_samples$Sample_ID,
+  x  = search_samples$x,
+  y  = search_samples$y,
+  z  = search_samples$Date_BC_AD_Median
+)
+search_dep <- mobest::create_obs(
+  C1 = search_samples$MDS_C1,
+  C2 = search_samples$MDS_C2
+)
+
+search_result <- mobest::locate(
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = c(-6800, -5500),
+  search_time_mode   = "absolute"
+)
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples %>% dplyr::rename(search_id = Sample_ID),
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  facet_wrap(
+    search_id~search_time,
+    ncol = 2,
+    labeller = labeller(
+      search_id = c(
+        "Stuttgart_published.DG" = paste(
+          "<Stuttgart> ~5250BC",
+          "Early Neolithic (Linear Pottery culture) - Lazaridis et al. 2014",
+          sep = "\n"
+        ),
+        "I5411" = paste(
+          "<I5411> ~6650BC",
+          "Mesolithic (Iron Gates) - Mathieson et al. 2018",
+          sep = "\n"
+        )
+      ),
+      search_time = {
+        times <- c(-6800, -5500)
+        labels <- paste0("Search time: ", abs(times), "BC")
+        names(labels) <- times
+        labels
+      }
+    )
+  )
+

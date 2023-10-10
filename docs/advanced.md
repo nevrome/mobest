@@ -1,5 +1,7 @@
 # Advanced features of the mobest package
 
+`mobest::locate` uses the spatiotemporal interpolation to calculate a similarity probability between a set of "search" samples and an interpolation field. It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`. These probabilities are normalized for each search sample and grid (with the default `normalize = TRUE`).
+
 ## Spatiotemporal interpolation permutations in a model grid
 
 The spatiotemporal interpolation workflow consists of the creation of a list of models and then subsequently running each element in this list to construct different ancestry fields. The actual interpolation is done in a function `mobest:::interpolate`, which has a minimal interface and is therefore kept internal.

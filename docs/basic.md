@@ -616,8 +616,6 @@ A more beautiful and informative version of the result plot.
 
 In the example above we performed the similarity search with `mobest::locate()` for only one parameter permutation, keeping everything constant except the two dependent variables. But as already laid out above in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`, mobest can automatically consider more parameter permutations, the most basic of which are directly available in `locate()`.
 
-Please note that all parameter permutations will be multiplied with all other permutations, causing the number of runs to grow rapidly. If you, for example, submit five time slices and five search samples, the number of runs will be $5*5=25$ times bigger than for one time slice and sample.
-
 ### Multiple search time slices
 
 As explained in {ref}`Search positions <basic:search positions>` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices at with one call to `locate`.
@@ -678,53 +676,5 @@ Similarity search map plot for two different time slices.
 
 ### Multiple search samples
 
+Please note that all parameter permutations will be multiplied with all other permutations, causing the number of runs to grow rapidly. If you, for example, submit five time slices and five search samples, the number of runs will be $5*5=25$ times bigger than for one time slice and sample.
 
-
-<!--
-
-## Artifical example
-
-Here is a simple, artificial example how 2. can be used:
-
-```r
-# multiply probabilities for PCA coordinate 1 and PCA coordinate 2
-locate_product <- mobest::multiply_dependent_probabilities(locate_simple)
-
-locate_product %>% ggplot() +
-  geom_raster(mapping = aes(x = field_x, y = field_y, fill = probability)) +
-  geom_point(mapping = aes(x = search_x, y = search_y), colour = "red") +
-  coord_fixed() +
-  ggtitle(paste0(
-    "t for sample of interest = ", unique(locate_product$search_z), "\n",
-    "t field time slice = ", unique(locate_product$field_z)
-  ))
-
-```
-
-## Origin search
-
-`mobest::locate` uses the spatiotemporal interpolation to calculate a similarity probability between a set of "search" samples and an interpolation field. It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`. These probabilities are normalized for each search sample and grid (with the default `normalize = TRUE`).
-
-```r
-locate_simple <- mobest::locate(
-  independent = positions,
-  dependent = observations,
-  kernel = kernset,
-  search_independent = positions[1:4,],
-  search_dependent = observations[1:4,],
-  search_space_grid = expand.grid(
-      x = seq(100000, 1000000, 100000), 
-      y = seq(100000, 1000000, 100000)
-    ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
-  search_time = c(0,-100),
-  quiet = T
-)
-```
-
-The spatiotemporal probability grids `locate` returns are calculated are per ancestry component (as put in via `dependent`/`search_dependent`). To multiply the ancestry component grids, `mobest` provides `mobest::multiply_dependent_probabilities`, which yields an object of class `mobest_locateproduct`. The output probabilities are normalized per permutation.
-
-```r
-mobest::multiply_dependent_probabilities(locate_simple)
-```
-
--->
