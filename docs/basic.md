@@ -195,7 +195,7 @@ When you have download the input data file you can load it into a [`tibble`](htt
 
 ```r
 samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
-# you have to replace "data/docs/" with the path to your file
+# you have to replace "data/docs/" with the path to your copy of the file
 ```
 
 `samples_basic` is a tibble that includes the following columns/variables:
