@@ -229,6 +229,7 @@ samples_projected <- samples_basic %>%
     y = sf::st_coordinates(.)[,2]
   ) %>%
   sf::st_drop_geometry()
+# readr::write_csv(samples_projected, file = "docs/data/samples_projected.csv")
 ```
 
 With the coordinates in the same reference system as the land outline we prepared above we can combine both in a figure:

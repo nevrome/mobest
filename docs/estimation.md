@@ -2,9 +2,14 @@
 
 One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is a correct and useful setting for the kernel parameters (see {ref}`Kernel parameter settings <basic:kernel parameter settings>` in the basic workflow description). Supplementary Text 2 of {cite:p}`Schmid2023` discusses this in detail. `mobest` provides different helper functions to either estimate the parameters or prepare data products that can be used to estimate them. Here we explain a practical way to estimate the nugget and lengthscale values.
 
-For this tutorial we will use the data introduced and prepared in {doc}`A basic similarity search workflow <basic>`, specifically a `samples_projected.csv` table prepared in {ref}`Reading the input samples <basic:reading the input samples>`. You can download it [here](data/samples_projected.csv). 
+For this tutorial we will use the data introduced and prepared in {doc}`A basic similarity search workflow <basic>`, specifically a `samples_projected.csv` table prepared in {ref}`Reading the input samples <basic:reading the input samples>`.
 
-## Using a subset of the Variogram to estimate the nugget parameter
+You can download a script with the main workflow explained below including the required test data here:
+
+- [simple_similarity_search.R](data/simple_similarity_search.R)
+- [samples_projected.csv](data/samples_projected.csv)
+
+## Using a subset of the variogram to estimate the nugget parameter
 
 We start by loading the input data - individual ancient DNA samples with their spatiotemporal and genetic position.
 
@@ -15,30 +20,33 @@ samples_projected <- readr::read_csv("docs/data/samples_projected.csv")
 
 ### Determining pairwise distances
 
-`mobest::calculate_pairwise_distances` calculates different types of pairwise distances (spatial, temporal, ancestry components) for each input sample pair and returns them in a long format `tibble` of class `mobest_pairwisedistances`.
+`mobest::calculate_pairwise_distances` allows to calculate different types of pairwise distances (spatial, temporal, dependent variables/ancestry components) for each input sample pair and returns them in a long format `tibble` of class `mobest_pairwisedistances`.
 
 ```r
 distances_all <- mobest::calculate_pairwise_distances(
   independent = mobest::create_spatpos(
-    id = janno_final$Poseidon_ID,
-    x = janno_final$x,
-    y = janno_final$y,
-    z = janno_final$Date_BC_AD_Median_Derived
+    id = samples_projected$Sample_ID,
+    x = samples_projected$x,
+    y = samples_projected$y,
+    z = samples_projected$Date_BC_AD_Median
   ),
   dependent = mobest::create_obs(
-    C1_mds_u = janno_final$C1_mds_u,
-    C2_mds_u = janno_final$C2_mds_u,
-    C3_mds_u = janno_final$C3_mds_u
+    C1 = samples_projected$MDS_C1,
+    C2 = samples_projected$MDS_C2
   )
 )
 ```
 
-Helper functions are available to calculate the individual components of this table.
+Helper functions are available to calculate the individual components of this table, if this is desired.
 
 ```r
 geo_dist  <- mobest::calculate_geo_pairwise_distances(positions)
 time_dist <- mobest::calculate_time_pairwise_distances(positions)
 obs_dist  <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
+```
+
+```{warning}
+Note that `mobest::calculate_pairwise_distances()` by default calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions. This behaviour can be turned off by setting `with_resid = FALSE`
 ```
 
 ### Summarizing distances in an emirical variogram
