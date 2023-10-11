@@ -92,7 +92,7 @@ p2 <- ggplot() +
   scale_fill_viridis_c() +
   theme_bw()
 
-p <- cowplot::plot_grid(p1, p2)
+cowplot::plot_grid(p1, p2)
 ```
 </details>
 
@@ -125,50 +125,86 @@ variogram <- mobest::bin_pairwise_distances(
 
 ### Estimating the nugget parameter
 
-This variogram can for example be used to estimate the nugget parameter of the GPR kernel settings, by filtering for pairwise "genetic" distances with very small spatial and temporal distances.
+A form of the variogram can be used to estimate the nugget parameter of the GPR kernel settings, by filtering for pairwise "genetic" distances with very small spatial and temporal distances. Here is one workflow to do so.
 
 ```r
-d_all_long <- distances_all %>%
-  tidyr::pivot_longer(
-    cols = c(C1_mds_u_dist_resid, C2_mds_u_dist_resid, C3_mds_u_dist_resid),
-    names_to = "dist_type", values_to = "dist_val"
-  ) %>%
-  dplyr::mutate(
-    dist_type = dplyr::recode(
-      dist_type,
-      C1_mds_u_dist_resid = "C1_mds_u",
-      C2_mds_u_dist_resid = "C2_mds_u",
-      C3_mds_u_dist_resid = "C3_mds_u"
-    )
-  )
-```
-
-```r
-lower_left_variogram <- d_all_long %>%
+distances_for_nugget <- distances_all %>%
+  # remove auto-distances
+  dplyr::filter(id1 != id2) %>%
   # filter for small temporal and spatial pairwise distances
   dplyr::filter(time_dist < 50 & geo_dist < 50) %>%
-  dplyr::filter(id1 != id2) %>%
+  # transform the residual dependent variable distances
+  # into a long format table
+  tidyr::pivot_longer(
+    cols = tidyselect::ends_with("_resid"),
+    names_to = "dist_type", values_to = "dist_val"
+  ) %>%
+  # rescale the distances to relative proportions
   dplyr::mutate(
-    # rescaling of the dist val to a relative proportion
     dist_val_adjusted = dplyr::case_when(
-      dist_type == "C1_mds_u" ~ 0.5*(dist_val^2/stats::var(janno_final$C1_mds_u)),
-      dist_type == "C2_mds_u" ~ 0.5*(dist_val^2/stats::var(janno_final$C2_mds_u)),
-      dist_type == "C3_mds_u" ~ 0.5*(dist_val^2/stats::var(janno_final$C3_mds_u)),
+      dist_type == "C1_dist_resid" ~
+        0.5*(dist_val^2 / stats::var(samples_projected$MDS_C1)),
+      dist_type == "C2_dist_resid" ~
+        0.5*(dist_val^2 / stats::var(samples_projected$MDS_C2))
     )
   )
 ```
 
+We remove the zero-distances from samples to themselves and then filter to very small spatial and temporal distances, so to pairs of samples that are very close in space and time. Within this subset we rescale the distances in dependent variable space, so genetic distances, to reflect a proportion of the variance of the samples in said space.
+
+The mean of the resulting metric can be employed as the nugget value for a given dependent variable.
+
 ```r
-estimated_nuggets <- lower_left_variogram %>%
+estimated_nuggets <- distances_for_nugget %>%
   dplyr::group_by(dist_type) %>%
-  dplyr::summarise(nugget = mean(dist_val_adjusted, na.rm = T)) %>%
-  dplyr::mutate(
-    dependent_var_id = gsub("_dist", "", dist_type)
-  )
+  dplyr::summarise(nugget = mean(dist_val_adjusted, na.rm = T))
 ```
 
+<details>
+<summary>Code for this figure.</summary>
+
+```r
+ggplot() +
+  geom_violin(
+    data = distances_for_nugget,
+    mapping = aes(x = dist_type, y = dist_val_adjusted, fill = dist_type),
+    linewidth = 0.5,
+    width = 0.8
+  ) +
+  geom_boxplot(
+    data = distances_for_nugget,
+    mapping = aes(x = dist_type, y = dist_val_adjusted),
+    width = 0.1, outlier.size = 1
+  ) +
+  geom_point(
+    data = estimated_nuggets,
+    mapping = aes(x = dist_type, y = nugget),
+    size = 4, shape = 18
+  ) +
+  geom_point(
+    data = estimated_nuggets,
+    mapping = aes(x = dist_type, y = nugget),
+    size = 6, shape = "|"
+  ) +
+  geom_text(
+    data = estimated_nuggets,
+    mapping = aes(x = dist_type, y = nugget, label = paste0("mean: ~", round(nugget, 3))),
+    nudge_x = -0.5
+  ) +
+  coord_flip() +
+  theme_bw() +
+  guides(fill = "none") +
+  xlab("ancestry component distance type") +
+  ylab("pairwise half mean squared normalized residual distance") +
+  scale_y_log10(labels = scales::comma) +
+  scale_x_discrete(limits = rev(unique(distances_for_nugget$dist_type)))
+```
+</details>
+
 ```{figure} img/estimation/nuggets.png
-...
+Violin- and boxplot of the detrended pairwise distance distribution for different ancestry
+components in a short and narrow temporal and spatial distance window (< 50km & < 50years).
+The diamond shaped dot is positioned at the mean point of the distribution
 ```
 
 ## Finding optimal lengthscale parameters with crossvalidation

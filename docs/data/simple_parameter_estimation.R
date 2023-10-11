@@ -60,23 +60,24 @@ variogram <- mobest::bin_pairwise_distances(
 distances_for_nugget <- distances_all %>%
   # remove auto-distances
   dplyr::filter(id1 != id2) %>%
+  # filter for small temporal and spatial pairwise distances
+  dplyr::filter(time_dist < 50 & geo_dist < 50) %>%
   # transform the residual dependent variable distances
   # into a long format table
   tidyr::pivot_longer(
     cols = tidyselect::ends_with("_resid"),
     names_to = "dist_type", values_to = "dist_val"
   ) %>%
-  # filter for small temporal and spatial pairwise distances
-  dplyr::filter(time_dist < 50 & geo_dist < 50) %>%
   # rescale the distances to relative proportions
   dplyr::mutate(
     dist_val_adjusted = dplyr::case_when(
-      dist_type == "C1_dist_resid" ~ 0.5*(dist_val^2/stats::var(samples_projected$MDS_C1)),
-      dist_type == "C2_dist_resid" ~ 0.5*(dist_val^2/stats::var(samples_projected$MDS_C2))
+      dist_type == "C1_dist_resid" ~
+        0.5*(dist_val^2 / stats::var(samples_projected$MDS_C1)),
+      dist_type == "C2_dist_resid" ~
+        0.5*(dist_val^2 / stats::var(samples_projected$MDS_C2))
     )
   )
 
-# calculate the nugget as the mean adjusted distance
 estimated_nuggets <- distances_for_nugget %>%
   dplyr::group_by(dist_type) %>%
   dplyr::summarise(nugget = mean(dist_val_adjusted, na.rm = T))
@@ -116,19 +117,16 @@ p <- ggplot() +
   scale_y_log10(labels = scales::comma) +
   scale_x_discrete(limits = rev(unique(distances_for_nugget$dist_type)))
 
-ggsave(
-  filename = "docs/img/estimation/nuggets.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/estimation/nuggets.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
 
-```r
-estimated_nuggets <- lower_left_variogram %>%
-  dplyr::group_by(dist_type) %>%
-  dplyr::summarise(nugget = mean(dist_val_adjusted, na.rm = T)) %>%
-  dplyr::mutate(
-    dependent_var_id = gsub("_dist", "", dist_type)
-  )
-```
+## Finding optimal lengthscale parameters with crossvalidation
 
+### Basic setup
 
+### Analyzing the crossvalidation results
+
+### HPC setup for large lengthscale parameter spaces
