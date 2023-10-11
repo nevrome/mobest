@@ -1,6 +1,6 @@
 # Data types in the mobest R package
 
-The following guide briefly lists the main `mobest` data types with their constructors loosely in the order one would usually call them.
+The following guide briefly lists the main `mobest` input data types with their constructors loosely in the order one would usually call them.
 
 ## Basic data types
 
@@ -88,9 +88,7 @@ mobest::create_kernset(
 
 If a function requires both input of type `mobest_observations` and `mobest_kernelsetting`, then the names of the individual ancestry components must be identical, i.e. fit to each other.
 
-## Result types
-
-## Variability and permutations
+## Permutation data types
 
 When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions (e.g. uncertain dating). To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that automatically consider all permutations of these input lists.
 

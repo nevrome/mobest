@@ -158,6 +158,13 @@ The mean of the resulting metric can be employed as the nugget value for a given
 estimated_nuggets <- distances_for_nugget %>%
   dplyr::group_by(dist_type) %>%
   dplyr::summarise(nugget = mean(dist_val_adjusted, na.rm = T))
+
+# estimated_nuggets
+# A tibble: 2 × 2
+  dist_type     nugget
+  <chr>          <dbl>
+1 C1_dist_resid 0.0710
+2 C2_dist_resid 0.0589
 ```
 
 <details>
@@ -209,9 +216,28 @@ The diamond shaped dot is positioned at the mean point of the distribution
 
 ## Finding optimal lengthscale parameters with crossvalidation
 
-`mobest::crossvalidate` allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel function parameters. Internally it employs `mobest::create_model_grid` and `mobest::run_model_grid` (see below). Crossvalidation is computationally expensive, but in our experience the best method for the kernel parameter estimation.
+To find the empirically optimal lengthscale parameters mobest includes the function `mobest::crossvalidate`. It allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel parameters. This is a computationally expensive and mathematically inelegant method, but robust, reliable and readily understandable. `crossvalidate()` internally employs `mobest::create_model_grid` and `mobest::run_model_grid` (see {ref}`The permutation machine <advanced:the permutation machine>`).
 
-### Basic setup
+### A basic crossvalidation setup
+
+To run `mobest::crossvalidate` we require the spatiotemporal and dependent variable positions of the field-informing input samples, fixed nuggets for each dependent variable and a grid of kernel parameters to test.
+
+The input positions can be specified as objects of type `mobest_spatiotemporalpositions` and `mobest_observations` just as laid out for `mobest::locate()` (see {ref}`Independent and dependent positions <basic:independent and dependent positions>`).
+
+```r
+ind <- mobest::create_spatpos(
+  id = samples_projected$Sample_ID,
+  x  = samples_projected$x,
+  y  = samples_projected$y,
+  z  = samples_projected$Date_BC_AD_Median
+)
+dep <- mobest::create_obs(
+  C1 = samples_projected$MDS_C1,
+  C2 = samples_projected$MDS_C2
+)
+```
+
+The grid of kernel parameters grid is a bit more difficult to obtain. It has to be of type `mobest_kernelsetting_multi` (see {ref}`Permutation data types <types:permutation data types>`), which is a bit awkward to construct for a large set of value permutations. Here is one way of doing so.
 
 ```r
 kernels_to_test <- expand.grid(
