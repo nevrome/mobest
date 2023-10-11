@@ -218,6 +218,14 @@ The diamond shaped dot is positioned at the mean point of the distribution
 
 To find the empirically optimal lengthscale parameters mobest includes the function `mobest::crossvalidate`. It allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel parameters. This is a computationally expensive and mathematically inelegant method, but robust, reliable and readily understandable. `crossvalidate()` internally employs `mobest::create_model_grid` and `mobest::run_model_grid` (see {ref}`The permutation machine <advanced:the permutation machine>`).
 
+For the example here we can speed up the expensive calculations by reducing the sample size.
+
+```r
+set.seed(123)
+samples_reduced <- samples_projected %>% dplyr::slice_sample(n = 100)
+```
+
+
 ### A basic crossvalidation setup
 
 To run `mobest::crossvalidate` we require the spatiotemporal and dependent variable positions of the field-informing input samples, fixed nuggets for each dependent variable and a grid of kernel parameters to test.
@@ -226,41 +234,91 @@ The input positions can be specified as objects of type `mobest_spatiotemporalpo
 
 ```r
 ind <- mobest::create_spatpos(
-  id = samples_projected$Sample_ID,
-  x  = samples_projected$x,
-  y  = samples_projected$y,
-  z  = samples_projected$Date_BC_AD_Median
+  id = samples_reduced$Sample_ID,
+  x  = samples_reduced$x,
+  y  = samples_reduced$y,
+  z  = samples_reduced$Date_BC_AD_Median
 )
 dep <- mobest::create_obs(
-  C1 = samples_projected$MDS_C1,
-  C2 = samples_projected$MDS_C2
+  C1 = samples_reduced$MDS_C1,
+  C2 = samples_reduced$MDS_C2
 )
 ```
 
 The grid of kernel parameters grid is a bit more difficult to obtain. It has to be of type `mobest_kernelsetting_multi` (see {ref}`Permutation data types <types:permutation data types>`), which is a bit awkward to construct for a large set of value permutations. Here is one way of doing so.
 
 ```r
-kernels_to_test <- expand.grid(
-  ds = seq(100,200, 50)*1000,
-  dt = seq(100,200, 50)
-) %>% purrr::pmap(function(...) {
+kernels_to_test <-
+  # create a permutation grid of spatial (ds) and temporal (dt) lengthscale parameters to test
+  expand.grid(
+    ds = seq(100, 2000, 100) * 1000, # *1000 to transform from kilometres to meters
+    dt = seq(100, 2000, 100)
+  ) %>%
+  # create objects of type mobest_kernelsetting from them
+  purrr::pmap(function(...) {
     row <- list(...)
     mobest::create_kernset(
-      ac1 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.065),
-      ac2 = mobest::create_kernel(row$ds, row$ds, row$dt, 0.08)
+      C1 = mobest::create_kernel(
+        dsx = row$ds,
+        dsy = row$ds,
+        dt  = row$dt,
+        g   = 0.071  # nugget for C1 as calculated above 
+      ),
+      C2 = mobest::create_kernel(
+        dsx = row$ds,
+        dsy = row$ds,
+        dt  = row$dt,
+        g   = 0.059
+      )
     )
   }) %>%
+  # name then and  package them in an object of type mobest_kernelsetting_multi
   magrittr::set_names(paste("kernel", 1:length(.), sep = "_")) %>%
   do.call(mobest::create_kernset_multi, .)
+```
 
+With this input ready we can call `mobest::crossvalidate()`. This function randomly splits the input data in `groups` number of groups, takes `groups - 1` of them as training data and uses it to estimate the dependent variable positions of the last group's samples. It then calculates the differences between the true and the predicted values for each test sample and documents it in a tabular data structure of type `mobest_interpolgrid`. This is repeated so that each group acts as the test group once, so each sample is predicted by others once. In another `iteration` this entire process is repeated after resampling the groups.
+
+```{warning}
+Even this extremely reduced example runs for around 2-15 minutes depending on your system.
+```
+
+```r
 interpol_comparison <- mobest::crossvalidate(
-  independent = positions,
-  dependent = observations,
-  kernel = kernels_to_test,
-  iterations = 2,
-  groups = 10,
-  quiet = T
+  independent = ind,
+  dependent   = dep,
+  kernel      = kernels_to_test,
+  iterations  = 2, # in a real-world setting this should be set to 10+ iterations
+  groups      = 10,
+  quiet       = T
 )
+```
+
+That means each row in `mobest_interpolgrid` features the result for one test sample with one kernel parameter permutation and iteration. The following columns/variables are documented:
+
+|Column         |Description |
+|:--------------|:-----------|
+|independent_table_id| |
+|dependent_setting_id| |
+|dependent_var_id| |
+|kernel_setting_id| |
+|pred_grid_id| |
+|mixing_iteration| |
+|dsx| |
+|dsy| |
+|dt| |
+|g| |
+|id| |
+|x| |
+|y| |
+|z| |
+|mean| |
+|sd| |
+|measured| |
+|difference| |
+
+To decide which kernel parameters yield the overall best prediction we have to summarize the per-sample results in the mobest_interpolgrid` table. One way of doing this is by calculating the ...
+
 ```
 
 ### Analyzing the crossvalidation results

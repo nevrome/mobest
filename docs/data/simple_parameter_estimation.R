@@ -125,7 +125,58 @@ p <- ggplot() +
 
 ## Finding optimal lengthscale parameters with crossvalidation
 
+set.seed(123)
+samples_reduced <- samples_projected %>% dplyr::slice_sample(n = 100)
+
 ### Basic setup
+
+ind <- mobest::create_spatpos(
+  id = samples_reduced$Sample_ID,
+  x  = samples_reduced$x,
+  y  = samples_reduced$y,
+  z  = samples_reduced$Date_BC_AD_Median
+)
+dep <- mobest::create_obs(
+  C1 = samples_reduced$MDS_C1,
+  C2 = samples_reduced$MDS_C2
+)
+
+kernels_to_test <-
+  # create a permutation grid of spatial (ds) and temporal (dt) lengthscale parameters to test
+  expand.grid(
+    ds = seq(100, 2000, 100)*1000,
+    dt = seq(100, 2000, 100)
+  ) %>%
+  # create objects of type mobest_kernelsetting from them
+  purrr::pmap(function(...) {
+    row <- list(...)
+    mobest::create_kernset(
+      C1 = mobest::create_kernel(
+        dsx = row$ds,
+        dsy = row$ds,
+        dt  = row$dt,
+        g   = 0.071  # nugget for C1 as calculated above
+      ),
+      C2 = mobest::create_kernel(
+        dsx = row$ds,
+        dsy = row$ds,
+        dt  = row$dt,
+        g   = 0.059
+      )
+    )
+  }) %>%
+  # name then and  package them in an object of type mobest_kernelsetting_multi
+  magrittr::set_names(paste("kernel", 1:length(.), sep = "_")) %>%
+  do.call(mobest::create_kernset_multi, .)
+
+interpol_comparison <- mobest::crossvalidate(
+  independent = ind,
+  dependent   = dep,
+  kernel      = kernels_to_test,
+  iterations  = 2, # in a real-world setting this should be set to 10+ iterations
+  groups      = 10,
+  quiet       = F
+)
 
 ### Analyzing the crossvalidation results
 
