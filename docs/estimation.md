@@ -9,6 +9,15 @@ You can download a script with the main workflow explained below including the r
 - [simple_similarity_search.R](data/simple_similarity_search.R)
 - [samples_projected.csv](data/samples_projected.csv)
 
+## Preparing the computational environment
+
+```r
+library(magrittr)
+library(ggplot2)
+```
+
+For more information see the {ref}`Preparing the computational environment <basic:preparing the computational environment>` section in the basic tutorial.
+
 ## Using a subset of the variogram to estimate the nugget parameter
 
 We start by loading the input data - individual ancient DNA samples with their spatiotemporal and genetic position.
@@ -45,29 +54,55 @@ time_dist <- mobest::calculate_time_pairwise_distances(positions)
 obs_dist  <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
 ```
 
-`mobest_pairwisedistances` includes the following columns/variables.
+Spatial distances (`calculate_geo_pairwise_distances`) are assumed to be in meter and transformed to kilometres. This can be turned off with `m_to_km = FALSE`. `mobest::calculate_pairwise_distances()` also calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions (see the `*_dist_resid` columns). This behaviour can be turned off by setting `with_resid = FALSE`.
+
+`mobest_pairwisedistances`, here in `distances_all`, finally includes the following columns/variables.
 
 |Column         |Description |
 |:--------------|:-----------|
-|id1            ||
-|id2            ||
-|geo_dist       ||
-|time_dist      ||
-|obs_dist_total ||
-|C\*_dist       ||
-|C\*_dist_resid ||
+|id1            |Identifier of the first sample|
+|id2            |Identifier of the second sample|
+|geo_dist       |Spatial distance (in the units of the CRS, typically kilometres)|
+|time_dist      |Temporal distance (typically in years)|
+|obs_dist_total |Euclidean distance in the dependent variable space, so across all dimensions|
+|\*_dist        |Distance in along the axis of one dependent variable denoted by \*|
+|\*_dist_resid  |Distance for one dependent variable, but here only the distance in the space<br>defined by the residuals of a linear model|
 
-Note that `mobest::calculate_pairwise_distances()` also calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions. This behaviour can be turned off by setting `with_resid = FALSE`.
+This table allows us to easily visualize and analyse the pairwise distance properties of our dataset, for example with scatter plots or 2D histograms.
 
-This table allows us to easily visualize and analyse the pairwise distance properties of our dataset, for example with a set of correlation plots.
+<details>
+<summary>Code for this figure.</summary>
 
-```{figure} img/estimation/....png
-...
+```r
+p1 <- ggplot() +
+  geom_bin2d(
+    data = distances_all,
+    mapping = aes(x = geo_dist, y = obs_dist_total),
+    bins = 30
+  ) +
+  scale_fill_viridis_c() +
+  theme_bw()
+
+p2 <- ggplot() +
+  geom_bin2d(
+    data = distances_all,
+    mapping = aes(x = time_dist, y = obs_dist_total),
+    bins = 30
+  ) +
+  scale_fill_viridis_c() +
+  theme_bw()
+
+p <- cowplot::plot_grid(p1, p2)
+```
+</details>
+
+```{figure} img/estimation/distance_correlation.png
+2D histograms of the sample distance pairs comparing spatial, temporal and genetic space.
 ```
 
 ### Summarizing distances in an empirical variogram
 
-`mobest::bin_pairwise_distances` bins the pairwise distances in an `mobest_pairwisedistances` object and calculates an empirical variogram (class `mobest_empiricalvariogram`) from them.
+`mobest::bin_pairwise_distances` bins the pairwise distances in an `mobest_pairwisedistances` object and calculates an empirical variogram (class `mobest_empiricalvariogram`) for the Euclidean distances in dependent variable space. `geo_bin` and `time_bin` set the spatial and temporal bin size. The `per_bin_operation` to summarize the information is per-default set to `function(x) { 0.5 * mean(x^2, na.rm = T) }`, so half-mean-squared.
 
 ```r
 variogram <- mobest::bin_pairwise_distances(
@@ -80,28 +115,24 @@ variogram <- mobest::bin_pairwise_distances(
 
 |Column         |Description |
 |:--------------|:-----------|
-|geo_dist_cut   ||
-|time_dist_cut  ||
-|obs_dist_total ||
-|C\*_dist       ||
-|C\*_dist_resid ||
-|n              ||
+|geo_dist_cut   |Upper bound of the spatial bin|
+|time_dist_cut  |Upper bound of the temporal bin|
+|obs_dist_total |Euclidean distance in the dependent variable space,<br>summarized with the `per_bin_operation`|
+|C\*_dist       |Distance in along the axis of one dependent variable,<br>summarized with the `per_bin_operation`|
+|C\*_dist_resid |Distance in residual space for one dependent variable,<br>summarized with the `per_bin_operation`|
+|n              |Number of pairswise distances in a given space-time bin<br>(as shown in the 2D histograms in the previous section)|
 
-This variogram can be visualized in various ways, one of which is a simple raster of the sample counts.
-
-```{figure} img/estimation/....png
-...
-```
 
 ### Estimating the nugget parameter
 
 This variogram can for example be used to estimate the nugget parameter of the GPR kernel settings, by filtering for pairwise "genetic" distances with very small spatial and temporal distances.
 
 ```r
-d_all_long <- distances_all %>% tidyr::pivot_longer(
-  cols = c(C1_mds_u_dist_resid, C2_mds_u_dist_resid, C3_mds_u_dist_resid),
-  names_to = "dist_type", values_to = "dist_val"
-) %>%
+d_all_long <- distances_all %>%
+  tidyr::pivot_longer(
+    cols = c(C1_mds_u_dist_resid, C2_mds_u_dist_resid, C3_mds_u_dist_resid),
+    names_to = "dist_type", values_to = "dist_val"
+  ) %>%
   dplyr::mutate(
     dist_type = dplyr::recode(
       dist_type,
@@ -136,7 +167,7 @@ estimated_nuggets <- lower_left_variogram %>%
   )
 ```
 
-```{figure} img/estimation/....png
+```{figure} img/estimation/nuggets.png
 ...
 ```
 
