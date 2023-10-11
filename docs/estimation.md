@@ -404,6 +404,45 @@ Note that these values here are just for demonstration and a result of a crossva
 
 ### HPC setup for large lengthscale parameter spaces
 
+The setup explained above is complete, but hardly practical for applications with large datasets and a large relevant parameter space. Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs.
+
+This setup has three components:
+
+1. An R script specifying the individual crossvalidation run.
+2. A bash script to call 1. through the scheduler with a sequence of parameters.
+3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above.
+
+```r
+...
+```
+
+using the [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html) scheduler
+
+```bash
+#!/bin/bash
+#
+#$ -S /bin/bash  # defines bash as the shell for execution
+#$ -N mobest     # name of the command that will be listed in the queue
+#$ -cwd          # change to the current directory
+#$ -j y          # join error and standard output in one file
+#$ -o ~/log      # standard output file or directory
+#$ -pe smp 5     # use X CPU cores
+#$ -l h_vmem=10G # request XGb of memory
+#$ -V            # load personal profile
+
+date
+Rscript path/to/your/mobestRscript.R
+date
+exit 0
+```
+
+Note that this script can following script can also be run through
+{ref}`Create an apptainer image to run mobest <install:create an apptainer image to run mobest>`
+
+```r
+...
+```
+
 
 
 <!--
