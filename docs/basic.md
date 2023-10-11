@@ -447,8 +447,8 @@ Here is a list of the variables returned in `mobest_observations` for each of th
 |field_y              |Spatial y axis coordinate of the prediction point|
 |field_z              |Temporal coordinate (age) of the prediction point|
 |field_geo_id         |Identifier of the spatial prediction point|
-|field_mean           |Mean value predicted by the GPR model for the relevant dependent variable|
-|field_sd             |Uncertainty predicted by the GPR model for the relevant dependent variable|
+|field_mean           |Mean value predicted by the GPR model for the dependent variable|
+|field_sd             |Uncertainty predicted by the GPR model for the dependent variable|
 |search_id            |Identifier of the search sample|
 |search_x             |Spatial x axis coordinate of the search sample|
 |search_y             |Spatial y axis coordinate of the search sample|

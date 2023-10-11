@@ -197,7 +197,8 @@ p1 <- ggplot() +
   ylab("temporal lengthscale parameter") +
   guides(
     fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
-  )
+  ) +
+  ggtitle("C1")
 
 p2 <- ggplot() +
   geom_raster(
@@ -211,7 +212,8 @@ p2 <- ggplot() +
   ylab("temporal lengthscale parameter") +
   guides(
     fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
-  )
+  ) +
+  ggtitle("C2")
 
 p <- cowplot::plot_grid(p1, p2)
 

@@ -301,24 +301,24 @@ That means each row in `interpol_comparison` features the result for one test sa
 
 |Column         |Description |
 |:--------------|:-----------|
-|independent_table_id| |
-|dependent_setting_id| |
-|dependent_var_id| |
-|kernel_setting_id| |
-|pred_grid_id| |
-|mixing_iteration| |
-|dsx| |
-|dsy| |
-|dt| |
-|g| |
-|id| |
-|x| |
-|y| |
-|z| |
-|mean| |
-|sd| |
-|measured| |
-|difference| |
+|independent_table_id |Identifier of the spatiotemporal position permutation|
+|dependent_setting_id |Identifier of the dependent variable space position permutation|
+|dependent_var_id     |Identifier of the dependent variable|
+|kernel_setting_id    |Identifier of the kernel setting permutation|
+|pred_grid_id         |Identifier of the spatiotemporal prediction grid|
+|mixing_iteration     |Number of iteration|
+|dsx                  |Kernel lengthscale parameter on the spatial x axis|
+|dsy                  |Kernel lengthscale parameter on the spatial y axis|
+|dt                   |Kernel lengthscale parameter on the temporal axis|
+|g                    |Kernel nugget parameter|
+|id                   |Identifier of the test sample|
+|x                    |Spatial x axis coordinate of the test sample|
+|y                    |Spatial y axis coordinate of the test sample|
+|z                    |Temporal coordinate (age) of the test sample|
+|mean                 |Mean value predicted by the GPR model for the dependent variable<br>at the location of the test sample|
+|sd                   |Uncertainty predicted by the GPR model for the dependent variable<br>at the location of the test sample|
+|measured             |Genetic coordinate of the test sample in the dependent variable space|
+|difference           |Difference between `mean` (the predicted value) and `measured`<br>(the actually observed value)|
 
 `interpol_comparison` has $2 * 100 * 100 * 2 = 40000$ rows as a result of the following permutations:
 
@@ -359,7 +359,8 @@ p1 <- ggplot() +
   ylab("temporal lengthscale parameter") +
   guides(
     fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
-  )
+  ) +
+  ggtitle("C1")
 
 p2 <- ggplot() +
   geom_raster(
@@ -373,14 +374,15 @@ p2 <- ggplot() +
   ylab("temporal lengthscale parameter") +
   guides(
     fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
-  )
+  ) +
+  ggtitle("C2")
 
 cowplot::plot_grid(p1, p2)
 ```
 </details>
 
 ```{figure} img/estimation/crossvalidation_kernel_grid.png
-...
+Crossvalidation results (mean squared differences between prediction and observation) for two dependent variables/ancestry components C1 and C2
 ```
 
 The very best parameter combination for each dependent variable be identified like this:
@@ -398,7 +400,7 @@ kernel_grid %>%
 2 C2               1900000  1900                0.000131
 ```
 
-Note that these values here are just for demonstration and a result of a crossvalidation run with a very small sample size.
+Note that these values here are just for demonstration and a result of a crossvalidation run with a very small sample size. Extremely large kernel sizes are plausible for extremely small sample density.
 
 ### HPC setup for large lengthscale parameter spaces
 
