@@ -223,8 +223,8 @@ For the example here we can speed up the expensive calculations by reducing the 
 ```r
 set.seed(123)
 samples_reduced <- samples_projected %>% dplyr::slice_sample(n = 100)
+# typically one would run this with all samples
 ```
-
 
 ### A basic crossvalidation setup
 
@@ -251,8 +251,9 @@ The grid of kernel parameters grid is a bit more difficult to obtain. It has to 
 kernels_to_test <-
   # create a permutation grid of spatial (ds) and temporal (dt) lengthscale parameters to test
   expand.grid(
-    ds = seq(100, 2000, 100) * 1000, # *1000 to transform from kilometres to meters
-    dt = seq(100, 2000, 100)
+    ds = seq(100, 1900, 200)*1000, # *1000 to transform from kilometres to meters
+    dt = seq(100, 1900, 200)
+    # typically one would use a finer grid
   ) %>%
   # create objects of type mobest_kernelsetting from them
   purrr::pmap(function(...) {
@@ -277,6 +278,8 @@ kernels_to_test <-
   do.call(mobest::create_kernset_multi, .)
 ```
 
+`kernels_to_test` includes $10 * 10 = 100$ different kernel settings.
+
 With this input ready we can call `mobest::crossvalidate()`. This function randomly splits the input data in `groups` number of groups, takes `groups - 1` of them as training data and uses it to estimate the dependent variable positions of the last group's samples. It then calculates the differences between the true and the predicted values for each test sample and documents it in a tabular data structure of type `mobest_interpolgrid`. This is repeated so that each group acts as the test group once, so each sample is predicted by others once. In another `iteration` this entire process is repeated after resampling the groups.
 
 ```{warning}
@@ -289,12 +292,12 @@ interpol_comparison <- mobest::crossvalidate(
   dependent   = dep,
   kernel      = kernels_to_test,
   iterations  = 2, # in a real-world setting this should be set to 10+ iterations
-  groups      = 10,
-  quiet       = T
+  groups      = 5, # and this to 10
+  quiet       = F
 )
 ```
 
-That means each row in `mobest_interpolgrid` features the result for one test sample with one kernel parameter permutation and iteration. The following columns/variables are documented:
+That means each row in `interpol_comparison` features the result for one test sample with one kernel parameter permutation and iteration. The following columns/variables are documented:
 
 |Column         |Description |
 |:--------------|:-----------|
@@ -317,15 +320,85 @@ That means each row in `mobest_interpolgrid` features the result for one test sa
 |measured| |
 |difference| |
 
-To decide which kernel parameters yield the overall best prediction we have to summarize the per-sample results in the mobest_interpolgrid` table. One way of doing this is by calculating the ...
+`interpol_comparison` has $2 * 100 * 100 * 2 = 40000$ rows as a result of the following permutations:
 
-```
+- $2$ dependent variables
+- $100$ set of kernel parameter settings
+- $100$ spatial prediction grid positions
+- $2$ group resampling iterations
 
 ### Analyzing the crossvalidation results
 
-```{figure} img/estimation/....png
+To finally decide which kernel parameters yield the overall best prediction we have to summarize the per-sample results in the `mobest_interpolgrid` table. One way of doing this is by calculating the mean-squared difference for each lenghtscale setting.
+
+```r
+kernel_grid <- interpol_comparison %>%
+  dplyr::group_by(
+    dependent_var_id, ds = dsx, dt) %>%
+  dplyr::summarise(
+    mean_squared_difference = mean(difference^2),
+    .groups = "drop"
+  )
+```
+
+And this can then be visualized in a raster plot.
+
+<details>
+<summary>Code for this figure.</summary>
+
+```r
+p1 <- ggplot() +
+  geom_raster(
+    data = kernel_grid %>% dplyr::filter(dependent_var_id == "C1"),
+    mapping = aes(x = ds / 1000, y = dt, fill = mean_squared_difference)
+  ) +
+  scale_fill_viridis_c(direction = -1) +
+  coord_fixed() +
+  theme_bw() +
+  xlab("spatial lengthscale parameter") +
+  ylab("temporal lengthscale parameter") +
+  guides(
+    fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
+  )
+
+p2 <- ggplot() +
+  geom_raster(
+    data = kernel_grid %>% dplyr::filter(dependent_var_id == "C2"),
+    mapping = aes(x = ds / 1000, y = dt, fill = mean_squared_difference)
+  ) +
+  scale_fill_viridis_c(direction = -1) +
+  coord_fixed() +
+  theme_bw() +
+  xlab("spatial lengthscale parameter") +
+  ylab("temporal lengthscale parameter") +
+  guides(
+    fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
+  )
+
+cowplot::plot_grid(p1, p2)
+```
+</details>
+
+```{figure} img/estimation/crossvalidation_kernel_grid.png
 ...
 ```
+
+The very best parameter combination for each dependent variable be identified like this:
+
+```r
+kernel_grid %>%
+  dplyr::group_by(dependent_var_id) %>%
+  dplyr::slice_min(order_by = mean_squared_difference, n = 1) %>%
+  dplyr::ungroup()
+
+# A tibble: 2 × 4
+  dependent_var_id      ds    dt mean_squared_difference
+  <chr>              <dbl> <dbl>                   <dbl>
+1 C1               1100000  1500                0.000320
+2 C2               1900000  1900                0.000131
+```
+
+Note that these values here are just for demonstration and a result of a crossvalidation run with a very small sample size.
 
 ### HPC setup for large lengthscale parameter spaces
 

@@ -142,12 +142,10 @@ dep <- mobest::create_obs(
 )
 
 kernels_to_test <-
-  # create a permutation grid of spatial (ds) and temporal (dt) lengthscale parameters to test
   expand.grid(
-    ds = seq(100, 2000, 100)*1000,
-    dt = seq(100, 2000, 100)
+    ds = seq(100, 1900, 200)*1000,
+    dt = seq(100, 1900, 200)
   ) %>%
-  # create objects of type mobest_kernelsetting from them
   purrr::pmap(function(...) {
     row <- list(...)
     mobest::create_kernset(
@@ -155,7 +153,7 @@ kernels_to_test <-
         dsx = row$ds,
         dsy = row$ds,
         dt  = row$dt,
-        g   = 0.071  # nugget for C1 as calculated above
+        g   = 0.071
       ),
       C2 = mobest::create_kernel(
         dsx = row$ds,
@@ -165,7 +163,6 @@ kernels_to_test <-
       )
     )
   }) %>%
-  # name then and  package them in an object of type mobest_kernelsetting_multi
   magrittr::set_names(paste("kernel", 1:length(.), sep = "_")) %>%
   do.call(mobest::create_kernset_multi, .)
 
@@ -173,11 +170,60 @@ interpol_comparison <- mobest::crossvalidate(
   independent = ind,
   dependent   = dep,
   kernel      = kernels_to_test,
-  iterations  = 2, # in a real-world setting this should be set to 10+ iterations
-  groups      = 10,
+  iterations  = 2,
+  groups      = 5,
   quiet       = F
 )
 
 ### Analyzing the crossvalidation results
+
+kernel_grid <- interpol_comparison %>%
+  dplyr::group_by(
+    dependent_var_id, ds = dsx, dt) %>%
+  dplyr::summarise(
+    mean_squared_difference = mean(difference^2),
+    .groups = "drop"
+  )
+
+p1 <- ggplot() +
+  geom_raster(
+    data = kernel_grid %>% dplyr::filter(dependent_var_id == "C1"),
+    mapping = aes(x = ds / 1000, y = dt, fill = mean_squared_difference)
+  ) +
+  scale_fill_viridis_c(direction = -1) +
+  coord_fixed() +
+  theme_bw() +
+  xlab("spatial lengthscale parameter") +
+  ylab("temporal lengthscale parameter") +
+  guides(
+    fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
+  )
+
+p2 <- ggplot() +
+  geom_raster(
+    data = kernel_grid %>% dplyr::filter(dependent_var_id == "C2"),
+    mapping = aes(x = ds / 1000, y = dt, fill = mean_squared_difference)
+  ) +
+  scale_fill_viridis_c(direction = -1) +
+  coord_fixed() +
+  theme_bw() +
+  xlab("spatial lengthscale parameter") +
+  ylab("temporal lengthscale parameter") +
+  guides(
+    fill = guide_colourbar(title = "Mean squared\ndifference\nbetween\nprediction &\ntrue value")
+  )
+
+p <- cowplot::plot_grid(p1, p2)
+
+# ggsave(
+#   filename = "docs/img/estimation/crossvalidation_kernel_grid.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+kernel_grid %>%
+  dplyr::group_by(dependent_var_id) %>%
+  dplyr::slice_min(order_by = mean_squared_difference, n = 1) %>%
+  dplyr::ungroup()
 
 ### HPC setup for large lengthscale parameter spaces
