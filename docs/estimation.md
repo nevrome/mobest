@@ -402,15 +402,15 @@ kernel_grid %>%
 
 Note that these values here are just for demonstration and a result of a crossvalidation run with a very small sample size. Extremely large kernel sizes are plausible for extremely small sample density.
 
-### An HPC setup for large lengthscale parameter spaces
+### An HPC crossvalidation setup for large lengthscale parameter spaces
 
 The setup explained above is complete, but impractical for applications with large datasets and a large relevant parameter space. If you have access to a desktop computer or a single, strong node on a HPC system with plenty of processor cores, then it might be feasible to call the R code introduced above there. You could step the analysis by investigating a very large but coarse lengthscale parameter grid in a first run, and then submit a second or even a third run with a "zoomed-in" grid in the area with the best interpolation model performance. This hardly scales to really large analyses, though. For that we require a distributed computing setup, which makes use of the multitude of individual nodes a typical HPC provides.
 
-Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs. This setup has three components:
+Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs. This setup has three components, which will be explained in detail below.
 
-1. An R script specifying the individual crossvalidation run.
-2. A bash script to call 1. through the scheduler with a sequence of parameters.
-3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above.
+1. An R script specifying the individual crossvalidation run: [cross.R]()
+2. A bash script to call 1. through the scheduler with a sequence of parameters: [run.sh]()
+3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above: [compile.R]
 
 #### The crossvalidation R script
 
@@ -425,7 +425,9 @@ ds_for_this_run <- as.numeric(args[2])
 dt_for_this_run <- as.numeric(args[3])
 
 # read data
-samples_projected <- readr::read_csv("docs/data/samples_projected.csv")
+samples_projected <- readr::read_csv(
+  "docs/data/samples_projected.csv"
+)
 
 # define kernel
 kernel_for_this_run <- mobest::create_kernset_multi(
@@ -446,11 +448,10 @@ kernel_for_this_run <- mobest::create_kernset_multi(
   .names = paste0("kernel_", run)
 )
 
-# set a seed
+# set a seed to freeze randomness
 set.seed(123)
-# the only random element of this analysis is
-# the splitting into sample groups. With this seed the groups
-# should be identical for each parameter configuration
+# the only random element of this analysis is the splitting into sample groups 
+# with this seed the groups should be identical for each parameter configuration
 
 # run crossvalidation
 interpol_comparison <- mobest::crossvalidate(
@@ -485,7 +486,7 @@ kernel_grid <- interpol_comparison %>%
   )
 
 # write the output to the file system
-save(
+readr::write_csv(
   kernel_grid,
   file = paste0("data/parameter_exploration/crossvalidation/interpol_comparison_", run, ".RData")
 )
@@ -502,19 +503,53 @@ The following script `run_crossvalidation.sh` now describes how the R script can
 #!/bin/bash
 #
 #$ -S /bin/bash  # defines bash as the shell for execution
-#$ -N mobest     # name of the command that will be listed in the queue
+#$ -N cross      # name of the command that will be listed in the queue
 #$ -cwd          # change to the current directory
 #$ -j y          # join error and standard output in one file
 #$ -o ~/log      # standard output file or directory
-#$ -pe smp 5     # use X CPU cores
-#$ -l h_vmem=10G # request XGb of memory
+#$ -q archgen.q  # queue
+#$ -pe smp 2     # use X CPU cores
+#$ -l h_vmem=5G  # request XGb of memory
 #$ -V            # load personal profile
+#$ -t 1-225      # array job length
+#$ -tc 25        # number of concurrently running tasks in array
 
 date
-Rscript path/to/your/mobestRscript.R
+
+echo Task in Array: ${SGE_TASK_ID}
+i=$((SGE_TASK_ID - 1))
+
+# determine parameter permutations
+ds_to_explore=($(seq 100 100 1500))
+dt_to_explore=($(seq 100 100 1500))
+dss=()
+dts=()
+for ds in "${ds_to_explore[@]}"
+do
+  for dt in "${dt_to_explore[@]}"
+  do
+    dss+=($ds)
+    dts+=($dt)
+  done
+done
+
+current_ds=${dss[${i}]}
+current_dt=${dts[${i}]}
+
+echo ds: ${current_ds}
+echo dt: ${current_dt}
+
+apptainer exec \
+  --bind=/path/to/your/analysis/directory \
+  path/to/your/apptainer_mobest.sif \
+  Rscript path/to/your/mobestRscript.R ${i} ${current_ds} ${current_dt} \
+  /
+
 date
 exit 0
 ```
+
+$15*15 = 225$
 
 #### The result compilation script
 

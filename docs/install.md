@@ -74,6 +74,7 @@ Note that you can also submit this through a job scheduler, if you have an **HPC
 #$ -cwd          # change to the current directory
 #$ -j y          # join error and standard output in one file
 #$ -o ~/log      # standard output file or directory
+#$ -q archgen.q  # queue
 #$ -pe smp 5     # use X CPU cores
 #$ -l h_vmem=10G # request XGb of memory
 #$ -V            # load personal profile

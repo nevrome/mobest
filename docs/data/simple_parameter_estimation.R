@@ -227,5 +227,3 @@ kernel_grid %>%
   dplyr::group_by(dependent_var_id) %>%
   dplyr::slice_min(order_by = mean_squared_difference, n = 1) %>%
   dplyr::ungroup()
-
-### HPC setup for large lengthscale parameter spaces
