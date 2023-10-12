@@ -402,21 +402,101 @@ kernel_grid %>%
 
 Note that these values here are just for demonstration and a result of a crossvalidation run with a very small sample size. Extremely large kernel sizes are plausible for extremely small sample density.
 
-### HPC setup for large lengthscale parameter spaces
+### An HPC setup for large lengthscale parameter spaces
 
-The setup explained above is complete, but hardly practical for applications with large datasets and a large relevant parameter space. Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs.
+The setup explained above is complete, but impractical for applications with large datasets and a large relevant parameter space. If you have access to a desktop computer or a single, strong node on a HPC system with plenty of processor cores, then it might be feasible to call the R code introduced above there. You could step the analysis by investigating a very large but coarse lengthscale parameter grid in a first run, and then submit a second or even a third run with a "zoomed-in" grid in the area with the best interpolation model performance. This hardly scales to really large analyses, though. For that we require a distributed computing setup, which makes use of the multitude of individual nodes a typical HPC provides.
 
-This setup has three components:
+Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs. This setup has three components:
 
 1. An R script specifying the individual crossvalidation run.
 2. A bash script to call 1. through the scheduler with a sequence of parameters.
 3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above.
 
+#### The crossvalidation R script
+
 ```r
-...
+# load dependencies
+library(magrittr)
+
+# read command line parameters
+args <- unlist(strsplit(commandArgs(trailingOnly = TRUE), " "))
+run <- args[1]
+ds_for_this_run <- as.numeric(args[2])
+dt_for_this_run <- as.numeric(args[3])
+
+# read data
+samples_projected <- readr::read_csv("docs/data/samples_projected.csv")
+
+# define kernel
+kernel_for_this_run <- mobest::create_kernset_multi(
+  mobest::create_kernset(
+    C1 = mobest::create_kernel(
+      dsx = ds_for_this_run*1000,
+      dsy = ds_for_this_run*1000,
+      dt  = dt_for_this_run,
+      g   = 0.071
+    ),
+    C2 = mobest::create_kernel(
+      dsx = ds_for_this_run*1000,
+      dsy = ds_for_this_run*1000,
+      dt  = dt_for_this_run,
+      g   = 0.059
+    )
+  ),
+  .names = paste0("kernel_", run)
+)
+
+# set a seed
+set.seed(123)
+# the only random element of this analysis is
+# the splitting into sample groups. With this seed the groups
+# should be identical for each parameter configuration
+
+# run crossvalidation
+interpol_comparison <- mobest::crossvalidate(
+  independent = mobest::create_spatpos(
+    id = 1:nrow(janno_final),
+    x = janno_final$x, 
+    y = janno_final$y, 
+    z = janno_final$Date_BC_AD_Median_Derived
+  ),
+  dependent = mobest::create_obs(
+    multivar_method_observation_bundles[[mperm_id]][[dimension_for_this_run]],
+    .names = paste(
+      dimension_for_this_run,
+      multivar_for_this_run,
+      snpset_for_this_run,
+      sep = "_"
+    )
+  ),
+  kernel = kernel_for_this_run,
+  iterations = 10,
+  groups = 10,
+  quiet = F
+)
+
+# summarize the crossvalidation result
+kernel_grid <- interpol_comparison %>%
+  dplyr::group_by(
+    dependent_var_id, ds = dsx, dt) %>%
+  dplyr::summarise(
+    mean_squared_difference = mean(difference^2),
+    .groups = "drop"
+  )
+
+# write the output to the file system
+save(
+  kernel_grid,
+  file = paste0("data/parameter_exploration/crossvalidation/interpol_comparison_", run, ".RData")
+)
 ```
 
-using the [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html) scheduler
+it's also possible and simple to just run the 02b script with the respective array index
+`qsub -b y -cwd -q archgen.q -pe smp 8 -l h_vmem=50G -now n -V -j y -o ~/log -N fillGaps singularity exec --bind=/mnt/archgen/users/schmid singularity_mobest.sif Rscript code/02_parameter_estimation/02a_crossvalidation.R "11772" "pca_proj" "u" "C9" "500" "1300"`
+
+#### The submission bash script
+
+The following script `run_crossvalidation.sh` now describes how the R script can be submitted to a scheduler, in this case using the [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html) scheduler. The script would be submitted there with `qsub run_crossvalidation.sh`.
 
 ```bash
 #!/bin/bash
@@ -435,6 +515,8 @@ Rscript path/to/your/mobestRscript.R
 date
 exit 0
 ```
+
+#### The result compilation script
 
 Note that this script can following script can also be run through
 {ref}`Create an apptainer image to run mobest <install:create an apptainer image to run mobest>`
