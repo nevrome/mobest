@@ -61,7 +61,7 @@ readr::write_csv(
   kernel_grid,
   file = paste0(
     "docs/data/hpc_crossvalidation/kernel_grid_",
-    sprintf("%06d", run),
+    sprintf("%06d", as.integer(run)),
     ".csv"
   )
 )
