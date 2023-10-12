@@ -1,8 +1,10 @@
 # Advanced features of the mobest package
 
-`mobest::locate` uses the spatiotemporal interpolation to calculate a similarity probability between a set of "search" samples and an interpolation field. It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`. These probabilities are normalized for each search sample and grid (with the default `normalize = TRUE`).
+`mobest::locate()` uses spatiotemporal interpolation to calculate spatial similarity probability maps between a set of search samples and an interpolated ancestry field at specific time slices. This basic and arguably most important usecase of the mobest package is documented in {doc}`A basic similarity search workflow <basic>`. `locate()` hides a lot of the complexity of mobest, though, and some of that will be documented in this section.
 
-## The permutation machine
+## Gaussian process regression on top of a linear model
+
+...
 
 ## Spatiotemporal interpolation permutations in a model grid
 
@@ -53,6 +55,8 @@ interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 ```
 
 ## Similarity search with permutations
+
+It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`. These probabilities are normalized for each search sample and grid (with the default `normalize = TRUE`).
 
 `mobest::locate` is actually just a special, simplified interface to `mobest::locate_multi`, which adds another level of complexity. It allows multiple input values for `independent`, `dependent`, `kernel`, `search_independent` and `search_dependent` and the result will therefore consider all permutations of these input settings (`independent` and `search_independent` as well as `dependent` and `search_dependent` have to be congruent, though).
 

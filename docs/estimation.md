@@ -216,7 +216,7 @@ The diamond shaped dot is positioned at the mean point of the distribution
 
 ## Finding optimal lengthscale parameters with crossvalidation
 
-To find the empirically optimal lengthscale parameters mobest includes the function `mobest::crossvalidate`. It allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel parameters. This is a computationally expensive and mathematically inelegant method, but robust, reliable and readily understandable. `crossvalidate()` internally employs `mobest::create_model_grid` and `mobest::run_model_grid` (see {ref}`The permutation machine <advanced:the permutation machine>`).
+To find the empirically optimal lengthscale parameters mobest includes the function `mobest::crossvalidate`. It allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel parameters. This is a computationally expensive and mathematically inelegant method, but robust, reliable and readily understandable. `crossvalidate()` internally employs `mobest::create_model_grid` and `mobest::run_model_grid` (see {ref}`Spatiotemporal interpolation permutations in a model grid <advanced:spatiotemporal interpolation permutations in a model grid>`).
 
 For the example here we can speed up the expensive calculations by reducing the sample size.
 
