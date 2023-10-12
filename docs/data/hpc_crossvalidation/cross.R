@@ -9,6 +9,17 @@ samples_projected <- readr::read_csv(
   "docs/data/samples_projected.csv"
 )
 
+ind <- mobest::create_spatpos(
+  id = samples_reduced$Sample_ID,
+  x  = samples_reduced$x,
+  y  = samples_reduced$y,
+  z  = samples_reduced$Date_BC_AD_Median
+)
+dep <- mobest::create_obs(
+  C1 = samples_reduced$MDS_C1,
+  C2 = samples_reduced$MDS_C2
+)
+
 kernel_for_this_run <- mobest::create_kernset_multi(
   mobest::create_kernset(
     C1 = mobest::create_kernel(
@@ -30,25 +41,12 @@ kernel_for_this_run <- mobest::create_kernset_multi(
 set.seed(123)
 
 interpol_comparison <- mobest::crossvalidate(
-  independent = mobest::create_spatpos(
-    id = 1:nrow(janno_final),
-    x = janno_final$x,
-    y = janno_final$y,
-    z = janno_final$Date_BC_AD_Median_Derived
-  ),
-  dependent = mobest::create_obs(
-    multivar_method_observation_bundles[[mperm_id]][[dimension_for_this_run]],
-    .names = paste(
-      dimension_for_this_run,
-      multivar_for_this_run,
-      snpset_for_this_run,
-      sep = "_"
-    )
-  ),
-  kernel = kernel_for_this_run,
-  iterations = 10,
-  groups = 10,
-  quiet = F
+  independent = ind,
+  dependent   = dep,
+  kernel      = kernel_for_this_run,
+  iterations  = 1,
+  groups      = 10,
+  quiet       = F
 )
 
 kernel_grid <- interpol_comparison %>%

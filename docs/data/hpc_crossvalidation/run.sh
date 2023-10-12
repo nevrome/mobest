@@ -37,9 +37,9 @@ echo ds: ${current_ds}
 echo dt: ${current_dt}
 
 apptainer exec \
-  --bind=/path/to/your/analysis/directory \
-  path/to/your/apptainer_mobest.sif \
-  Rscript path/to/your/mobestRscript.R ${i} ${current_ds} ${current_dt} \
+  --bind=/mnt/archgen/users/schmid/mobest \
+  /mnt/archgen/users/schmid/mobest/apptainer_mobest.sif \
+  Rscript /mnt/archgen/users/schmid/mobest/docs/data/hpc_crossvalidation/cross.R ${i} ${current_ds} ${current_dt} \
   /
 
 date
