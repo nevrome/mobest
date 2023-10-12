@@ -408,11 +408,17 @@ The setup explained above is complete, but impractical for applications with lar
 
 Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs. This setup has three components, which will be explained in detail below.
 
-1. An R script specifying the individual crossvalidation run: [cross.R]()
-2. A bash script to call 1. through the scheduler with a sequence of parameters: [run.sh]()
-3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above: [compile.R]
+1. An R script specifying the individual crossvalidation run: [cross.R](data/hpc_crossvalidation/cross.R)
+2. A bash script to call 1. through the scheduler with a sequence of parameters: [run.sh](data/hpc_crossvalidation/run.sh)
+3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above: [compile.R](data/hpc_crossvalidation/compile.R)
+
+To make sure this example actually works, we filled it with real paths. Make sure to change them for your application.
 
 #### The crossvalidation R script
+
+The following script `cross.R` includes the code for a single run of the crossvalidation with one set of kernel parameters.
+
+Note how the command line arguments are read from `run.sh` with `commandArgs()` and then used in `mobest::create_kernset()` to run `mobest::crossvalidate()` with exactly the desired lengthscale parameters.
 
 ```r
 # load dependencies
@@ -495,14 +501,40 @@ readr::write_csv(
 )
 ```
 
-it's also possible and simple to just run the 02b script with the respective array index
-`qsub -b y -cwd -q archgen.q -pe smp 8 -l h_vmem=50G -now n -V -j y -o ~/log -N fillGaps singularity exec --bind=/mnt/archgen/users/schmid singularity_mobest.sif Rscript code/02_parameter_estimation/02a_crossvalidation.R "11772" "pca_proj" "u" "C9" "500" "1300"`
+`cross.R` returns a very short table (in the script the object `kernel_grid` of type `mobest_interpolgrid`) with only two lines; one for each dependent variable. It writes it to the file system as a .csv file with a unique name: `kernel_grid_000XXX.csv`, where XXX is the run number.
+
+For testing purposes is possible to run this script with a specific set of lengthscale parameters, here 1000 kilometres and 1000 years.
+
+```bash
+Rscript /mnt/archgen/users/schmid/mobest/docs/data/hpc_crossvalidation/cross.R "999" "1000" "1000"
+```
+
+If the local R installation does not already include the mobest package, we may want to run `Rscript` through `apptainer`, as described in {ref}`Create an apptainer image to run mobest <install:create an apptainer image to run mobest>`.
+
+```bash
+apptainer exec \
+  --bind=/mnt/archgen/users/schmid/mobest \
+  /mnt/archgen/users/schmid/mobest/apptainer_mobest.sif \
+  Rscript /mnt/archgen/users/schmid/mobest/docs/data/hpc_crossvalidation/cross.R "999" "1000" "1000" \
+  /
+```
+
+And if we want to go all the way, we can also submit this to the HPC scheduler, in this case [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html).
+
+```bash
+qsub -b y -cwd -q archgen.q -pe smp 10 -l h_vmem=20G -now n -V -j y -o ~/log -N crossOne \ 
+  apptainer exec \
+    --bind=/mnt/archgen/users/schmid/mobest \
+    /mnt/archgen/users/schmid/mobest/apptainer_mobest.sif \
+    Rscript /mnt/archgen/users/schmid/mobest/docs/data/hpc_crossvalidation/cross.R "999" "1000" "1000" \
+    /
+```
 
 #### The submission bash script
 
-The following script `run_crossvalidation.sh` now describes how the R script can be submitted to a scheduler, in this case using the [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html) scheduler. The script would be submitted there with `qsub docs/data/hpc_crossvalidation/run.sh`.
+Of course we usually do not want to run `cross.R` only once, but many times for a regular grid of lengthscale parameters. The following SGE submission script `run.sh` now describes how the R script can be submitted to a scheduler as an array of jobs. It can be submitted with `qsub docs/data/hpc_crossvalidation/run.sh`.
 
-
+Note how the parameter grid is constructed by two nested loops and indexed by the `SGE_TASK_ID`, more specifically `SGE_TASK_ID - 1 = i`. The number of jobs, here $15*15=225$, is hardcoded in `-t 1-225` and must be calculated and set in advance based on the number of values in `ds_to_explore` and `dt_to_explore`. `seq 100 100 1500` creates a sequence of 15 values from 100 to 1500 in steps of 100.
 
 ```bash
 #!/bin/bash
@@ -553,12 +585,11 @@ date
 exit 0
 ```
 
-$15*15 = 225$
+So this will start 225 jobs in batches of 25 jobs at a time. Each job will run `cross.R` with a different set of input parameters, which will, in turn, create 225 `kernel_grid_000XXX.csv` files.
 
 #### The result compilation script
 
-Note that this script can following script can also be run through
-{ref}`Create an apptainer image to run mobest <install:create an apptainer image to run mobest>`
+To read these individual files, and subsequently create the plot described in {ref}`Analyzing the crossvalidation results <estimation:analyzing the crossvalidation results>` a third script `compile.R` is in order. It should probably start with some code like this, which reads and merges the individual files into a single data structure.
 
 ```r
 kernel_grid <- purrr::map_dfr(
