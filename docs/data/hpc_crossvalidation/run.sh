@@ -1,5 +1,3 @@
-# submit with qsub docs/data/hpc_crossvalidation/run.sh
-
 #!/bin/bash
 #
 #$ -S /bin/bash  # defines bash as the shell for execution
@@ -31,14 +29,13 @@ do
     dts+=($dt)
   done
 done
-
 current_ds=${dss[${i}]}
 current_dt=${dts[${i}]}
 
 echo ds: ${current_ds}
 echo dt: ${current_dt}
 
-singularity exec \
+apptainer exec \
   --bind=/mnt/archgen/users/schmid/mobest \
   /mnt/archgen/users/schmid/mobest/apptainer_mobest.sif \
   Rscript /mnt/archgen/users/schmid/mobest/docs/data/hpc_crossvalidation/cross.R ${i} ${current_ds} ${current_dt} \

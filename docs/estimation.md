@@ -424,12 +424,24 @@ run <- args[1]
 ds_for_this_run <- as.numeric(args[2])
 dt_for_this_run <- as.numeric(args[3])
 
-# read data
+# read samples
 samples_projected <- readr::read_csv(
   "docs/data/samples_projected.csv"
 )
 
-# define kernel
+# transform samples to the required input data types
+ind <- mobest::create_spatpos(
+  id = samples_projected$Sample_ID,
+  x  = samples_projected$x,
+  y  = samples_projected$y,
+  z  = samples_projected$Date_BC_AD_Median
+)
+dep <- mobest::create_obs(
+  C1 = samples_projected$MDS_C1,
+  C2 = samples_projected$MDS_C2
+)
+
+# define the kernel for this run
 kernel_for_this_run <- mobest::create_kernset_multi(
   mobest::create_kernset(
     C1 = mobest::create_kernel(
@@ -455,25 +467,12 @@ set.seed(123)
 
 # run crossvalidation
 interpol_comparison <- mobest::crossvalidate(
-  independent = mobest::create_spatpos(
-    id = 1:nrow(janno_final),
-    x = janno_final$x, 
-    y = janno_final$y, 
-    z = janno_final$Date_BC_AD_Median_Derived
-  ),
-  dependent = mobest::create_obs(
-    multivar_method_observation_bundles[[mperm_id]][[dimension_for_this_run]],
-    .names = paste(
-      dimension_for_this_run,
-      multivar_for_this_run,
-      snpset_for_this_run,
-      sep = "_"
-    )
-  ),
-  kernel = kernel_for_this_run,
-  iterations = 10,
-  groups = 10,
-  quiet = F
+  independent = ind,
+  dependent   = dep,
+  kernel      = kernel_for_this_run,
+  iterations  = 10,
+  groups      = 10,
+  quiet       = F
 )
 
 # summarize the crossvalidation result
@@ -488,7 +487,11 @@ kernel_grid <- interpol_comparison %>%
 # write the output to the file system
 readr::write_csv(
   kernel_grid,
-  file = paste0("data/parameter_exploration/crossvalidation/interpol_comparison_", run, ".RData")
+  file = paste0(
+    "docs/data/hpc_crossvalidation/kernel_grid_",
+    sprintf("%06d", as.integer(run)),
+    ".csv"
+  )
 )
 ```
 
@@ -497,7 +500,9 @@ it's also possible and simple to just run the 02b script with the respective arr
 
 #### The submission bash script
 
-The following script `run_crossvalidation.sh` now describes how the R script can be submitted to a scheduler, in this case using the [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html) scheduler. The script would be submitted there with `qsub run_crossvalidation.sh`.
+The following script `run_crossvalidation.sh` now describes how the R script can be submitted to a scheduler, in this case using the [SGE](https://docs.oracle.com/cd/E19279-01/820-3257-12/n1ge.html) scheduler. The script would be submitted there with `qsub docs/data/hpc_crossvalidation/run.sh`.
+
+
 
 ```bash
 #!/bin/bash
@@ -509,10 +514,10 @@ The following script `run_crossvalidation.sh` now describes how the R script can
 #$ -o ~/log      # standard output file or directory
 #$ -q archgen.q  # queue
 #$ -pe smp 2     # use X CPU cores
-#$ -l h_vmem=5G  # request XGb of memory
+#$ -l h_vmem=10G # request XGb of memory
 #$ -V            # load personal profile
 #$ -t 1-225      # array job length
-#$ -tc 25        # number of concurrently running tasks in array
+#$ -tc 25        # number of concurrently submitted tasks
 
 date
 
@@ -532,7 +537,6 @@ do
     dts+=($dt)
   done
 done
-
 current_ds=${dss[${i}]}
 current_dt=${dts[${i}]}
 
@@ -540,9 +544,9 @@ echo ds: ${current_ds}
 echo dt: ${current_dt}
 
 apptainer exec \
-  --bind=/path/to/your/analysis/directory \
-  path/to/your/apptainer_mobest.sif \
-  Rscript path/to/your/mobestRscript.R ${i} ${current_ds} ${current_dt} \
+  --bind=/mnt/archgen/users/schmid/mobest \
+  /mnt/archgen/users/schmid/mobest/apptainer_mobest.sif \
+  Rscript /mnt/archgen/users/schmid/mobest/docs/data/hpc_crossvalidation/cross.R ${i} ${current_ds} ${current_dt} \
   /
 
 date
@@ -557,7 +561,16 @@ Note that this script can following script can also be run through
 {ref}`Create an apptainer image to run mobest <install:create an apptainer image to run mobest>`
 
 ```r
-...
+kernel_grid <- purrr::map_dfr(
+  list.files(
+    path = "docs/data/hpc_crossvalidation",
+    pattern = "*.csv",
+    full.names = TRUE
+  ),
+  function(x) {
+    readr::read_csv(x, show_col_types = FALSE)
+  }
+)
 ```
 
 

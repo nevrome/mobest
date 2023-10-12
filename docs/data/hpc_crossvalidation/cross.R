@@ -44,7 +44,7 @@ interpol_comparison <- mobest::crossvalidate(
   independent = ind,
   dependent   = dep,
   kernel      = kernel_for_this_run,
-  iterations  = 1,
+  iterations  = 10,
   groups      = 10,
   quiet       = F
 )
