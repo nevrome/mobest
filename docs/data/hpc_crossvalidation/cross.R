@@ -59,5 +59,5 @@ kernel_grid <- interpol_comparison %>%
 
 readr::write_csv(
   kernel_grid,
-  file = paste0("docs/data/hpc_crossvalidation/kernel_grid_", run, "csv")
+  file = paste0("docs/data/hpc_crossvalidation/kernel_grid_", run, ".csv")
 )
