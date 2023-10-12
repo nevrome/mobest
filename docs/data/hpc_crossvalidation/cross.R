@@ -10,14 +10,14 @@ samples_projected <- readr::read_csv(
 )
 
 ind <- mobest::create_spatpos(
-  id = samples_reduced$Sample_ID,
-  x  = samples_reduced$x,
-  y  = samples_reduced$y,
-  z  = samples_reduced$Date_BC_AD_Median
+  id = samples_projected$Sample_ID,
+  x  = samples_projected$x,
+  y  = samples_projected$y,
+  z  = samples_projected$Date_BC_AD_Median
 )
 dep <- mobest::create_obs(
-  C1 = samples_reduced$MDS_C1,
-  C2 = samples_reduced$MDS_C2
+  C1 = samples_projected$MDS_C1,
+  C2 = samples_projected$MDS_C2
 )
 
 kernel_for_this_run <- mobest::create_kernset_multi(
