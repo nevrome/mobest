@@ -9,7 +9,7 @@
 #$ -o ~/log      # standard output file or directory
 #$ -q archgen.q  # queue
 #$ -pe smp 2     # use X CPU cores
-#$ -l h_vmem=5G  # request XGb of memory
+#$ -l h_vmem=10G # request XGb of memory
 #$ -V            # load personal profile
 #$ -t 1-225      # array job length
 #$ -tc 25        # number of concurrently submitted tasks
