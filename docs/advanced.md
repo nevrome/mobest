@@ -90,7 +90,7 @@ Samples extracted from archaeological contexts usually have no precise age infor
 
 As a consequence, spatiotemporal interpolation only based on the median age, as demonstrated in {doc}`A basic similarity search workflow <basic>` is of questionable accuracy. The following R script is a modified version of this simple workflow, now featuring temporal resampling based on archaeological age ranges and radiocarbon dates.
 
-We start again by downloading
+We start again by downloading and sub-setting data from {cite:p}`Schmid2023`. Here we already perform some additional steps in advance to reduce the complexity below. This includes the transformation of the spatial coordinates and the parsing and restructuring of the uncalibrated radiocarbon dates.
 
 <details>
 <summary>Code to prepare the input data table.</summary>
@@ -116,23 +116,51 @@ samples_raw <- dplyr::left_join(
   samples_genetic_space_raw,
   by = "Sample_ID"
 )
-# create different useful subsets of this table
-## most basic selection of variables
-samples_basic <- samples_raw %>%
+# create a useful subsets of this table
+samples_selected <- samples_raw %>%
   dplyr::select(
     Sample_ID,
     Latitude, Longitude,
-    Date_BC_AD_Median,
+    Date_BC_AD_Start, Date_BC_AD_Stop, Date_C14,
     MDS_C1 = C1_mds_u, MDS_C2 = C2_mds_u
   )
-readr::write_csv(samples_basic, file = "docs/data/samples_advanced.csv")
+# transform the spatial coordinates to EPSG:3035
+samples_projected <- samples_selected %>%
+  sf::st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>%
+  sf::st_transform(crs = 3035) %>% 
+  dplyr::mutate(
+    x = sf::st_coordinates(.)[,1],
+    y = sf::st_coordinates(.)[,2],
+    .after = "Sample_ID"
+  ) %>%
+  sf::st_drop_geometry()
+# restructure radiocarbon information
+samples_advanced <- samples_projected %>%
+  tibble::add_column(
+    .,
+    purrr::map_dfr(
+      .$Date_C14,
+      function(y) {
+        tibble::tibble(
+          C14_ages = paste(stringr::str_match_all(y, ":(.*?)±")[[1]][,2], collapse = ";"),
+          C14_sds = paste(stringr::str_match_all(y, "±(.*?)\\)")[[1]][,2], collapse = ";")
+        )
+      }
+    ),
+    .after = "Date_C14"
+  )
+readr::write_csv(samples_advanced, file = "docs/data/samples_advanced.csv")
 ```
 
 </details>
 
-You do not have to run this and can instead download the example table `samples_advanced.csv` from [here](data/samples_advanced.csv). Instead of the simple `Date_BC_AD_Median` this table has a different set of columns to express their age.
+You do not have to run this and can instead download the example table `samples_advanced.csv` from [here](data/samples_advanced.csv). Instead of the simple `Date_BC_AD_Median` this table has a different set of columns to express age.
 
-
+| Variable | Type | Description |
+|----------|------|-------------|
+| Date_BC_AD_Start | int  | ... |
+| Date_BC_AD_Stop  | int  | ... |
+| Date_C14         | chr  | ... |
 
 #### Drawing ages for each sample
 
