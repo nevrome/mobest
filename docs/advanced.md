@@ -1,6 +1,6 @@
 # Advanced features of the mobest package
 
-`mobest::locate()` uses spatiotemporal interpolation to calculate spatial similarity probability maps between a set of search samples and an interpolated ancestry field at specific time slices. This basic and arguably most important usecase of the mobest package is documented in {doc}`A basic similarity search workflow <basic>`. `locate()` hides a lot of the complexity of mobest, though, and some of that will be documented in this section.
+`mobest::locate()` uses spatiotemporal interpolation to calculate spatial similarity probability maps between a set of search samples and an interpolated ancestry field at specific time slices. This basic and arguably most important use case of the mobest package is documented in {doc}`A basic similarity search workflow <basic>`. `locate()` hides a lot of the complexity of mobest, though, and some of that is documented in the following sections.
 
 ## Gaussian process regression on top of a linear model
 
@@ -60,7 +60,7 @@ search_result <- mobest::locate_multi(
   prediction_grid    = mobest::create_spatpos(...),
   search_independent = mobest::create_spatpos_multi(...),
   search_dependent   = mobest::create_obs_multi(...),
-  search_space_grid  = mobest:create_spatpos(...),
+  search_space_grid  = mobest::create_spatpos(...),
   search_time        = 0,
   search_time_mode   = "relative"
 )
@@ -80,4 +80,66 @@ mobest::fold_probabilities_per_group(search_product)
 
 ```r
 mobest::fold_probabilities_per_group(search_product, dependent_setting_id, kernel_setting_id)
+```
+
+### Temporal resampling as permutation application
+
+The introduction of `mobest::locate_multi()` above has been abstract and devoid of any hint to the great power that comes with its permutation machinery. Here we want to show one application that is very relevant for archeogenetic and macro-archaeological applications of mobest: Temporal resampling.
+
+Samples extracted from archaeological contexts usually have no precise age information that could be pin-pointed to exactly one year. Instead they can either be linked to a certain age range through relative chronology based on stratigraphy or typology, or they are dated with biological, physical or chemical methods of dating like for example [radiocarbon dating](https://en.wikipedia.org/wiki/Radiocarbon_dating). No matter how ingenious the method of dating might be, including sophisticated chronological modelling based on various lines of evidence, the outcome for the individual sample will always be a probability distribution over a set of potential years. And this set can be surprisingly large (up to several hundred years), with highly asymmetric probability distributions.
+
+As a consequence, spatiotemporal interpolation only based on the median age, as demonstrated in {doc}`A basic similarity search workflow <basic>` is of questionable accuracy. The following R script is a modified version of this simple workflow, now featuring temporal resampling based on archaeological age ranges and radiocarbon dates.
+
+We start again by downloading
+
+<details>
+<summary>Code to prepare the input data table.</summary>
+
+```r
+# download .zip archives with tables from https://doi.org/10.17605/OSF.IO/6UWM5
+utils::download.file(
+  url = "https://osf.io/download/kej4s/",
+  destfile = "docs/data/pnas_tables.zip"
+)
+# extract the relevant tables
+utils::unzip(
+  "docs/data/pnas_tables.zip",
+  files = c("Dataset_S1.csv", "Dataset_S2.csv"),
+  exdir = "docs/data/"
+)
+# read data files
+samples_context_raw <- readr::read_csv("docs/data/Dataset_S1.csv")
+samples_genetic_space_raw <- readr::read_csv("docs/data/Dataset_S2.csv")
+# join them by sample name
+samples_raw <- dplyr::left_join(
+  samples_context_raw,
+  samples_genetic_space_raw,
+  by = "Sample_ID"
+)
+# create different useful subsets of this table
+## most basic selection of variables
+samples_basic <- samples_raw %>%
+  dplyr::select(
+    Sample_ID,
+    Latitude, Longitude,
+    Date_BC_AD_Median,
+    MDS_C1 = C1_mds_u, MDS_C2 = C2_mds_u
+  )
+readr::write_csv(samples_basic, file = "docs/data/samples_advanced.csv")
+```
+
+</details>
+
+You do not have to run this and can instead download the example table `samples_advanced.csv` from [here](data/samples_advanced.csv). Instead of the simple `Date_BC_AD_Median` this table has a different set of columns to express their age.
+
+
+
+#### Drawing ages for each sample
+
+```r
+```
+
+#### Applying the similarity search
+
+```r
 ```

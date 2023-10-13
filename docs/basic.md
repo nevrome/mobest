@@ -175,8 +175,7 @@ samples_raw <- dplyr::left_join(
   samples_genetic_space_raw,
   by = "Sample_ID"
 )
-# create different useful subsets of this table
-## most basic selection of variables
+# create a useful subset of this table
 samples_basic <- samples_raw %>%
   dplyr::select(
     Sample_ID,
