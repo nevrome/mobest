@@ -58,11 +58,153 @@ samples_with_age_densities <- samples_advanced %>%
     )
   )
 
+age_resampling_runs <- 2
+
 samples_with_age_samples <- samples_with_age_densities %>%
   dplyr::mutate(
     Date_BC_AD_Samples = purrr::map(
       Date_BC_AD_Prob, function(x) {
-          sample(x = x$age, size = 100, prob = x$sum_dens, replace = T)
+          sample(x = x$age, size = age_resampling_runs, prob = x$sum_dens, replace = T)
       }
     )
+  )
+
+###
+
+ind <- do.call(
+  mobest::create_spatpos_multi,
+  c(
+    purrr::map(
+      seq_len(age_resampling_runs), function(age_resampling_run) {
+        mobest::create_spatpos(
+          id = samples_with_age_samples$Sample_ID,
+          x  = samples_with_age_samples$x,
+          y  = samples_with_age_samples$y,
+          z  = purrr::map_int(
+            samples_with_age_samples$Date_BC_AD_Samples,
+            function(x) {x[age_resampling_run]}
+          )
+        )
+      }
+    ),
+    list(.names = paste0("age_resampling_run_", seq_len(age_resampling_runs)))
+  )
+)
+
+dep <- mobest::create_obs_multi(
+  d = mobest::create_obs(
+    C1 = samples_projected$MDS_C1,
+    C2 = samples_projected$MDS_C2
+  )
+)
+
+kernset <- mobest::create_kernset_multi(
+  k = mobest::create_kernset(
+    C1 = mobest::create_kernel(
+      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+      g = 0.1
+    ),
+    C2 = mobest::create_kernel(
+      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+      g = 0.1
+    )
+  )
+)
+
+research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(crs = 3035)
+
+spatial_pred_grid <- mobest::create_prediction_grid(
+  research_land_outline_3035,
+  spatial_cell_size = 50000
+)
+
+search_samples <- samples_with_age_samples %>%
+  dplyr::filter(
+    Sample_ID == "Stuttgart_published.DG"
+  )
+
+search_ind <- mobest::create_spatpos(
+  id = search_samples$Sample_ID,
+  x  = search_samples$x,
+  y  = search_samples$y,
+  z  = search_samples$Date_BC_AD_Median
+)
+search_dep <- mobest::create_obs(
+  C1 = search_samples$MDS_C1,
+  C2 = search_samples$MDS_C2
+)
+
+search_result <- mobest::locate(
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = -6800,
+  search_time_mode   = "absolute"
+)
+
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture) - Lazaridis et al. 2014"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  facet_wrap(
+    ~search_time,
+    labeller = \(variable, value) {
+      paste0("Search time: ", abs(value), "BC")
+    }
+  )
+
+mobest::fold_probabilities_per_group(search_product)
+
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture)\nLazaridis et al. 2014"
+  ) +
+  annotate(
+    "text",
+    label = "6500BC",
+    x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
   )
