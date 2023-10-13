@@ -461,10 +461,10 @@ As a result of the permutation of parameters, prediction grid and search points 
 
 We have:
 
-- $1$ set of input point positions in independent variable space
-- $1$ set of input point positions in dependent variable space
-- $2$ dependent variables
-- $1$ set of kernel parameter settings
+- $1$ set of input point positions in independent variable space (`independent_table_id`)
+- $1$ set of input point positions in dependent variable space (`dependent_setting_id`)
+- $2$ dependent variables (`dependent_var_id`)
+- $1$ set of kernel parameter settings (`kernel_setting_id`)
 - $4738$ spatial prediction grid positions
 - $1$ time slice of interest
 - $1$ search sample

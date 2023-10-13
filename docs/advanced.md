@@ -12,7 +12,7 @@ The detrending step can be turned off for individual variables in `mobest::creat
 
 Spatiotemporal interpolation is the first main operation mobest undertakes. The actual interpolation is performed in an internal function `mobest:::interpolate()`, which has a minimal interface and does not have to be called directly by the user. This is not least, because the main workflow in `mobest::locate()` (see {doc}`A basic similarity search workflow <basic>`) generally requires multiple interpolation runs. mobest therefore offers a slightly more complex, two step interpolation workflow, which consists of the creation of a list of models and then subsequently running each element in this list to construct different ancestry fields. 
 
-`mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of the field-defining input objects. Each row equals one complete model definition with all parameters and input data fully defined. Here is this function is called with the necessary input data constructors. Note that unlike for `locate()` we here require the `*_multi` constructors to express iterations of all settings. This mechanism is explained below in {ref}`Similarity search with permutations <advanced:similarity search with permutations>`, so we omit the details here with `...`.
+`mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of the field-defining input objects. Each row equals one complete model definition with all parameters and input data fully defined. Here is this function is called with the necessary input data constructors. Note that unlike for `locate()` we here require the `*_multi` constructors to express iterations of all settings (for more about this see {ref}`Similarity search with permutations <advanced:similarity search with permutations>` below).
 
 ```r
 library(magrittr)
@@ -49,55 +49,35 @@ It returns an unnested table of type `mobest_interpolgrid`, where each row docum
 
 ## Similarity search with permutations
 
-It requires the necessary reference sample input to perform the interpolation, which internally employs `mobest::create_model_grid` and `mobest::run_model_grid`. The search then yields a similarity probability value for each grid cell and for each search sample in an object of class `mobest_locateoverview`. These probabilities are normalized for each search sample and grid (with the default `normalize = TRUE`).
-
-`mobest::locate` is actually just a special, simplified interface to `mobest::locate_multi`, which adds another level of complexity. It allows multiple input values for `independent`, `dependent`, `kernel`, `search_independent` and `search_dependent` and the result will therefore consider all permutations of these input settings (`independent` and `search_independent` as well as `dependent` and `search_dependent` have to be congruent, though).
+As already pointed out in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`, `mobest::locate()` is a special, simplified interface for `mobest::locate_multi()`. This more general function adds another level of complexity, by allowing multiple input values for `independent`, `dependent`, `kernel`, `search_independent` and `search_dependent` through a set of data types and constructor functions with the suffix `*_multi` (see {ref}`Permutation data types <types:permutation data types>`). The result will consider all permutations of these input settings (`independent` and `search_independent` as well as `dependent` and `search_dependent` have to be congruent, though).
 
 ```r
-locate_overview <- mobest::locate_multi(
-  independent = mobest::create_spatpos_multi(
-    dating1 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100)),
-    dating2 = positions %>% dplyr::mutate(z = z + sample(-100:100, 100))
-  ),
-  dependent = mobest::create_obs_multi(
-    obs1 = observations, obs2 = observations
-  ),
-  kernel = mobest::create_kernset_multi(
-    kernel_1 = mobest::create_kernset(
-      ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
-      ac2 = mobest::create_kernel(1000000, 1000000, 200, 0.1)
-    ),
-    kernel_2 = mobest::create_kernset(
-      ac1 = mobest::create_kernel(1000000, 1000000, 200, 0.1),
-      ac2 = mobest::create_kernel(1000000, 1000000, 250, 0.1)
-    )
-  ),
-  search_independent = mobest::create_spatpos_multi(
-    dating1 = positions[1:4,], dating2 = positions[1:4,]
-  ),
-  search_dependent = mobest::create_obs_multi(
-    obs1 = observations[1:4,], obs2 = observations[1:4,]
-  ),
-  search_space_grid = expand.grid(
-      x = seq(100000, 1000000, 100000), 
-      y = seq(100000, 1000000, 100000)
-    ) %>% { mobest::create_geopos(id = 1:nrow(.), x = .$x, y = .$y) },
-  search_time = 0,
-  search_time_mode = "relative",
-  quiet = T
+library(magrittr)
+search_result <- mobest::locate_multi(
+  independent        = mobest::create_spatpos_multi(...),
+  dependent          = mobest::create_obs_multi(...),
+  kernel             = mobest::create_kernset_multi(...),
+  prediction_grid    = mobest::create_spatpos(...),
+  search_independent = mobest::create_spatpos_multi(...),
+  search_dependent   = mobest::create_obs_multi(...),
+  search_space_grid  = mobest:create_spatpos(...),
+  search_time        = 0,
+  search_time_mode   = "relative"
 )
 
-locate_product <- mobest::multiply_dependent_probabilities(locate_overview)
+search_product <- mobest::multiply_dependent_probabilities(search_result)
 ```
 
-`mobest::locate_multi` produces many probability grids for each sample. Even after `mobest::multiply_dependent_probabilities` merges the per-ancestry component iterations, that still leaves many parameter permutations. `mobest::fold_probabilities_per_group` is a convenient function to combine these to a single, merged probability grid of class `mobest_locatefold`. The folding operation can be set in the argument `folding_operation`, where the default is a simple sum. Again, in the default setting, the output probabilities are normalized per permutation.
+The result `locate_multi()` is also an object of type `mobest_locateoverview`, just as for `locate`. But `locate_multi()` actually makes use of its columns `independent_table_id`, `dependent_setting_id`, `dependent_var_id` and `kernel_setting_id`.
+
+So `mobest::locate_multi` produces potentially many probability grids for each sample. Even after the per-dependent variable iterations are merged with `mobest::multiply_dependent_probabilities`, that could still leave many parameter permutations. `mobest::fold_probabilities_per_group` is a convenient function to combine these to a single, merged probability grid of class `mobest_locatefold`. The folding operation can be set in the argument `folding_operation`, where the default is a simple sum. Again, in the default setting, the output probabilities are normalized per permutation.
 
 ```r
-mobest::fold_probabilities_per_group(locate_product)
+mobest::fold_probabilities_per_group(search_product)
 ```
 
-`fold_probabilities_per_group` also allows to maintain the the permutation groups, in case a full summary is not desired:
+`fold_probabilities_per_group` also allows to maintain all or some permutation groups, in case a full summary is not desired:
 
 ```r
-mobest::fold_probabilities_per_group(locate_product, dependent_setting_id, kernel_setting_id)
+mobest::fold_probabilities_per_group(search_product, dependent_setting_id, kernel_setting_id)
 ```
