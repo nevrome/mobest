@@ -187,6 +187,7 @@ readr::write_csv(samples_basic, file = "docs/data/samples_basic.csv")
 ```
 
 </details>
+<br>
 
 You do not have to run this and can instead download the example table `samples_basic.csv` from [here](data/samples_basic.csv).
 
@@ -204,7 +205,7 @@ samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
 | Sample_ID         | chr  | A sample identifier                                                                                                      |
 | Latitude          | dbl  | The latitude coordinate where this sample was recovered                                                                  |
 | Longitude         | dbl  | The longitude coordinate                                                                                                 |
-| Date_BC_AD_Median | int  | The median age of this sample in years                                                                                   |
+| Date_BC_AD_Median | int  | The median age of this sample in years BC/AD<br>/(negative numbers for BC, positive for AD)                                                                                 |
 | MDS_C1            | dbl  | The coordinate of this sample on dimension 1 of an MDS analysis.<br>See the paper for more details on how this was obtained |
 | MDS_C2            | dbl  | The coordinate of this sample on MDS dimension 2                                                                         |
 

@@ -88,9 +88,9 @@ The introduction of `mobest::locate_multi()` above has been abstract and devoid 
 
 Samples extracted from archaeological contexts usually have no precise age information that could be pin-pointed to exactly one year. Instead they can either be linked to a certain age range through relative chronology based on stratigraphy or typology, or they are dated with biological, physical or chemical methods of dating like for example [radiocarbon dating](https://en.wikipedia.org/wiki/Radiocarbon_dating). No matter how ingenious the method of dating might be, including sophisticated chronological modelling based on various lines of evidence, the outcome for the individual sample will always be a probability distribution over a set of potential years. And this set can be surprisingly large (up to several hundred years), with highly asymmetric probability distributions.
 
-As a consequence, spatiotemporal interpolation only based on the median age, as demonstrated in {doc}`A basic similarity search workflow <basic>` is of questionable accuracy. The following R script is a modified version of this simple workflow, now featuring temporal resampling based on archaeological age ranges and radiocarbon dates.
+As a consequence, spatiotemporal interpolation only based on the median age, as demonstrated in {doc}`A basic similarity search workflow <basic>` is of questionable accuracy. The following section introduces a modified version of this simple workflow, now featuring temporal resampling based on archaeological age ranges and radiocarbon dates.
 
-We start again by downloading and sub-setting data from {cite:p}`Schmid2023`. Here we already perform some additional steps in advance to reduce the complexity below. This includes the transformation of the spatial coordinates and the parsing and restructuring of the uncalibrated radiocarbon dates.
+We start again by downloading and sub-setting data from {cite:p}`Schmid2023`. Here we already perform some additional steps in advance to reduce the complexity a bit. This includes the transformation of the spatial coordinates and the parsing and restructuring of the uncalibrated radiocarbon dates.
 
 <details>
 <summary>Code to prepare the input data table.</summary>
@@ -121,7 +121,7 @@ samples_selected <- samples_raw %>%
   dplyr::select(
     Sample_ID,
     Latitude, Longitude,
-    Date_BC_AD_Start, Date_BC_AD_Stop, Date_C14,
+    Date_BC_AD_Start, Date_BC_AD_Median, Date_BC_AD_Stop, Date_C14,
     MDS_C1 = C1_mds_u, MDS_C2 = C2_mds_u
   )
 # transform the spatial coordinates to EPSG:3035
@@ -153,18 +153,102 @@ readr::write_csv(samples_advanced, file = "docs/data/samples_advanced.csv")
 ```
 
 </details>
+<br>
 
-You do not have to run this and can instead download the example table `samples_advanced.csv` from [here](data/samples_advanced.csv). Instead of the simple `Date_BC_AD_Median` this table has a different set of columns to express age.
+You do not have to run this and can instead download the example table `samples_advanced.csv`. Additional to the simple `Date_BC_AD_Median` column this table has a different set of variables to express age.
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| Date_BC_AD_Start | int  | ... |
-| Date_BC_AD_Stop  | int  | ... |
-| Date_C14         | chr  | ... |
+| Date_BC_AD_Start | int | The start of the age range for this sample in years BC/AD |
+| Date_BC_AD_Stop  | int | The end of the age range for this sample in years BC/AD |
+| Date_C14         | chr | A list of radiocarbon dates for each sample<br>in the form `(labCode-labNumber:ageBP±sd);...` |
+| C14_ages         | chr | A string list with only the BP ages of the C14 dates |
+| C14_sds          | chr | A string list with only the standard deviations of the C14 dates |
+
+With `samples_advanced.csv` we can write code to draw age samples and then use them for the similarity search. The script and the data can be downloaded here:
+
+- [temporal_resampling_similarity_search.R](data/temporal_resampling_similarity_search.R)
+- [samples_advanced.csv](data/samples_advanced.csv)
 
 #### Drawing ages for each sample
 
+As expected we start this analysis by loading the relevant dependencies and data.
+
 ```r
+library(magrittr)
+library(ggplot2)
+
+samples_advanced <- readr::read_csv("docs/data/samples_advanced.csv")
+```
+
+The first step to draw age samples is then to determine per-year probability densities for each sample. For the ones without radiocarbon dates this density follows a simple, uniform distribution. We assign each year a fraction, depending on the total number of years between `Date_BC_AD_Start` and `Date_BC_AD_Stop`. We can encode this in a simple helper function `contextual_date_uniform()`, which returns a tibble with the years in a column `age` and the densities in a column `sum_dens`.
+
+```r
+contextual_date_uniform <- function(startbcad, stopbcad) {
+  tibble::tibble(
+    age = startbcad:stopbcad,
+    sum_dens = 1/(length(startbcad:stopbcad))
+  )
+}
+```
+
+For the samples with radiocarbon ages this is more involved, because we have to calibrate the radiocarbon ages and determine the normalized sum of their densities. For the calibration we use the Bchron R package {cite}`Haslett2008`, which implements a simple, fast [calibration algorithm](https://en.wikipedia.org/wiki/Radiocarbon_calibration). We then sum the per-year densities in case there are multiple uncalibrated dates for a given sample, normalize them and fill age range gaps in the `Bchron::BchronCalibrate()` output (some years fall below its density threshold) with 0 to get a continous sequence of years and densities. The output of `radiocarbon_date_sumcal()` has the same structure as `contextual_date_uniform()`: a tibble with the years in a column `age` and the densities in a column `sum_dens`.
+
+```r
+radiocarbon_date_sumcal <- function(ages, sds, cal_curve) {
+  bol <- 1950 # c14 reference zero
+  raw_calibration_output <- Bchron::BchronCalibrate(
+    ages      = ages,
+    ageSds    = sds,
+    calCurves = rep(cal_curve, length(ages))
+  )
+  density_tables <- purrr::map(
+    raw_calibration_output,
+    function(y) {
+      tibble::tibble(
+        age = as.integer(-y$ageGrid + bol),
+        densities = y$densities
+      )
+    }
+  )
+  sum_density_table <- dplyr::bind_rows(density_tables) %>%
+    dplyr::group_by(age) %>%
+    dplyr::summarise(
+      sum_dens = sum(densities)/length(density_tables),
+      .groups = "drop"
+    ) %>%
+    dplyr::right_join(
+      ., data.frame(age = min(.$age):max(.$age)), by = "age"
+    ) %>%
+    dplyr::mutate(sum_dens = tidyr::replace_na(sum_dens, 0)) %>%
+    dplyr::arrange(age)
+  return(sum_density_table)
+}
+```
+
+With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, that features the density tibbles for each sample. Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world. The calibration we apply here is a massive simplifcation, given that each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities more accurate and more precise.
+
+```r
+samples_with_age_densities <- samples_advanced %>%
+  dplyr::mutate(
+    Date_BC_AD_Prob = purrr::pmap(
+      list(Date_BC_AD_Start, Date_BC_AD_Stop, C14_ages, C14_sds),
+      function(context_start, context_stop, c14bps, c14sds) {
+        if (!is.na(c14bps)) {
+          radiocarbon_date_sumcal(
+            ages = as.numeric(strsplit(c14bps, ";")[[1]]),
+            sds = as.numeric(strsplit(c14sds, ";")[[1]]),
+            cal_curve = "intcal20"
+          )
+        } else {
+          contextual_date_uniform(
+            startbcad = context_start,
+            stopbcad = context_stop
+          )
+        }
+      }
+    )
+  )
 ```
 
 #### Applying the similarity search

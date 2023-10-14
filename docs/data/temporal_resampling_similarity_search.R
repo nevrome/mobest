@@ -3,8 +3,8 @@ library(ggplot2)
 
 samples_advanced <- readr::read_csv("docs/data/samples_advanced.csv")
 
-sumcal <- function(ages, sds, cal_curve) {
-  bol <- 1950 # c14 reference zero
+radiocarbon_date_sumcal <- function(ages, sds, cal_curve) {
+  bol <- 1950
   raw_calibration_output <- Bchron::BchronCalibrate(
     ages      = ages,
     ageSds    = sds,
@@ -46,13 +46,16 @@ samples_with_age_densities <- samples_advanced %>%
       list(Date_BC_AD_Start, Date_BC_AD_Stop, C14_ages, C14_sds),
       function(context_start, context_stop, c14bps, c14sds) {
         if (!is.na(c14bps)) {
-          sumcal(
-            as.numeric(strsplit(c14bps, ";")[[1]]),
-            as.numeric(strsplit(c14sds, ";")[[1]]),
-            "intcal20"
+          radiocarbon_date_sumcal(
+            ages = as.numeric(strsplit(c14bps, ";")[[1]]),
+            sds = as.numeric(strsplit(c14sds, ";")[[1]]),
+            cal_curve = "intcal20"
           )
         } else {
-          contextual_date_uniform(context_start, context_stop)
+          contextual_date_uniform(
+            startbcad = context_start,
+            stopbcad = context_stop
+          )
         }
       }
     )
