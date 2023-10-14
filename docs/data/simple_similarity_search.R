@@ -103,6 +103,11 @@ kernset <- mobest::create_kernset(
   )
 )
 
+# save(
+#   dep, kernset, spatial_pred_grid, search_ind, search_dep,
+#   file = "docs/data/simple_objects_snapshot.RData"
+# )
+
 search_result <- mobest::locate(
   independent        = ind,
   dependent          = dep,

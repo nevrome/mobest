@@ -74,6 +74,11 @@ samples_with_age_samples <- samples_with_age_densities %>%
 
 ###
 
+load("docs/data/simple_objects_snapshot.RData")
+
+dep_multi <- mobest::create_obs_multi(d = dep)
+kernset_multi <- mobest::create_kernset_multi(k = kernset)
+
 ind <- do.call(
   mobest::create_spatpos_multi,
   c(
@@ -92,49 +97,6 @@ ind <- do.call(
     ),
     list(.names = paste0("age_resampling_run_", seq_len(age_resampling_runs)))
   )
-)
-
-dep <- mobest::create_obs_multi(
-  d = mobest::create_obs(
-    C1 = samples_with_age_samples$MDS_C1,
-    C2 = samples_with_age_samples$MDS_C2
-  )
-)
-
-kernset <- mobest::create_kernset_multi(
-  k = mobest::create_kernset(
-    C1 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    ),
-    C2 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    )
-  )
-)
-
-research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(crs = 3035)
-
-spatial_pred_grid <- mobest::create_prediction_grid(
-  research_land_outline_3035,
-  spatial_cell_size = 50000
-)
-
-search_samples <- samples_with_age_samples %>%
-  dplyr::filter(
-    Sample_ID == "Stuttgart_published.DG"
-  )
-
-search_ind <- mobest::create_spatpos(
-  id = search_samples$Sample_ID,
-  x  = search_samples$x,
-  y  = search_samples$y,
-  z  = search_samples$Date_BC_AD_Median
-)
-search_dep <- mobest::create_obs(
-  C1 = search_samples$MDS_C1,
-  C2 = search_samples$MDS_C2
 )
 
 search_result <- mobest::locate(

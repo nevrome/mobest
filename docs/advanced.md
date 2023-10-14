@@ -155,7 +155,7 @@ readr::write_csv(samples_advanced, file = "docs/data/samples_advanced.csv")
 </details>
 <br>
 
-You do not have to run this and can instead download the example table `samples_advanced.csv`. Additional to the simple `Date_BC_AD_Median` column this table has a different set of variables to express age.
+You do not have to run this and can instead download the example table [`samples_advanced.csv`](data/samples_advanced.csv). Additional to the simple `Date_BC_AD_Median` column this table has a different set of variables to express age.
 
 | Variable | Type | Description |
 |----------|------|-------------|
@@ -165,10 +165,11 @@ You do not have to run this and can instead download the example table `samples_
 | C14_ages         | chr | A string list with only the BP ages of the C14 dates |
 | C14_sds          | chr | A string list with only the standard deviations of the C14 dates |
 
-With `samples_advanced.csv` we can write code to draw age samples and then use them for the similarity search. The script and the data can be downloaded here:
+With `samples_advanced.csv` we can write code to draw age samples and then use them for the similarity search. The script and the data can be downloaded here, including a snapshot of some objects we created in {doc}`A basic similarity search workflow <basic>`.
 
 - [temporal_resampling_similarity_search.R](data/temporal_resampling_similarity_search.R)
 - [samples_advanced.csv](data/samples_advanced.csv)
+- [simple_objects_snapshot.RData](data/simple_objects_snapshot.RData)
 
 #### Drawing ages for each sample
 
@@ -278,55 +279,20 @@ samples_with_age_samples <- samples_with_age_densities %>%
 
 #### Applying the similarity search
 
-With the age samples ready we can move on to the preparation of the input for `mobest::locate_multi()`. Most of it is identical to what we carefully prepared in {doc}`A basic similarity search workflow <basic>`, except that we have to wrap some objects in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is technical necessity, but can be tedious in cases, where only a single iteration is considered anyway.
-
-This code requires some objects prepared and explained in {doc}`A basic similarity search workflow <basic>`.
+With the age samples ready we can move on to the preparation of the input for `mobest::locate_multi()`. Most of it is identical to what we carefully prepared in {doc}`A basic similarity search workflow <basic>`, so we can just rerun the code used there. To simplify things, we can alternatively load an `.RData` object that serves as a snapshot of the relevant objects we created there. You can download it from [here](data/simple_objects_snapshot.RData).
 
 ```r
-dep <- mobest::create_obs_multi(
-  d = mobest::create_obs(
-    C1 = samples_with_age_samples$MDS_C1,
-    C2 = samples_with_age_samples$MDS_C2
-  )
-)
-
-kernset <- mobest::create_kernset_multi(
-  k = mobest::create_kernset(
-    C1 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    ),
-    C2 = mobest::create_kernel(
-      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
-      g = 0.1
-    )
-  )
-)
-
-spatial_pred_grid <- mobest::create_prediction_grid(
-  research_land_outline_3035,
-  spatial_cell_size = 50000
-)
-
-search_samples <- samples_with_age_samples %>%
-  dplyr::filter(
-    Sample_ID == "Stuttgart_published.DG"
-  )
-
-search_ind <- mobest::create_spatpos(
-  id = search_samples$Sample_ID,
-  x  = search_samples$x,
-  y  = search_samples$y,
-  z  = search_samples$Date_BC_AD_Median
-)
-
-search_dep <- mobest::create_obs(
-  C1 = search_samples$MDS_C1,
-  C2 = search_samples$MDS_C2
-)
+load("docs/data/simple_parameters.RData")
 ```
 
-The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create a 
+Some objects, `search_ind` and `search_dep`, can be used exactly as we used them for the basic workflow. Others, `dep` and `kernset`, have to be wrapped in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is technical necessity, but can be tedious in cases, where only a single iteration is considered anyway.
+
+```r
+dep_multi <- mobest::create_obs_multi(d = dep)
+kernset_multi <- mobest::create_kernset_multi(k = kernset)
+```
+
+The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create a
 
 ```r
 ind <- do.call(
