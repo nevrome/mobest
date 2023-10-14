@@ -61,7 +61,7 @@ samples_with_age_densities <- samples_advanced %>%
     )
   )
 
-age_resampling_runs <- 2
+age_resampling_runs <- 10
 
 samples_with_age_samples <- samples_with_age_densities %>%
   dplyr::mutate(
@@ -96,8 +96,8 @@ ind <- do.call(
 
 dep <- mobest::create_obs_multi(
   d = mobest::create_obs(
-    C1 = samples_projected$MDS_C1,
-    C2 = samples_projected$MDS_C2
+    C1 = samples_with_age_samples$MDS_C1,
+    C2 = samples_with_age_samples$MDS_C2
   )
 )
 

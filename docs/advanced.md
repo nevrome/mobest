@@ -226,7 +226,7 @@ radiocarbon_date_sumcal <- function(ages, sds, cal_curve) {
 }
 ```
 
-With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, that features the density tibbles for each sample. Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world.
+With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, that features the density tibbles for each sample. Running this code takes some minutes, because it involves thousands of radiocarbon calibrations. Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world.
 
 ```r
 samples_with_age_densities <- samples_advanced %>%
@@ -255,10 +255,10 @@ samples_with_age_densities <- samples_advanced %>%
 The calibration-based age probabilities we generate in this script are an improvement over using just median ages. But they still equate to a massive simplification of the per-sample age information. Each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities much more accurate and precise. But such models are typically not available for large meta-datasets like the one required for spatiotemporal interpolation on a continental scale.
 ```
 
-In a last step we can define the number of age resampling runs we want to apply and draw this number of random samples from the age distributions for each sample. For the example here we chose two, but for a real world application a larger number (>50) is recommended.
+In a last step we can define the number of age resampling runs we want to apply and draw this number of random samples from the age distributions for each sample. For the example here we chose ten, but for a real world application a larger number (>50) is recommended.
 
 ```r
-age_resampling_runs <- 2
+age_resampling_runs <- 10
 
 samples_with_age_samples <- samples_with_age_densities %>%
   dplyr::mutate(
@@ -274,9 +274,79 @@ samples_with_age_samples <- samples_with_age_densities %>%
   )
 ```
 
-`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of two individual ages. These are two possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples are often hundreds of years apart. This highlights the relevance of this age resampling exercise.
+`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of ten individual ages. These are ten possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples are often hundreds of years apart. This highlights the relevance of this age resampling exercise.
 
 #### Applying the similarity search
 
+With the age samples ready we can move on to the preparation of the input for `mobest::locate_multi()`. Most of it is identical to what we carefully prepared in {doc}`A basic similarity search workflow <basic>`, except that we have to wrap some objects in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is technical necessity, but can be tedious in cases, where only a single iteration is considered anyway.
+
+This code requires some objects prepared and explained in {doc}`A basic similarity search workflow <basic>`.
+
 ```r
+dep <- mobest::create_obs_multi(
+  d = mobest::create_obs(
+    C1 = samples_with_age_samples$MDS_C1,
+    C2 = samples_with_age_samples$MDS_C2
+  )
+)
+
+kernset <- mobest::create_kernset_multi(
+  k = mobest::create_kernset(
+    C1 = mobest::create_kernel(
+      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+      g = 0.1
+    ),
+    C2 = mobest::create_kernel(
+      dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
+      g = 0.1
+    )
+  )
+)
+
+spatial_pred_grid <- mobest::create_prediction_grid(
+  research_land_outline_3035,
+  spatial_cell_size = 50000
+)
+
+search_samples <- samples_with_age_samples %>%
+  dplyr::filter(
+    Sample_ID == "Stuttgart_published.DG"
+  )
+
+search_ind <- mobest::create_spatpos(
+  id = search_samples$Sample_ID,
+  x  = search_samples$x,
+  y  = search_samples$y,
+  z  = search_samples$Date_BC_AD_Median
+)
+
+search_dep <- mobest::create_obs(
+  C1 = search_samples$MDS_C1,
+  C2 = search_samples$MDS_C2
+)
 ```
+
+The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create a 
+
+```r
+ind <- do.call(
+  mobest::create_spatpos_multi,
+  c(
+    purrr::map(
+      seq_len(age_resampling_runs), function(age_resampling_run) {
+        mobest::create_spatpos(
+          id = samples_with_age_samples$Sample_ID,
+          x  = samples_with_age_samples$x,
+          y  = samples_with_age_samples$y,
+          z  = purrr::map_int(
+            samples_with_age_samples$Date_BC_AD_Samples,
+            function(x) {x[age_resampling_run]}
+          )
+        )
+      }
+    ),
+    list(.names = paste0("age_resampling_run_", seq_len(age_resampling_runs)))
+  )
+)
+```
+
