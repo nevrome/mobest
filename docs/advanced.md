@@ -82,7 +82,7 @@ mobest::fold_probabilities_per_group(search_product)
 mobest::fold_probabilities_per_group(search_product, dependent_setting_id, kernel_setting_id)
 ```
 
-### Temporal resampling as permutation application
+### Temporal resampling as a permutation application
 
 The introduction of `mobest::locate_multi()` above has been abstract and devoid of any hint to the great power that comes with its permutation machinery. Here we want to show one application that is very relevant for archeogenetic and macro-archaeological applications of mobest: Temporal resampling.
 
@@ -292,10 +292,10 @@ dep_multi <- mobest::create_obs_multi(d = dep)
 kernset_multi <- mobest::create_kernset_multi(k = kernset)
 ```
 
-The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create a
+The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create an object of type `mobest_spatiotemporalpositions_multi` containing a list of ten different temporal resampling iterations of `mobest_spatiotemporalpositions`. All of them feature a different set of ages for the field-informing samples. They are named `age_resampling_run_*`, where `*` is a number from one to ten.
 
 ```r
-ind <- do.call(
+ind_multi <- do.call(
   mobest::create_spatpos_multi,
   c(
     purrr::map(
@@ -315,4 +315,25 @@ ind <- do.call(
   )
 )
 ```
+
+This concludes the preparation and we can call `locate_multi()`.
+
+```r
+search_result <- mobest::locate_multi(
+  independent        = ind_multi,
+  dependent          = dep_multi,
+  kernel             = kernset_multi,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = -6800,
+  search_time_mode   = "absolute"
+)
+```
+
+...
+
+#### Inspecting the computed results
+
+...
 

@@ -1,3 +1,7 @@
+### Temporal resampling as a permutation application
+
+#### Drawing ages for each sample
+
 library(magrittr)
 library(ggplot2)
 
@@ -72,14 +76,14 @@ samples_with_age_samples <- samples_with_age_densities %>%
     )
   )
 
-###
+#### Applying the similarity search
 
 load("docs/data/simple_objects_snapshot.RData")
 
 dep_multi <- mobest::create_obs_multi(d = dep)
 kernset_multi <- mobest::create_kernset_multi(k = kernset)
 
-ind <- do.call(
+ind_multi <- do.call(
   mobest::create_spatpos_multi,
   c(
     purrr::map(
@@ -100,9 +104,9 @@ ind <- do.call(
 )
 
 search_result <- mobest::locate(
-  independent        = ind,
-  dependent          = dep,
-  kernel             = kernset,
+  independent        = ind_multi,
+  dependent          = dep_multi,
+  kernel             = kernset_multi,
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
