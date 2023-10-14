@@ -226,7 +226,7 @@ radiocarbon_date_sumcal <- function(ages, sds, cal_curve) {
 }
 ```
 
-With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, that features the density tibbles for each sample. Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world. The calibration we apply here is a massive simplifcation, given that each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities more accurate and more precise.
+With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, that features the density tibbles for each sample. Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world.
 
 ```r
 samples_with_age_densities <- samples_advanced %>%
@@ -250,6 +250,31 @@ samples_with_age_densities <- samples_advanced %>%
     )
   )
 ```
+
+```{warning}
+The calibration-based age probabilities we generate in this script are an improvement over using just median ages. But they still equate to a massive simplification of the per-sample age information. Each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities much more accurate and precise. But such models are typically not available for large meta-datasets like the one required for spatiotemporal interpolation on a continental scale.
+```
+
+In a last step we can define the number of age resampling runs we want to apply and draw this number of random samples from the age distributions for each sample. For the example here we chose two, but for a real world application a larger number (>50) is recommended.
+
+```r
+age_resampling_runs <- 2
+
+samples_with_age_samples <- samples_with_age_densities %>%
+  dplyr::mutate(
+    Date_BC_AD_Samples = purrr::map(
+      Date_BC_AD_Prob, function(x) {
+        sample(
+          x    = x$age,
+          size = age_resampling_runs,
+          prob = x$sum_dens, replace = T
+        )
+      }
+    )
+  )
+```
+
+`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of two individual ages. These are two possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples are often hundreds of years apart. This highlights the relevance of this age resampling exercise.
 
 #### Applying the similarity search
 
