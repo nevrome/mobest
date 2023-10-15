@@ -13,9 +13,10 @@ mobest - Spatiotemporal Ancestry Interpolation and Search
 
    Install mobest <install.md>
    Basic similarity search <basic.md>
+   Better map plots <plot.md>
+   Multiple samples and time slices <multisearch.md>
    Interpolation parameter estimation <estimation.md>
    Advanced mobest features <advanced.md>
-   Diachronic mobility estimation <mobility.md>
-   Data types in mobest <types.md>
+   Input data types <types.md>
    Citation <citation.md>
    Bibliography <bibliography.md>

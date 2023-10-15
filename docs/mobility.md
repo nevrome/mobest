@@ -1,17 +1,5 @@
 # Diachronic mobility estimation with origin vectors
 
-To derive a simple, sample-wise measure of mobility, `mobest::determine_origin_vectors` constructs what we call "origin vectors" from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a sample was found (so for ancient samples that is usually where the respective individual was buried) with the point of **highest genetic similarity** in the interpolated search field and its permutations. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector". Under certain circumstances this vector can serve as a proxy for mobility.
-
-```r
-mobest::determine_origin_vectors(locate_product, quiet = T)
-```
-
-Just as in `mobest::fold_probabilities_per_group`, the origin vector search can be performed per permutation of the groups introduced above.
-
-```r
-origin_vectors <- mobest::determine_origin_vectors(locate_product, independent_table_id, quiet = T)
-```
-
 ## Summarising origin vectors
 
 In a very final step of the pipeline supported by `mobest`, we can combine origin vectors to meaningful summaries. Which summary statistics turn out to be useful strongly depends on the research questions guiding a particular project, so it is well likely that the following functions are not appropriate for a given use case.

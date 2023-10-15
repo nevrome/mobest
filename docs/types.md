@@ -1,6 +1,6 @@
-# Data types in the mobest R package
+# Input data types in the mobest R package
 
-The following guide briefly lists the main `mobest` input data types with their constructors loosely in the order one would usually call them.
+The following section briefly lists the main `mobest` input data types with their constructors.
 
 ## Basic data types
 
