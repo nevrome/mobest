@@ -2,16 +2,16 @@
 
 ## Install mobest directly as an R package
 
-mobest is an R package and can be **installed directly from GitHub on the R console** with
+mobest is an R package and can be **installed directly from GitHub** with the following code on the R console:
 
 ```r
 if(!require('remotes')) install.packages('remotes')
 remotes::install_github('nevrome/mobest')
 ```
 
-You can also install specific/older versions of mobest with the following syntax: `nevrome/mobest[@ref|#pull|@*release]`. To install the publication release version you can run `remotes::install_github('nevrome/mobest@1.0.0')`, for example.
+You can also install specific/older versions of mobest with the following syntax: `nevrome/mobest[@ref|#pull|@*release]`. For example to install the publication release version you can run `remotes::install_github('nevrome/mobest@1.0.0')`.
 
-For any of this too work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for the `sf` package. The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
+For any of this too work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for one particular dependency of mobest: the **`sf` R package**. The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
 
 | System library                                                        | deb package<br>(Ubuntu/Debian) | rpm package<br>(Fedora/CentOS) | pkgbuild package<br>(Arch) | brew package<br>(MacOS) |
 |-----------------------------------------------------------------------|----------------------------------|---------------------------------|-------------------------|----------------------|
@@ -24,10 +24,10 @@ The `sf` package maintainers provide a good explanation how to install these: <h
 
 ## Create an apptainer image to run mobest
 
-If installing system libraries is not possible (for example because you don't have root access) or desirable, then mobest can also be run through a virtualization layer. One option is the high performance computing container system [apptainer](https://apptainer.org) (formerly ["singularity"](https://apptainer.org/news/community-announcement-20211130)). To do this you can follow these steps:
+If installing system libraries is not possible (for example because you don't have root access) or desirable, then mobest can also be run through a virtualization layer. One option is the high performance computing container system [**apptainer**](https://apptainer.org) (formerly ["singularity"](https://apptainer.org/news/community-announcement-20211130)). To do this you can follow these steps:
 
 1. **Install apptainer** on a system where you have root access by following these instructions: <https://apptainer.org/docs/admin/main/installation.html>
-2. Create a new text file to **define a container**, e.g. `apptainer_mobest.def`. This file will specify a virtual machine with all necessary dependencies. Here is a possible configuration:
+2. Create a new text file to **define a container**, e.g. `apptainer_mobest.def`. This file will specify a virtual machine with all necessary dependencies. Here is a possible, minimal configuration:
 
 ```none
 Bootstrap: docker
@@ -48,7 +48,7 @@ This requires sudo rights. It will take a couple of minutes, because the base im
 
 You can test `apptainer_mobest.sif` by running a simple computation with the version of R that is installed within it, e.g. with `apptainer exec apptainer_mobest.sif Rscript -e 1+1`.
 
-If this works, then you can copy the image to the computing system where you actually want to run the mobest analysis, if you are not already working there anyway.
+If this works and if you are not already working there anyway, then you can copy the image to the computing system where you actually want to run the mobest analysis.
 
 4. **Run the R script** that specifies your mobest analysis through the apptainer container with a modified version of this code:
 
@@ -88,3 +88,5 @@ apptainer exec \
 date
 exit 0
 ```
+
+See {ref}`An HPC crossvalidation setup for large lengthscale parameter spaces <estimation:an HPC crossvalidation setup for large lengthscale parameter spaces>` for an application where running mobest on an HPC is advisable.

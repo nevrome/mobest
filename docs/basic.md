@@ -2,12 +2,14 @@
 
 This section explains the setup for a basic ancestry similarity search with mobest in R. 
 
-For didactic purposes we use a simplified version of the data and code used for the publication that introduced mobest: {cite:p}`Schmid2023`. This is a fairly generic setup you can adjust to the needs of other and more specific projects.
+For didactic purposes we use a simplified version of the data and code generated for the publication that introduced mobest: {cite:p}`Schmid2023`. This is a fairly generic setup you can adjust to the needs of other and more specific projects.
 
 The script explained in the following sections as well as the data required for it can be downloaded in its entirety here:
 
 - [simple_similarity_search.R](data/simple_similarity_search.R)
 - [samples_basic.csv](data/samples_basic.csv)
+
+`simple_similarity_search.R` also includes the code for the sections {doc}`Improving the similarity search map plot <plot>` and {doc}`Simple permutations <multisearch>`, which directly build upon this section.
 
 ## Preparing the computational environment
 
@@ -16,14 +18,12 @@ For this script we use various packages beyond base R, among which the following
 - `readr` for loading .csv input data
 - `magrittr` for the pipe operator `%>%`
 - `sf` for loading and manipulating spatial data
-- `rnaturalearth` for downloading geodata
+- `rnaturalearth` for downloading spatial reference data
 - `ggplot2` to visualize intermediate and final results
 - `dplyr` for data manipulation of `data.frame`s
 - `mobest` (obviously)
 
-`readr`, `magrittr`, `ggplot2` and `dplyr` are all in the [tidyverse](https://www.tidyverse.org) and can be installed in one go with `install.packages("tidyverse")` on the R console.
-
-For the installation of `sf` and `mobest` please see the instructions in the [Install section](install.md).
+`readr`, `magrittr`, `ggplot2` and `dplyr` are all in the [tidyverse](https://www.tidyverse.org) and can be installed in one go with `install.packages("tidyverse")` on the R console. For the installation of `sf` and `mobest` please see the instructions in {doc}`Installing mobest <install>`.
 
 We will generally call functions explicitly with their namespace using `::` (so e.g. `readr::read_csv()`). The only exceptions are `magrittr` and `ggplot2`, because we will use their functions so often that it becomes tedious to type them out. Instead we load them at the beginning.
 
@@ -36,11 +36,11 @@ library(ggplot2)
 
 ### Generating the the spatial prediction grid
 
-mobest's similarity search is typically run for a regular grid of spatial positions in the area of interest. It provides a function (`mobest::create_prediction_grid()`) to create such a grid, given a specification of the desired area. This area is typically (based on how we imagine mobest to be used) the land area in a certain part of planet Earth.
+mobest's similarity search is typically run for a regular grid of spatial positions in the area of interest. It provides a function, `mobest::create_prediction_grid()`, to create such a grid, given a specification of the desired area. This area is typically the land area in a certain part of planet Earth.
 
 #### Defining the research area
 
-In a first step we therefore have to define the research area for our analysis as a polygon in space. One way of doing this is to provide a list of latitude and longitude coordinates (extracted e.g. from Google Maps). The following code defines a simple research area covering large parts of Western Eurasia.
+In a first step we therefore have to define the research area for our analysis as a polygon in space. One way of doing so is to provide a list of latitude and longitude coordinates (extracted e.g. from [Google Maps](https://support.google.com/maps/answer/18539)). The following code defines a simple research area covering large parts of Western Eurasia.
 
 ```r
 research_area_4326 <- sf::st_polygon(
@@ -59,7 +59,7 @@ Spatial coordinates require a coordinate references system (CRS). For lat-lon co
 The defined research area plotted on top of a map.
 ```
 
-With the research area properly defined we can move to the next challenge and extract the land area in the research area. For that we have to obtain a dataset with polygons that trace the coastlines for all around the world. The [naturalearthdata](https://www.naturalearthdata.com) project provides open worldwide geodata in different resolutions and in easy to use data formats. The `rnaturalearth` package makes it easy to download this data right into `sf` objects in R.
+With the research area properly defined we can move to the next challenge and extract the land area in the research area. For that we have to obtain a dataset with polygons that trace the world's coastlines. The [naturalearthdata](https://www.naturalearthdata.com) project provides open worldwide geodata in different resolutions and in easy to use data formats. The `rnaturalearth` package makes it easy to download this data right into `sf` objects in R.
 
 ```r
 worldwide_land_outline_4326 <- rnaturalearth::ne_download(
@@ -77,29 +77,29 @@ research_land_outline_4326 <- sf::st_intersection(
 )
 ```
 
-We can plot the resulting spatial multi-polygon with ggplot2.
+Using `ggplot2`, we can finally plot the resulting spatial multi-polygon.
 
 ```r
 ggplot() + geom_sf(data = research_land_outline_4326)
 ```
 
 ```{figure} img/basic/research_area_land_outline_4326.png
-The research area land polygon.
+The land area within the research area.
 ```
 
 #### Projecting the spatial data
 
-At this point we run into a specific issue of mobest: It requires its "independent" spatial and temporal coordinates to be coordinates in a [Cartesian system](https://en.wikipedia.org/wiki/Cartesian_coordinate_system) describing [Euclidean space](https://en.wikipedia.org/wiki/Euclidean_space). For the spatial coordinates that means we can not work with latitude and longitude coordinates on a sphere, but have to apply [map projection](https://en.wikipedia.org/wiki/Map_projection) to represent the curved, two dimensional surface of our planet on a simple plane.
+At this point we run into a specific issue of mobest: It requires its "independent" spatial and temporal coordinates to be coordinates in a [Cartesian system](https://en.wikipedia.org/wiki/Cartesian_coordinate_system) describing [Euclidean space](https://en.wikipedia.org/wiki/Euclidean_space). For the spatial coordinates that means we can not work with latitude and longitude coordinates on a sphere, but have to transform them. We have to apply [map projection](https://en.wikipedia.org/wiki/Map_projection) to represent the curved, two dimensional surface of our planet on a simple plane.
 
-The question how exactly this should be done and which CRS to choose depends on the position, size and shape of your research area. Each map projection algorithm has different properties regarding whether they manage to preserve or distort size, shape, distances and directions of areas and lines compared to the actual properties on Earth. Generally the larger the research area, the bigger the distortion of these properties becomes and for mobest we ideally want to represent all them accurately. mobest is therefore unfit for origin search on a global scale, but can usually be well applied for individual countries with the projections recommended by their cartographic agencies. For an intermediate, continental scale, as in this example, we have to choose our CRS wisely. 
+The question how exactly this should be done and which CRS to choose depends on the position, size and shape of the research area. Each map projection algorithm has different properties regarding whether they manage to preserve or distort size, shape, distances and directions of areas and lines compared to the actual properties on Earth. Generally the larger the research area the bigger the distortion of these properties becomes. But for mobest we ideally want to represent all them accurately. mobest is therefore unfit for origin search on a global scale, but can usually be well applied for individual countries with the projections recommended by their cartographic agencies. For an intermediate, continental scale, as in this example, we have to choose our CRS wisely. 
 
 We decided to follow the recommendation of {cite:p}`Annoni2003`.
 
-> The Workshop recommends that the European Commission:    
-> Uses for statistical analysis and display a ETRS89 Lambert Azimuthal Equal Area coordinate reference system of 2001 [ETRS -LAEA11 ], that is specified by ETRS89 as datum and the Lambert Azimuthal Equal Area map projection.    
-> ...
+> *The Workshop recommends that the European Commission:*    
+> *- Uses for statistical analysis and display a ETRS89 Lambert Azimuthal Equal Area coordinate reference system of 2001 [ETRS -LAEA11 ], that is specified by ETRS89 as datum and the Lambert Azimuthal Equal Area map projection.*    
+> *- ...*
 
-This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our decision comes at the price of increased inaccuracy especially in the North- and South-East of the research area where we get very far away from the center at 52° latitude and 10° longitude (see {cite:p}`Tsoulos2003` p.53 for a visualization of the deformation).
+This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our decision comes at the price of increased inaccuracy especially in the North- and South-East of the research area where we get very far away from the centre at 52° latitude and 10° longitude (see {cite:p}`Tsoulos2003` p.53 for a visualization of the deformation).
 
 To transform the the land outline in the research area from EPSG:4326 to EPSG:3035 we can apply `sf::st_transform()`.
 
@@ -119,7 +119,7 @@ The research area land polygon now transformed to EPSG:3035.
 
 #### Creating the prediction grid
 
-To finally create the prediction grid we can use `mobest::create_prediction_grid()`. It takes the land outline polygon and overlays its bounding box with a regular grid (using `sf::st_make_grid()`), where each cell has the size corresponding to the `spatial_cell_size` parameter. It then determines the centers of each grid cell and crops the resulting, regular point cloud with the land area. Note that `spatial_cell_size` uses the unit of the CRS, so in our case for EPSG:3035 meters. That means a value of 50000 translates to one point every 50km. The total number of resulting spatial prediction positions is 4738 in this example.
+To finally create the prediction grid we can use `mobest::create_prediction_grid()`. It takes the land outline polygon and overlays its bounding box with a regular grid (using `sf::st_make_grid()`), where each cell has the size corresponding to the `spatial_cell_size` parameter. It then determines the centres of each grid cell and crops the resulting, regular point cloud with the land area. Note that `spatial_cell_size` uses the unit of the CRS, so in our case for EPSG:3035 meters. That means a value of 50000 translates to one point every 50km. The total number of resulting spatial prediction positions is 4738 in this example.
 
 ```r
 spatial_pred_grid <- mobest::create_prediction_grid(
@@ -128,7 +128,7 @@ spatial_pred_grid <- mobest::create_prediction_grid(
 )
 ```
 
-`create_prediction_grid` returns an object of class `mobest_spatialpositions`, which is derived from `tibble::tibble`. That means we can print it on the R console and it will behave as a tibble. It will also work seamlessly as an input for ggplot2, which we can now use to visualize the point cloud.
+`create_prediction_grid` returns an object of class `mobest_spatialpositions`, which is derived from `tibble::tibble`. That means we can print it on the R console and it will behave as a tibble. It will also work seamlessly as an input for `ggplot2`, which we can now use to visualize the point cloud.
 
 ```r
 ggplot() +
