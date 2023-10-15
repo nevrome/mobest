@@ -256,10 +256,12 @@ samples_with_age_densities <- samples_advanced %>%
 The calibration-based age probabilities we generate in this script are an improvement over using just median ages. But they still equate to a massive simplification of the per-sample age information. Each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities much more accurate and precise. But such models are typically not available for large meta-datasets like the one required for spatiotemporal interpolation on a continental scale.
 ```
 
-In a last step we can define the number of age resampling runs we want to apply and draw this number of random samples from the age distributions for each sample. For the example here we chose ten, but for a real world application a larger number (>50) is recommended.
+In a last step we can define the number of age resampling runs we want to apply and draw this number of random samples from the age distributions for each sample. For the example here we chose two, but for a real world application a larger number (>50) is recommended.
 
 ```r
-age_resampling_runs <- 10
+age_resampling_runs <- 2
+
+set.seed(123)
 
 samples_with_age_samples <- samples_with_age_densities %>%
   dplyr::mutate(
@@ -275,7 +277,7 @@ samples_with_age_samples <- samples_with_age_densities %>%
   )
 ```
 
-`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of ten individual ages. These are ten possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples are often hundreds of years apart. This highlights the relevance of this age resampling exercise.
+`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of two individual ages. These are two possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples are often hundreds of years apart. This highlights the relevance of this age resampling exercise.
 
 #### Applying the similarity search
 
@@ -285,14 +287,15 @@ With the age samples ready we can move on to the preparation of the input for `m
 load("docs/data/simple_parameters.RData")
 ```
 
-Some objects, `search_ind` and `search_dep`, can be used exactly as we used them for the basic workflow. Others, `dep` and `kernset`, have to be wrapped in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is technical necessity, but can be tedious in cases, where only a single iteration is considered anyway.
+These objects, `dep`, `kernset` and `search_dep`, have to be wrapped in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is technical necessity, but can be tedious in cases, where only a single iteration is considered anyway.
 
 ```r
 dep_multi <- mobest::create_obs_multi(d = dep)
 kernset_multi <- mobest::create_kernset_multi(k = kernset)
+search_dep_multi <- mobest::create_obs_multi(d = search_dep)
 ```
 
-The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create an object of type `mobest_spatiotemporalpositions_multi` containing a list of ten different temporal resampling iterations of `mobest_spatiotemporalpositions`. All of them feature a different set of ages for the field-informing samples. They are named `age_resampling_run_*`, where `*` is a number from one to ten.
+The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create an object of type `mobest_spatiotemporalpositions_multi` containing a list of two different temporal resampling iterations of `mobest_spatiotemporalpositions`. All of them feature a different set of ages for the field-informing samples. They are named `age_resampling_run_*`, where `*` is a number from one to two.
 
 ```r
 ind_multi <- do.call(
@@ -316,6 +319,32 @@ ind_multi <- do.call(
 )
 ```
 
+As `search_ind_multi` has to be congruent with `ind_multi` we have to apply the same operation there. For simplicity we will assume a static age for this sample. With `search_time_mode = "absolute"` the search sample's age does not factor into the result.
+
+```r
+search_samples <- samples_with_age_samples %>%
+  dplyr::filter(
+    Sample_ID == "Stuttgart_published.DG"
+  )
+
+search_samples_multi <- do.call(
+  mobest::create_spatpos_multi,
+  c(
+    purrr::map(
+      seq_len(age_resampling_runs), function(age_resampling_run) {
+        mobest::create_spatpos(
+          id = search_samples$Sample_ID,
+          x  = search_samples$x,
+          y  = search_samples$y,
+          z  = search_samples$Date_BC_AD_Median
+        )
+      }
+    ),
+    list(.names = paste0("age_resampling_run_", seq_len(age_resampling_runs)))
+  )
+)
+```
+
 This concludes the preparation and we can call `locate_multi()`.
 
 ```r
@@ -331,9 +360,119 @@ search_result <- mobest::locate_multi(
 )
 ```
 
-...
+#### Inspecting the output for the temporal resampling run
 
-#### Inspecting the computed results
+`search_result` is of type `mobest_locateoverview`, which is well described in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`. In this case we have the following parameter iterations.
 
-...
+- $2$ set of input point positions in independent variable space (`independent_table_id`)
+- $1$ set of input point positions in dependent variable space (`dependent_setting_id`)
+- $2$ dependent variables (`dependent_var_id`)
+- $1$ set of kernel parameter settings (`kernel_setting_id`)
+- $29583$ spatial prediction grid positions
+- $1$ time slice of interest
+- $1$ search sample
 
+This means we expect exactly $2 * 2 * 29583 = 118332$ rows in `search_result`, which we can once more confirm with `nrow(search_result)`.
+
+To summarise the result for each temporal resampling run across the two dependent variables `C1` and `C2` we can apply `multiply_dependent_probabilities`.
+
+```r
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+```
+
+`search_product` is of type `mobest_locateproduct` and has $118332/2 = 59166$ rows. We can then plot the separate results for the two resampling runs. Note the small but visible difference between the similarity surfaces.
+
+<details>
+<summary>Code for this figure.</summary>
+
+```r
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture) - Lazaridis et al. 2014"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  annotate(
+    "text",
+    label = "6800BC",
+    x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
+  ) +
+  facet_wrap(~independent_table_id)
+```
+</details>
+
+```{figure} img/temporal_resampling/search_map_two_resampling_runs.png
+Search results for two different temporal resampling runs.
+```
+
+To finally combine the two age resampling runs we can run `fold_probabilities_per_group`, which yields an object of type `mobest_locatefold` with $59166/2 = 59166$ rows.
+
+```r
+search_sum <- mobest::fold_probabilities_per_group(search_product)
+```
+
+We can plot this final, merged result as usual to get a potentially more accurate map.
+
+<details>
+<summary>Code for this figure.</summary>
+
+```r
+ggplot() +
+  geom_raster(
+    data = search_sum,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture)\nLazaridis et al. 2014"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  annotate(
+    "text",
+    label = "6800BC",
+    x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
+  )
+```
+</details>
+
+```{figure} img/temporal_resampling/search_map_combined_resampling_runs.png
+Merged similarity search result based on two temporal resampling runs.
+```

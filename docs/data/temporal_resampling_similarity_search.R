@@ -65,7 +65,9 @@ samples_with_age_densities <- samples_advanced %>%
     )
   )
 
-age_resampling_runs <- 10
+age_resampling_runs <- 2
+
+set.seed(123)
 
 samples_with_age_samples <- samples_with_age_densities %>%
   dplyr::mutate(
@@ -82,6 +84,7 @@ load("docs/data/simple_objects_snapshot.RData")
 
 dep_multi <- mobest::create_obs_multi(d = dep)
 kernset_multi <- mobest::create_kernset_multi(k = kernset)
+search_dep_multi <- mobest::create_obs_multi(d = search_dep)
 
 ind_multi <- do.call(
   mobest::create_spatpos_multi,
@@ -103,12 +106,34 @@ ind_multi <- do.call(
   )
 )
 
-search_result <- mobest::locate(
+search_samples <- samples_with_age_samples %>%
+  dplyr::filter(
+    Sample_ID == "Stuttgart_published.DG"
+  )
+
+search_samples_multi <- do.call(
+  mobest::create_spatpos_multi,
+  c(
+    purrr::map(
+      seq_len(age_resampling_runs), function(age_resampling_run) {
+        mobest::create_spatpos(
+          id = search_samples$Sample_ID,
+          x  = search_samples$x,
+          y  = search_samples$y,
+          z  = search_samples$Date_BC_AD_Median
+        )
+      }
+    ),
+    list(.names = paste0("age_resampling_run_", seq_len(age_resampling_runs)))
+  )
+)
+
+search_result <- mobest::locate_multi(
   independent        = ind_multi,
   dependent          = dep_multi,
   kernel             = kernset_multi,
-  search_independent = search_ind,
-  search_dependent   = search_dep,
+  search_independent = search_samples_multi,
+  search_dependent   = search_dep_multi,
   search_space_grid  = spatial_pred_grid,
   search_time        = -6800,
   search_time_mode   = "absolute"
@@ -116,7 +141,7 @@ search_result <- mobest::locate(
 
 search_product <- mobest::multiply_dependent_probabilities(search_result)
 
-ggplot() +
+p <- ggplot() +
   geom_raster(
     data = search_product,
     mapping = aes(x = field_x, y = field_y, fill = probability)
@@ -143,18 +168,24 @@ ggplot() +
   guides(
     fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
   ) +
-  facet_wrap(
-    ~search_time,
-    labeller = \(variable, value) {
-      paste0("Search time: ", abs(value), "BC")
-    }
-  )
+  annotate(
+    "text",
+    label = "6800BC",
+    x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
+  ) +
+  facet_wrap(~independent_table_id)
 
-mobest::fold_probabilities_per_group(search_product)
+ggsave(
+  filename = "docs/img/temporal_resampling/search_map_two_resampling_runs.png",
+  plot = p,
+  scale = 2.5, width = 1000, height = 400, units = "px"
+)
 
-ggplot() +
+search_sum <- mobest::fold_probabilities_per_group(search_product)
+
+p <- ggplot() +
   geom_raster(
-    data = search_product,
+    data = search_sum,
     mapping = aes(x = field_x, y = field_y, fill = probability)
   ) +
   scale_fill_viridis_c() +
@@ -172,8 +203,21 @@ ggplot() +
     label = "<Stuttgart> ~5250BC",
     subtitle = "Early Neolithic (Linear Pottery Culture)\nLazaridis et al. 2014"
   ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
   annotate(
     "text",
-    label = "6500BC",
+    label = "6800BC",
     x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
   )
+
+ggsave(
+  filename = "docs/img/temporal_resampling/search_map_combined_resampling_runs.png",
+  plot = p,
+  scale = 2.5, width = 1000, height = 400, units = "px"
+)
