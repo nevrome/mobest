@@ -148,9 +148,14 @@ spatial_pred_grid <- mobest::create_prediction_grid(
 
 research_area_3035 <- research_area_4326 %>% sf::st_transform(3035)
 
-## Simple permutations
+# save(
+#   dep, kernset, spatial_pred_grid, search_dep, research_area_3035,
+#   file = "docs/data/simple_objects_snapshot.RData"
+# )
 
-### Multiple search time slices
+# Simple permutations
+
+## Multiple search time slices
 
 search_result <- mobest::locate(
   independent        = ind,
@@ -159,12 +164,12 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = c(-6500, -5700),
+  search_time        = c(-6800, -5700),
   search_time_mode   = "absolute"
 )
 search_product <- mobest::multiply_dependent_probabilities(search_result)
 
-ggplot() +
+p <- ggplot() +
   geom_raster(
     data = search_product,
     mapping = aes(x = field_x, y = field_y, fill = probability)
@@ -198,7 +203,80 @@ ggplot() +
     }
   )
 
-### Multiple search samples
+ggsave(
+  filename = "docs/img/basic/search_map_two_timeslices.png",
+  plot = p,
+  scale = 2.5, width = 1000, height = 400, units = "px"
+)
+
+### Summarizing multiple search samples
+
+origin_vectors <- mobest::determine_origin_vectors(search_product, search_time)
+
+p <- ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  geom_point(
+    data = origin_vectors,
+    mapping = aes(field_x, field_y),
+    fill = "orange", shape = 24
+  ) +
+  geom_segment(
+    data = origin_vectors,
+    mapping = aes(
+      x = search_x, y = search_y,
+      xend = field_x, yend = field_y
+    ),
+    arrow = arrow(length = unit(0.2, "cm")),
+    colour = "red"
+  ) +
+  geom_label(
+    data = origin_vectors,
+    mapping = aes(
+      x = (field_x + search_x)/2, y = (field_y + search_y)/2,
+      label = paste0(round(ov_dist/1000, -2), "km")
+    ),
+    fill = "white", colour = "red",
+    size = 1.9, label.padding = unit(0.1, "lines")
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture) - Lazaridis et al. 2014"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  facet_wrap(
+    ~search_time,
+    labeller = \(variable, value) {
+      paste0("Search time: ", abs(value), "BC")
+    }
+  )
+
+ggsave(
+  filename = "docs/img/basic/search_map_two_timeslices_with_ovs.png",
+  plot = p,
+  scale = 2.5, width = 1000, height = 400, units = "px"
+)
+
+## Multiple search samples
 
 search_samples <- samples_projected %>%
   dplyr::filter(
@@ -227,8 +305,9 @@ search_result <- mobest::locate(
   search_time_mode   = "relative"
 )
 search_product <- mobest::multiply_dependent_probabilities(search_result)
+origin_vectors <- mobest::determine_origin_vectors(search_product)
 
-ggplot() +
+p <- ggplot() +
   geom_raster(
     data = search_product,
     mapping = aes(x = field_x, y = field_y, fill = probability)
@@ -272,7 +351,48 @@ ggplot() +
     )
   )
 
-# save(
-#   dep, kernset, spatial_pred_grid, search_dep, research_area_3035,
-#   file = "docs/data/simple_objects_snapshot.RData"
-# )
+ggsave(
+  filename = "docs/img/basic/search_map_two_samples.png",
+  plot = p,
+  scale = 2.5, width = 1000, height = 400, units = "px"
+)
+
+p <- ggplot() +
+  geom_sf(
+    data = research_land_outline_3035,
+    fill = "grey", color = NA
+  ) +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = origin_vectors,
+    mapping = aes(search_x, search_y),
+    colour = "red"
+  ) +
+  geom_point(
+    data = origin_vectors,
+    mapping = aes(field_x, field_y),
+    fill = "orange", shape = 24
+  ) +
+  geom_segment(
+    data = origin_vectors,
+    mapping = aes(
+      x = search_x, y = search_y,
+      xend = field_x, yend = field_y
+    ),
+    arrow = arrow(length = unit(0.2, "cm")),
+    colour = "red"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  )
+
+ggsave(
+  filename = "docs/img/basic/search_map_two_samples_in_one_plot.png",
+  plot = p,
+  scale = 2.5, width = 1000, height = 400, units = "px"
+)
