@@ -78,7 +78,7 @@ The origin vector summary can also be applied for individual parameter permutati
 origin_vectors <- mobest::determine_origin_vectors(search_product, search_time)
 ```
 
-The resulting object of type `mobest_originvectors` features one row for each vector with the following variables:
+The resulting object of type `mobest_originvectors` features one row for each vector with the following variables. Note that many variables here reflect mean values in this case, as `determine_origin_vectors()` can summarize information across parameter permutations.
 
 |Column               |Description |
 |:--------------------|:-----------|
@@ -87,24 +87,23 @@ The resulting object of type `mobest_originvectors` features one row for each ve
 |dependent_var_id     |Identifier of the dependent variable|
 |kernel_setting_id    |Identifier of the kernel setting permutation|
 |pred_grid_id         |Identifier of the spatiotemporal prediction grid|
-|dsx                  |Kernel lengthscale parameter on the spatial x axis|
-|dsy                  |Kernel lengthscale parameter on the spatial y axis|
-|dt                   |Kernel lengthscale parameter on the temporal axis|
-|g                    |Kernel nugget parameter|
 |field_id             |Identifier of the spatiotemporal prediction point|
 |field_x              |Spatial x axis coordinate of the prediction point|
 |field_y              |Spatial y axis coordinate of the prediction point|
 |field_z              |Temporal coordinate (age) of the prediction point|
 |field_geo_id         |Identifier of the spatial prediction point|
-|field_mean           |Mean value predicted by the GPR model for the dependent variable|
-|field_sd             |Uncertainty predicted by the GPR model for the dependent variable|
 |search_id            |Identifier of the search sample|
 |search_x             |Spatial x axis coordinate of the search sample|
 |search_y             |Spatial y axis coordinate of the search sample|
 |search_z             |Temporal coordinate (age) of the search sample|
 |search_time          |Search time as provided by the user in `locate()`'s `search_time` argument|
-|search_measured      |Genetic coordinate of the search sample in the dependent variable space|
-|probability          |Probability density for `search_measured` given all other parameters|
+|probability          |Probability density calculated in `locate()`|
+|ov_x                 |Length of the origin vector in x direction|
+|ov_y                 |Length of the origin vector in y direction|
+|ov_dist              |Length of the origin vector in space (Euclidean distance)|
+|ov_dist_se           |Standard error of the mean of all vector lengths|
+|ov_dist_sd           |Standard deviation of all vector lengths|
+|ov_angle_deg         |Direction of the origin vector as an angle in degree (0-360°)|
 
 One way of making use of this object is by highlighting the points of maximal similarity probability in the map plot.
 
