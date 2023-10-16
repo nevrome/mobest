@@ -1,5 +1,15 @@
+# A basic similarity search workflow
+
+## Preparing the computational environment
+
 library(magrittr)
 library(ggplot2)
+
+## Preparing the input data
+
+### Generating the the spatial prediction grid
+
+#### Defining the research area
 
 research_area_4326 <- sf::st_polygon(
   list(
@@ -22,25 +32,49 @@ research_land_outline_4326 <- sf::st_intersection(
   research_area_4326
 )
 
-# ggplot() + geom_sf(data = research_land_outline_4326)
+p <- ggplot() + geom_sf(data = research_land_outline_4326)
+
+# ggsave(
+#   filename = "docs/img/basic/research_area_land_outline_4326.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+#### Projecting the spatial data
 
 research_land_outline_3035 <- research_land_outline_4326 %>% sf::st_transform(crs = 3035)
 
-# ggplot() + geom_sf(data = research_land_outline_3035)
+p <- ggplot() + geom_sf(data = research_land_outline_3035)
+
+# ggsave(
+#   filename = "docs/img/basic/research_area_land_outline_3035.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+#### Creating the prediction grid
 
 spatial_pred_grid <- mobest::create_prediction_grid(
   research_land_outline_3035,
-  spatial_cell_size = 50000 # or 20000
+  spatial_cell_size = 50000
 )
 
-# ggplot() +
-#   geom_sf(data = research_land_outline_3035) +
-#   geom_point(
-#     data = spatial_pred_grid,
-#     mapping = aes(x, y),
-#     color = "red",
-#     size = 0.25
-#   )
+p <- ggplot() +
+  geom_sf(data = research_land_outline_3035) +
+  geom_point(
+    data = spatial_pred_grid,
+    mapping = aes(x, y),
+    color = "red",
+    size = 0.25
+  )
+
+# ggsave(
+#   filename = "docs/img/basic/spatial_prediction_grid.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+### Reading the input samples
 
 samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
 
@@ -56,19 +90,33 @@ samples_projected <- samples_basic %>%
   ) %>%
   sf::st_drop_geometry()
 
-# ggplot() +
-#   geom_sf(data = research_land_outline_3035) +
-#   geom_point(
-#     data = samples_projected,
-#     mapping = aes(x, y),
-#     color = "darkgreen",
-#     size = 0.25
-#   )
+p <- ggplot() +
+  geom_sf(data = research_land_outline_3035) +
+  geom_point(
+    data = samples_projected,
+    mapping = aes(x, y),
+    color = "darkgreen",
+    size = 0.25
+  )
+
+# ggsave(
+#   filename = "docs/img/basic/samples_map.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+## Specifying the search sample
 
 search_samples <- samples_projected %>%
   dplyr::filter(
     Sample_ID == "Stuttgart_published.DG"
   )
+
+## Running mobest's interpolation and search function
+
+### Building the input data for the interpolation
+
+#### Independent and dependent positions
 
 ind <- mobest::create_spatpos(
   id = samples_projected$Sample_ID,
@@ -92,6 +140,8 @@ search_dep <- mobest::create_obs(
   C2 = search_samples$MDS_C2
 )
 
+#### Kernel parameter settings
+
 kernset <- mobest::create_kernset(
   C1 = mobest::create_kernel(
     dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
@@ -101,6 +151,81 @@ kernset <- mobest::create_kernset(
     dsx = 800 * 1000, dsy = 800 * 1000, dt = 800,
     g = 0.1
   )
+)
+
+#### Search positions
+
+#### Normalization
+
+### Calling mobest::locate()
+
+search_result <- mobest::locate(
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = -6500,
+  search_time_mode   = "absolute"
+)
+
+## Inspecting the computed results
+
+### The mobest_locateoverview table
+
+### Creating similarity probability maps for individual dependent variables
+
+result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
+
+p_C1 <- ggplot() +
+  geom_raster(
+    data = result_C1,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  coord_fixed()
+
+result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
+
+p_C2 <- ggplot() +
+  geom_raster(
+    data = result_C2,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  coord_fixed()
+
+p <- cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
+
+# ggsave(
+#   filename = "docs/img/basic/search_map_simple_C1_C2.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+### Combining the information from multiple dependent variables
+
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+
+p <- ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  coord_fixed()
+
+# ggsave(
+#   filename = "docs/img/basic/search_map_simple_combined.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
+
+
+
+# Improving the similarity search map plot
+
+spatial_pred_grid <- mobest::create_prediction_grid(
+  research_land_outline_3035,
+  spatial_cell_size = 20000
 )
 
 search_result <- mobest::locate(
@@ -114,44 +239,55 @@ search_result <- mobest::locate(
   search_time_mode   = "absolute"
 )
 
-result_C1 <- search_result %>% dplyr::filter(dependent_var_id == "C1")
-# p_C1 <- ggplot() +
-#   geom_raster(
-#     data = result_C1,
-#     mapping = aes(x = field_x, y = field_y, fill = probability)
-#   ) +
-#   coord_fixed()
-
-result_C2 <- search_result %>% dplyr::filter(dependent_var_id == "C2")
-# p_C2 <- ggplot() +
-#   geom_raster(
-#     data = result_C2,
-#     mapping = aes(x = field_x, y = field_y, fill = probability)
-#   ) +
-#   coord_fixed()
-#
-# cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
-
 search_product <- mobest::multiply_dependent_probabilities(search_result)
 
-# ggplot() +
-#   geom_raster(
-#     data = search_product,
-#     mapping = aes(x = field_x, y = field_y, fill = probability)
-#   ) +
-#   coord_fixed()
-
-spatial_pred_grid <- mobest::create_prediction_grid(
-  research_land_outline_3035,
-  spatial_cell_size = 20000
-)
-
 research_area_3035 <- research_area_4326 %>% sf::st_transform(3035)
+
+p <- ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples,
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  ggtitle(
+    label = "<Stuttgart> ~5250BC",
+    subtitle = "Early Neolithic (Linear Pottery Culture)\nLazaridis et al. 2014"
+  ) +
+  annotate(
+    "text",
+    label = "6500BC",
+    x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  )
+
+# ggsave(
+#   filename = "docs/img/basic/search_map_neat_combined.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
 
 # save(
 #   dep, kernset, spatial_pred_grid, search_dep, research_area_3035,
 #   file = "docs/data/simple_objects_snapshot.RData"
 # )
+
+
 
 # Simple permutations
 
@@ -203,11 +339,11 @@ p <- ggplot() +
     }
   )
 
-ggsave(
-  filename = "docs/img/basic/search_map_two_timeslices.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/basic/search_map_two_timeslices.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
 
 ### Summarizing multiple search samples
 
@@ -270,11 +406,11 @@ p <- ggplot() +
     }
   )
 
-ggsave(
-  filename = "docs/img/basic/search_map_two_timeslices_with_ovs.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/basic/search_map_two_timeslices_with_ovs.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
 
 ## Multiple search samples
 
@@ -351,11 +487,11 @@ p <- ggplot() +
     )
   )
 
-ggsave(
-  filename = "docs/img/basic/search_map_two_samples.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/basic/search_map_two_samples.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
 
 p <- ggplot() +
   geom_sf(
@@ -391,8 +527,8 @@ p <- ggplot() +
     axis.title = element_blank()
   )
 
-ggsave(
-  filename = "docs/img/basic/search_map_two_samples_in_one_plot.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/basic/search_map_two_samples_in_one_plot.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )

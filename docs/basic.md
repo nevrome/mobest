@@ -249,7 +249,7 @@ ggplot() +
 The spatial distribution of the informative samples.
 ```
 
-A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely under-sampled. That is something we have to keep in mind for later when we interpret the results of the similarity search.
+A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely under-sampled. That is something we have to keep in mind for when we interpret the results of the similarity search.
 
 ## Specifying the search sample
 
@@ -400,7 +400,7 @@ We assume users generally want to use mobest, specifically `locate()`, to calcul
 
 `normalize` should therefore be set to `TRUE` for basic applications. This is also encoded as the the default setting.
 
-### Calling `mobest::locate`
+### Calling mobest::locate()
 
 In the previous sections we have thoroughly prepared the input for a first, simple run of `mobest::locate()`. We can now call the function.
 
