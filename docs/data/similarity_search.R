@@ -166,7 +166,7 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = -6500,
+  search_time        = -6800,
   search_time_mode   = "absolute"
 )
 
@@ -235,7 +235,7 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = -6500,
+  search_time        = -6800,
   search_time_mode   = "absolute"
 )
 
@@ -265,7 +265,7 @@ p <- ggplot() +
   ) +
   annotate(
     "text",
-    label = "6500BC",
+    label = "6800BC",
     x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
   ) +
   theme_bw() +

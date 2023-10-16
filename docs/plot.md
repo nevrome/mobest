@@ -50,7 +50,7 @@ ggplot() +
   ) +
   annotate(
     "text",
-    label = "6500BC",
+    label = "6800BC",
     x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
   )
 ```

@@ -18,7 +18,7 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = c(-6500, -5700),
+  search_time        = c(-6800, -5700),
   search_time_mode   = "absolute"
 )
 search_product <- mobest::multiply_dependent_probabilities(search_result)

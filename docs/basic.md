@@ -386,11 +386,11 @@ The search time can be specified as an integer vector of years: e.g. `search_tim
 For this example we will set the search time to an `"absolute"` value.
 
 ```r
-search_time = -6500
+search_time = -6800
 search_time_mode = "absolute"
 ```
 
-This will search at exactly one point in time; a single timeslice 6500 BC.
+This will search at exactly one point in time; a single timeslice 6800 BC.
 
 #### Normalization
 
@@ -412,7 +412,7 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = -6500,
+  search_time        = -6800,
   search_time_mode   = "absolute"
 )
 ```
@@ -503,7 +503,7 @@ cowplot::plot_grid(p_C1, p_C2, labels = c("C1", "C2"))
 ```
 
 ```{figure} img/basic/search_map_simple_C1_C2.png
-The similarity probability search results for the sample Stuttgart for 6500 BC.
+The similarity probability search results for the sample Stuttgart for 6800 BC.
 ```
 
 ### Combining the information from multiple dependent variables
@@ -530,7 +530,7 @@ ggplot() +
 ```
 
 ```{figure} img/basic/search_map_simple_combined.png
-The combined ($\text{C1}*\text{C2}$) similarity probability search results for the sample Stuttgart for 6500 BC.
+The combined ($\text{C1}*\text{C2}$) similarity probability search results for the sample Stuttgart for 6800 BC.
 ```
 
 This figure is the main result of this write-up.
