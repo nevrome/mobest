@@ -416,7 +416,7 @@ p <- ggplot() +
 
 search_samples <- samples_projected %>%
   dplyr::filter(
-    Sample_ID %in% c("Stuttgart_published.DG", "I5411")
+    Sample_ID %in% c("Stuttgart_published.DG", "RISE434.SG")
   )
 
 search_ind <- mobest::create_spatpos(
@@ -437,7 +437,7 @@ search_result <- mobest::locate(
   search_independent = search_ind,
   search_dependent   = search_dep,
   search_space_grid  = spatial_pred_grid,
-  search_time        = -700,
+  search_time        = -1500,
   search_time_mode   = "relative"
 )
 search_product <- mobest::multiply_dependent_probabilities(search_result)
@@ -473,14 +473,14 @@ p <- ggplot() +
       search_id = c(
         "Stuttgart_published.DG" = paste(
           "<Stuttgart> ~5250BC",
-          "Early Neolithic (Linear Pottery culture) - Lazaridis et al. 2014",
-          "Search time: ~5950BC",
+          "Early Neolithic - Lazaridis et al. 2014",
+          "Search time: ~6750BC",
           sep = "\n"
         ),
-        "I5411" = paste(
-          "<I5411> ~6650BC",
-          "Mesolithic (Iron Gates) - Mathieson et al. 2018",
-          "Search time: ~7350BC",
+        "RISE434.SG" = paste(
+          "<RISE434> ~2750BC",
+          "Late Neolithic - Allentoft et al. 2015",
+          "Search time: ~4250BC",
           sep = "\n"
         )
       )
