@@ -99,7 +99,7 @@ We decided to follow the recommendation of {cite:p}`Annoni2003`.
 > *- Uses for statistical analysis and display a ETRS89 Lambert Azimuthal Equal Area coordinate reference system of 2001 [ETRS -LAEA11 ], that is specified by ETRS89 as datum and the Lambert Azimuthal Equal Area map projection.*    
 > *- ...*
 
-This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our decision comes at the price of increased inaccuracy especially in the North- and South-East of the research area where we get very far away from the centre at 52° latitude and 10° longitude (see {cite:p}`Tsoulos2003` p.53 for a visualization of the deformation).
+This setting is documented in the EPSG code [3035](https://epsg.io/3035). Our decision comes at the price of increased inaccuracy especially in the North- and South-East of the research area where we get very far away from the specified centre for EPSG:3035 at 52° latitude and 10° longitude (see {cite:p}`Tsoulos2003` p.53 for a visualization of the deformation effects).
 
 To transform the the land outline in the research area from EPSG:4326 to EPSG:3035 we can apply `sf::st_transform()`.
 
@@ -119,7 +119,7 @@ The research area land polygon now transformed to EPSG:3035.
 
 #### Creating the prediction grid
 
-To finally create the prediction grid we can use `mobest::create_prediction_grid()`. It takes the land outline polygon and overlays its bounding box with a regular grid (using `sf::st_make_grid()`), where each cell has the size corresponding to the `spatial_cell_size` parameter. It then determines the centres of each grid cell and crops the resulting, regular point cloud with the land area. Note that `spatial_cell_size` uses the unit of the CRS, so in our case for EPSG:3035 meters. That means a value of 50000 translates to one point every 50km. The total number of resulting spatial prediction positions is 4738 in this example.
+To finally create the prediction grid we can use `mobest::create_prediction_grid()`. It takes the land outline polygon and overlays its bounding box with a regular grid (using `sf::st_make_grid()`), where each cell has the size corresponding to the `spatial_cell_size` parameter. It then determines the centres of each grid cell and crops the resulting, regular point cloud with the land area. Note that `spatial_cell_size` uses the unit of the CRS, so in our case for EPSG:3035 *meters*. That means a value of 50000 translates to one point every 50km. The total number of resulting spatial prediction positions is 4738 in this example.
 
 ```r
 spatial_pred_grid <- mobest::create_prediction_grid(
@@ -128,7 +128,7 @@ spatial_pred_grid <- mobest::create_prediction_grid(
 )
 ```
 
-`create_prediction_grid` returns an object of class `mobest_spatialpositions`, which is derived from `tibble::tibble`. That means we can print it on the R console and it will behave as a tibble. It will also work seamlessly as an input for `ggplot2`, which we can now use to visualize the point cloud.
+`create_prediction_grid` returns an object of class `mobest_spatialpositions`, which is derived from `tibble::tibble()`. That means we can print it on the R console and it will behave as a [`tibble`](https://tibble.tidyverse.org). It will also work seamlessly as an input for `ggplot2`, which we can now use to visualize the point cloud.
 
 ```r
 ggplot() +
@@ -147,9 +147,9 @@ The spatial prediction grid points plotted on top of the land area.
 
 ### Reading the input samples
 
-mobest requires a set of data points, observations, to inform the ancestry field interpolation. For each observation the position in space, time and a dependent variable space (e.g. the coordinates in a PCA analysis) must be known. This information must be provided in a specific format. A typical workflow would involve preparing this information in a .xlsx or (better) .csv table, which could then be read into R.
+mobest requires a set of data points, samples, to inform the ancestry field interpolation. For each sample the position in space, time and a dependent variable space (e.g. the coordinates in a PCA analysis) must be known. This information must be provided in a specific format. A typical mobest workflow involves preparing a sample list in a .xlsx or (better) .csv table, which could then be read into R and transformed to the correct format.
 
-For this tutorial we rely on the data used and published in {cite:p}`Schmid2023`. The following, hidden section includes the code to prepare the sample table we need here directly from the supplementarty tables published with the paper.
+For this tutorial we rely on the data used and published in {cite:p}`Schmid2023`. The following, hidden section includes the code to prepare the sample table we need from the supplementary tables published with the paper.
 
 <details>
 <summary>Code to prepare the input data table.</summary>
@@ -191,27 +191,27 @@ readr::write_csv(samples_basic, file = "docs/data/samples_basic.csv")
 
 You do not have to run this and can instead download the example table `samples_basic.csv` from [here](data/samples_basic.csv).
 
-When you have download the input data file you can load it into a [`tibble`](https://tibble.tidyverse.org) in R.
+When you have download the input data file you can load it into a `tibble` in R.
 
 ```r
 samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
 # you have to replace "data/docs/" with the path to your copy of the file
 ```
 
-`samples_basic` is a tibble that includes the following columns/variables:
+`samples_basic` includes the following columns/variables:
 
-| Variable          | Type | Description                                                                                                              |
-|-------------------|------|--------------------------------------------------------------------------------------------------------------------------|
-| Sample_ID         | chr  | A sample identifier                                                                                                      |
-| Latitude          | dbl  | The latitude coordinate where this sample was recovered                                                                  |
-| Longitude         | dbl  | The longitude coordinate                                                                                                 |
-| Date_BC_AD_Median | int  | The median age of this sample in years BC/AD<br>/(negative numbers for BC, positive for AD)                                                                                 |
+| Column            | Type | Description |
+|-------------------|------|-------------|
+| Sample_ID         | chr  | A sample identifier |
+| Latitude          | dbl  | The latitude coordinate where this sample was recovered  |
+| Longitude         | dbl  | The longitude coordinate |
+| Date_BC_AD_Median | int  | The median age of this sample in years BC/AD<br>/(negative numbers for BC, positive for AD) |
 | MDS_C1            | dbl  | The coordinate of this sample on dimension 1 of an MDS analysis.<br>See the paper for more details on how this was obtained |
-| MDS_C2            | dbl  | The coordinate of this sample on MDS dimension 2                                                                         |
+| MDS_C2            | dbl  | The coordinate of this sample on MDS dimension 2 |
 
-These variables are a minimum for a meaningful mobest run and must be known for all samples. Samples that are missing information in any of these columns have to excluded from the input data table.
+These variables are a minimum for a meaningful mobest run and must be known for all samples. Samples with missing information in any of these columns have to excluded from the input.
 
-Before we move on, we have to apply one more change to the sample table: Just as for the research area (see {ref}`Projecting the spatial data <basic:projecting the spatial data>`) above) we have to transform the coordinates from longitude and latitude coordinates to a projected system, specifically the same we selected above. To do this we can construct an `sf` object from the sample `tibble`, apply `sf::st_transform` and then transform this result back to a `tibble` with the x and y coordinates of EPSG:3035 in extra columns. This last step makes the code a bit awkward.
+Before we move on, we have to apply one more change to the sample table: Just as for the research area (see {ref}`Projecting the spatial data <basic:projecting the spatial data>`) above) we have to transform the coordinates from longitude and latitude coordinates to a projected system, specifically the same we selected above. To do this we can construct an `sf` object from the sample `tibble`, apply `sf::st_transform()` and then transform this result back to a `tibble` with the x and y coordinates of EPSG:3035 in extra columns. This last step makes the code a bit awkward.
 
 
 ```r
@@ -249,7 +249,7 @@ ggplot() +
 The spatial distribution of the informative samples.
 ```
 
-A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely under-sampled. That is something we have to keep in mind for when we interpret the results of the similarity search.
+A number of samples are outside of the area we actually want to predict here. That is no problem. They will inform the field in the north-eastern fringes of the area of interest and do no harm. It is much more problematic that some areas of our prediction grid are severely under-sampled. We have to keep sampling gaps like this in mind for when we interpret the results of the similarity search.
 
 ## Specifying the search sample
 
