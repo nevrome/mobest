@@ -175,11 +175,11 @@ p <- ggplot() +
   ) +
   facet_wrap(~independent_table_id)
 
-ggsave(
-  filename = "docs/img/temporal_resampling/search_map_two_resampling_runs.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/temporal_resampling/search_map_two_resampling_runs.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
 
 search_sum <- mobest::fold_probabilities_per_group(search_product)
 
@@ -216,8 +216,8 @@ p <- ggplot() +
     x = Inf, y = Inf, hjust = 1.1, vjust = 1.5
   )
 
-ggsave(
-  filename = "docs/img/temporal_resampling/search_map_combined_resampling_runs.png",
-  plot = p,
-  scale = 2.5, width = 1000, height = 400, units = "px"
-)
+# ggsave(
+#   filename = "docs/img/temporal_resampling/search_map_combined_resampling_runs.png",
+#   plot = p,
+#   scale = 2.5, width = 1000, height = 400, units = "px"
+# )
