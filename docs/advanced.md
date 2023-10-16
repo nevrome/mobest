@@ -167,7 +167,7 @@ You do not have to run this and can instead download the example table [`samples
 
 With `samples_advanced.csv` we can write code to draw age samples and then use them for the similarity search. The script and the data can be downloaded here, including a snapshot of some objects we created in {doc}`A basic similarity search workflow <basic>`.
 
-- [temporal_resampling_similarity_search.R](data/temporal_resampling_similarity_search.R)
+- [temporal_resampling.R](data/temporal_resampling.R)
 - [samples_advanced.csv](data/samples_advanced.csv)
 - [simple_objects_snapshot.RData](data/simple_objects_snapshot.RData)
 

@@ -6,7 +6,7 @@ For this tutorial we will use the data introduced and prepared in {doc}`A basic 
 
 You can download a script with the main workflow explained below including the required test data here:
 
-- [simple_similarity_search.R](data/simple_similarity_search.R)
+- [parameter_estimation.R](data/parameter_estimation.R)
 - [samples_projected.csv](data/samples_projected.csv)
 
 ## Preparing the computational environment

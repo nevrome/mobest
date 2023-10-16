@@ -6,10 +6,10 @@ For didactic purposes we use a simplified version of the data and code generated
 
 The script explained in the following sections as well as the data required for it can be downloaded in its entirety here:
 
-- [simple_similarity_search.R](data/simple_similarity_search.R)
+- [similarity_search.R](data/similarity_search.R)
 - [samples_basic.csv](data/samples_basic.csv)
 
-`simple_similarity_search.R` also includes the code for the sections {doc}`Improving the similarity search map plot <plot>` and {doc}`Simple permutations <multisearch>`, which directly build upon this section.
+`similarity_search.R` also includes the code for the sections {doc}`Improving the similarity search map plot <plot>` and {doc}`Simple permutations <multisearch>`, which directly build upon this section.
 
 ## Preparing the computational environment
 
