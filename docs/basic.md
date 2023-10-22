@@ -91,7 +91,9 @@ The land area within the research area.
 
 At this point we run into a specific issue of mobest: It requires its "independent" spatial and temporal coordinates to be coordinates in a [Cartesian system](https://en.wikipedia.org/wiki/Cartesian_coordinate_system) describing [Euclidean space](https://en.wikipedia.org/wiki/Euclidean_space). For the spatial coordinates that means we can not work with latitude and longitude coordinates on a sphere, but have to transform them. We have to apply [map projection](https://en.wikipedia.org/wiki/Map_projection) to represent the curved, two dimensional surface of our planet on a simple plane.
 
+```{note}
 The question how exactly this should be done and which CRS to choose depends on the position, size and shape of the research area. Each map projection algorithm has different properties regarding whether they manage to preserve or distort size, shape, distances and directions of areas and lines compared to the actual circumstances on Earth. Generally the larger the research area the bigger the distortion of these properties becomes. But for mobest we ideally want to represent all them accurately. mobest is therefore unfit for origin search on a global scale, but can usually be well applied for individual countries with the projections recommended by their cartographic agencies. For an intermediate, continental scale, as in this example, we have to choose our CRS wisely. 
+```
 
 We decided to follow the recommendation of {cite:p}`Annoni2003`.
 
@@ -374,7 +376,9 @@ Note how we scale the lengthscale parameters: `dsx` and `dsy` are set in meters 
 
 The main question naturally arising from this, is how to set these parameters for a given dataset and research question. There are various empirical ways to find optimal values through numerical optimization. See Supplementary Text 2 of {cite:p}`Schmid2023` for the approaches we applied. One concrete workflow to estimate the nugget from the variogram and the lengthscale parameters through crossvalidation is explained in {doc}`Interpolation parameter estimation <estimation>`.
 
-We would argue, though, that this computationally expensive workflow is not always necessary for basic applications of mobest. The analysis in {cite:p}`Schmid2023` showed that Gaussian process regression returns reasonably accurate interpolation results for a large range of kernel parameter settings, as long as they reflect a plausible intuition about the mobility behaviour of human ancestry, which generally operates on a scale of hundreds of kilometres and years. mobest is primarily a visualization method and adjusting its parameters to ones liking is legitimate if the choices are communicated transparently.
+```{note}
+While estimating the nugget is generally advisable, we would argue, that the computationally expensive crossvalidation workflow to estimate the lengthscale parameters is not always necessary for basic applications of mobest. The analysis in {cite:p}`Schmid2023` showed that Gaussian process regression returns reasonably accurate interpolation results for a large range of kernel parameter settings, as long as they reflect a plausible intuition about the mobility behaviour of human ancestry, which generally operates on a scale of hundreds of kilometres and years. mobest is primarily a visualization method and adjusting its parameters to ones liking is legitimate if the choices are communicated transparently.
+```
 
 #### Search positions
 

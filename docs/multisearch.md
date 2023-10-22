@@ -1,12 +1,16 @@
 # Simple permutations
 
-In the example in {doc}`A basic similarity search workflow <basic>` we performed the similarity search with `mobest::locate()` for only one parameter permutation, keeping everything constant except the two dependent variables. But as already laid out above in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`, mobest can automatically consider more parameter permutations, the most basic of which are directly available in `locate()`.
+In the example in {doc}`A basic similarity search workflow <basic>` we performed the similarity search with `mobest::locate()` for only one parameter permutation, keeping everything constant except the two dependent variables. But as already laid out above in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`, mobest can automatically consider more parameter permutations, the most basic of which are directly available in `locate()`. This flexibility has consequences for the presentability of the search results. Here the concept of the *origin_vector* can be helpful to summarize information.
 
-Please note that all parameter permutations will be multiplied with all other permutations, causing the number of runs to grow rapidly. If you, for example, submit five time slices and five search samples, the number of runs will be $5*5=25$ times bigger than for one time slice and sample. The permutation mechanism is explained in more detail in {doc}`Advanced features of the mobest package <advanced>`
+```{warning}
+Please note that all parameter permutations will be multiplied with all other permutations, causing the number of runs to grow rapidly. If you, for example, submit five time slices and five search samples, the number of runs will be $5*5=25$ times bigger than for one time slice and sample. The permutation mechanism is explained in more detail in {doc}`Advanced features of the mobest package <advanced>`.
+```
+
+The following code is included at the end of the [similarity_search.R](data/similarity_search.R) script.
 
 ## Multiple search time slices
 
-As explained in {ref}`Search positions <basic:search positions>` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices at with one call to `locate`.
+As explained in {ref}`Search positions <basic:search positions>` the `search_time` argument can take an integer vector of relative or absolute ages. That means we can run the search not just for one, but for arbitrarily many time slices with a single call to `locate()`.
 
 Here is an example with two time slices.
 
@@ -65,20 +69,116 @@ ggplot() +
 </details>
 
 ```{figure} img/basic/search_map_two_timeslices.png
+:name: fig_map_two_timeslices
 Similarity search map plot for two different time slices.
 ```
 
-### Summarizing multiple searches in one figure
+## Multiple search samples
 
-Plotting individual similarity probability map plots does not scale well, if the number of searches grows. `mobest::determine_origin_vectors` offers a way to derive a simple, summary statistic, by generating what we call "origin vectors" from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a sample was found with the point of **highest genetic similarity** in the interpolated search field and its permutations. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector".
+We can also select multiple search samples and prepare the input data for `mobest::locate()`. Here we introduce another sample `RISE434` originally published in {cite}`Allentoft2015`.
 
-The origin vector summary can also be applied for individual parameter permutations, which is especially relevant for more complex application involving `mobest::locate_multi` (see {ref}`Similarity search with permutations <advanced:similarity search with permutations>`), but already comes in handy for two different search times.
+```r
+search_samples <- samples_projected %>%
+  dplyr::filter(
+    Sample_ID %in% c("Stuttgart_published.DG", "RISE434.SG")
+  )
+
+search_ind <- mobest::create_spatpos(
+  id = search_samples$Sample_ID,
+  x  = search_samples$x,
+  y  = search_samples$y,
+  z  = search_samples$Date_BC_AD_Median
+)
+search_dep <- mobest::create_obs(
+  C1 = search_samples$MDS_C1,
+  C2 = search_samples$MDS_C2
+)
+```
+
+We set the `search_time_mode` to `"relative"` to get a different, meaningful search time for both samples.
+
+```r
+search_result <- mobest::locate(
+  independent        = ind,
+  dependent          = dep,
+  kernel             = kernset,
+  search_independent = search_ind,
+  search_dependent   = search_dep,
+  search_space_grid  = spatial_pred_grid,
+  search_time        = -1500,
+  search_time_mode   = "relative"
+)
+search_product <- mobest::multiply_dependent_probabilities(search_result)
+```
+
+<details>
+<summary>Code for this figure.</summary>
+
+```r
+ggplot() +
+  geom_raster(
+    data = search_product,
+    mapping = aes(x = field_x, y = field_y, fill = probability)
+  ) +
+  scale_fill_viridis_c() +
+  geom_sf(
+    data = research_area_3035,
+    fill = NA, colour = "red",
+    linetype = "solid", linewidth = 1
+  ) +
+  geom_point(
+    data = search_samples %>% dplyr::rename(search_id = Sample_ID),
+    mapping = aes(x, y),
+    colour = "red"
+  ) +
+  theme_bw() +
+  theme(
+    axis.title = element_blank()
+  ) +
+  guides(
+    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
+  ) +
+  facet_wrap(
+    ~search_id,
+    ncol = 2,
+    labeller = labeller(
+      search_id = c(
+        "Stuttgart_published.DG" = paste(
+          "<Stuttgart> ~5250BC",
+          "Early Neolithic (Linear Pottery culture) - Lazaridis et al. 2014",
+          "Search time: ~6750BC",
+          sep = "\n"
+        ),
+        "RISE434.SG" = paste(
+          "<RISE434> ~2750BC",
+          "Late Neolithic (Corded Ware culture) - Allentoft et al. 2015",
+          "Search time: ~4250BC",
+          sep = "\n"
+        )
+      )
+    )
+  )
+```
+</details>
+
+```{figure} img/basic/search_map_two_samples.png
+:name: fig_map_two_samples
+Similarity search map plot for two different search samples.
+```
+
+## Summarizing multiple searches in one figure
+
+Plotting individual similarity probability map plots does not scale well, if the number of searches grows. `mobest::determine_origin_vectors()` offers a way to derive a simple, summary statistic, by generating what we call *origin vectors* from objects of class `mobest_locateproduct`. Each vector connects the spatial point where a sample was found with the point of **highest genetic similarity** in the interpolated search field and its permutations. The output is of class `mobest_originvectors` and documents distance and direction of the "origin vector".
+
+The origin vector summary can also be applied for individual parameter permutations, which is especially relevant for more complex application involving `mobest::locate_multi()` (see {ref}`Similarity search with permutations <advanced:similarity search with permutations>`), but already comes in handy for just two different search times, as introduced in the {ref}`Multiple search time slices <multisearch:multiple search time slices>` section above.
+
+We can take the `search_product` object from there and apply `mobest::determine_origin_vectors()` with the grouping variable `search_time`, to determine one origin vector for each of the two search time iterations.
 
 ```r
 origin_vectors <- mobest::determine_origin_vectors(search_product, search_time)
 ```
 
-The resulting object of type `mobest_originvectors` features one row for each vector with the following variables. Note that many variables here reflect mean values in this case, as `determine_origin_vectors()` can summarize information across parameter permutations.
+The resulting object of type `mobest_originvectors` features one row for each vector with the following variables.
 
 |Column               |Description |
 |:--------------------|:-----------|
@@ -105,7 +205,11 @@ The resulting object of type `mobest_originvectors` features one row for each ve
 |ov_dist_sd           |Standard deviation of all vector lengths|
 |ov_angle_deg         |Direction of the origin vector as an angle in degree (0-360°)|
 
-One way of making use of this object is by highlighting the points of maximal similarity probability in the map plot.
+```{warning}
+Note that **here** many variables can reflect mean values, as `determine_origin_vectors()` can summarize information across parameter permutations. Depending on the input `mobest_locateproduct` table and the specific grouping requirements, multiple origin vectors are determined and then summarized. This explains variables like `ov_dist_se` and `ov_dist_sd`, which are only meaningful for groups of vectors.
+```
+
+One basic way of making use of an `mobest_originvectors` object is by highlighting the points of maximal similarity probability in the map plot.
 
 <details>
 <summary>Code for this figure.</summary>
@@ -170,103 +274,16 @@ ggplot() +
 </details>
 
 ```{figure} img/basic/search_map_two_timeslices_with_ovs.png
-Similarity search map plot for two different time slices including arrows to the point of maximum similarity probability.
+Similarity search map plot for two different time slices including arrows to the point of maximum similarity probability. cf. Figure '{ref}`fig_map_two_timeslices`'
 ```
 
-## Multiple search samples
+With `origin_vectors` we can also summarize the results for two different samples, as in {ref}`Multiple search samples <multisearch:multiple search samples>` above, in a single figure.
 
-We can also select multiple search samples and prepare the input data for `mobest::locate()`. Here we introduce another sample `RISE434` originally published in {cite}`Allentoft2015`.
-
-```r
-search_samples <- samples_projected %>%
-  dplyr::filter(
-    Sample_ID %in% c("Stuttgart_published.DG", "RISE434.SG")
-  )
-
-search_ind <- mobest::create_spatpos(
-  id = search_samples$Sample_ID,
-  x  = search_samples$x,
-  y  = search_samples$y,
-  z  = search_samples$Date_BC_AD_Median
-)
-search_dep <- mobest::create_obs(
-  C1 = search_samples$MDS_C1,
-  C2 = search_samples$MDS_C2
-)
-```
-
-Here we set the `search_time_mode` to `"relative"` to get a different, meaningful search time for both samples.
+If we take the `search_product` object from there and apply `mobest::determine_origin_vectors()` without a grouping variable - grouping by sample is the default - then we get origin vectors for the two samples, which we can display in the same map figure.
 
 ```r
-search_result <- mobest::locate(
-  independent        = ind,
-  dependent          = dep,
-  kernel             = kernset,
-  search_independent = search_ind,
-  search_dependent   = search_dep,
-  search_space_grid  = spatial_pred_grid,
-  search_time        = -1500,
-  search_time_mode   = "relative"
-)
-search_product <- mobest::multiply_dependent_probabilities(search_result)
 origin_vectors <- mobest::determine_origin_vectors(search_product)
 ```
-
-<details>
-<summary>Code for this figure.</summary>
-
-```r
-ggplot() +
-  geom_raster(
-    data = search_product,
-    mapping = aes(x = field_x, y = field_y, fill = probability)
-  ) +
-  scale_fill_viridis_c() +
-  geom_sf(
-    data = research_area_3035,
-    fill = NA, colour = "red",
-    linetype = "solid", linewidth = 1
-  ) +
-  geom_point(
-    data = search_samples %>% dplyr::rename(search_id = Sample_ID),
-    mapping = aes(x, y),
-    colour = "red"
-  ) +
-  theme_bw() +
-  theme(
-    axis.title = element_blank()
-  ) +
-  guides(
-    fill = guide_colourbar(title = "Similarity\nsearch\nprobability")
-  ) +
-  facet_wrap(
-    ~search_id,
-    ncol = 2,
-    labeller = labeller(
-      search_id = c(
-        "Stuttgart_published.DG" = paste(
-          "<Stuttgart> ~5250BC",
-          "Early Neolithic (Linear Pottery culture) - Lazaridis et al. 2014",
-          "Search time: ~6750BC",
-          sep = "\n"
-        ),
-        "RISE434.SG" = paste(
-          "<RISE434> ~2750BC",
-          "Late Neolithic (Corded Ware culture) - Allentoft et al. 2015",
-          "Search time: ~4250BC",
-          sep = "\n"
-        )
-      )
-    )
-  )
-```
-</details>
-
-```{figure} img/basic/search_map_two_samples.png
-Similarity search map plot for two different search samples.
-```
-
-With `origin_vectors` we can summarize the results for both samples in a single figure.
 
 <details>
 <summary>Code for this figure.</summary>
@@ -309,5 +326,5 @@ ggplot() +
 </details>
 
 ```{figure} img/basic/search_map_two_samples_in_one_plot.png
-Prototype of a figure that combines the independent search results for two samples in one figure.
+Prototype of a figure that combines the independent search results for two samples in one figure. cf. Figure '{ref}`fig_map_two_samples`'
 ```
