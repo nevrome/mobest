@@ -1,15 +1,17 @@
 # Parameter estimation for optimal ancestry interpolation
 
-One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is a correct and useful setting for the kernel parameters (see {ref}`Kernel parameter settings <basic:kernel parameter settings>` in the basic workflow description). Supplementary Text 2 of {cite:p}`Schmid2023` discusses this in detail. `mobest` provides different helper functions to either estimate the parameters or prepare data products that can be used to estimate them. Here we explain a practical way to estimate the nugget and lengthscale values.
+One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is how to find correct and useful settings for the kernel hyperparameters (see {ref}`Kernel parameter settings <basic:kernel parameter settings>` in the basic workflow description). Supplementary Text 2 of {cite:p}`Schmid2023` discusses this in detail. Based on this `mobest` provides different helper functions to either estimate the parameters or prepare data products that can be used to estimate them. Here we explain a practical way to estimate the nugget and lengthscale values.
 
 For this tutorial we will use the data introduced and prepared in {doc}`A basic similarity search workflow <basic>`, specifically a `samples_projected.csv` table prepared in {ref}`Reading the input samples <basic:reading the input samples>`.
 
-You can download a script with the main workflow explained below including the required test data here:
+You can download the script with the main workflow explained below including the required test data:
 
 - [parameter_estimation.R](data/parameter_estimation.R)
 - [samples_projected.csv](data/samples_projected.csv)
 
 ## Preparing the computational environment
+
+We start by loading the required packages we do not want to call explicitly from their source namespaces.
 
 ```r
 library(magrittr)
@@ -20,7 +22,7 @@ For more information see the {ref}`Preparing the computational environment <basi
 
 ## Using a subset of the variogram to estimate the nugget parameter
 
-We start by loading the input data - individual ancient DNA samples with their spatiotemporal and genetic position.
+We then load the input data: individual ancient DNA samples with their spatiotemporal and genetic position.
 
 ```r
 samples_projected <- readr::read_csv("docs/data/samples_projected.csv")
@@ -29,7 +31,7 @@ samples_projected <- readr::read_csv("docs/data/samples_projected.csv")
 
 ### Determining pairwise distances
 
-`mobest::calculate_pairwise_distances` allows to calculate different types of pairwise distances (spatial, temporal, dependent variables/ancestry components) for each input sample pair and returns them in a long format `tibble` of class `mobest_pairwisedistances`.
+`mobest::calculate_pairwise_distances()` allows to calculate different types of pairwise distances (spatial, temporal, dependent variables/ancestry components) for each input sample pair and returns them in a long format `tibble` of class `mobest_pairwisedistances`.
 
 ```r
 distances_all <- mobest::calculate_pairwise_distances(
@@ -54,9 +56,15 @@ time_dist <- mobest::calculate_time_pairwise_distances(positions)
 obs_dist  <- mobest::calculate_dependent_pairwise_distances(positions$id, observations)
 ```
 
-Spatial distances (`calculate_geo_pairwise_distances`) are assumed to be in meter and transformed to kilometres. This can be turned off with `m_to_km = FALSE`. `mobest::calculate_pairwise_distances()` also calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions (see the `*_dist_resid` columns). This behaviour can be turned off by setting `with_resid = FALSE`.
+```{warning}
+Spatial distances (from `calculate_geo_pairwise_distances()`) are assumed to be in meter and transformed to kilometres. As this can be inaccurate (see {ref}`Projecting the spatial data <basic:projecting the spatial data>`) the feature can be turned off with `m_to_km = FALSE`.
+```
 
-`mobest_pairwisedistances`, here in `distances_all`, finally includes the following columns/variables.
+```{warning}
+`mobest::calculate_pairwise_distances()` calculates the distances in dependent variables space on the residuals of a linear model informed from the spatiotemporal positions and returns it in a set of columns with the suffix `*_dist_resid` (see {ref}`Gaussian process regression on top of a linear model <advanced:gaussian process regression on top of a linear model>`). This behaviour can be turned off by setting `with_resid = FALSE`.
+```
+
+`mobest_pairwisedistances`, here in `distances_all`, includes the following columns/variables.
 
 |Column         |Description |
 |:--------------|:-----------|
@@ -65,10 +73,10 @@ Spatial distances (`calculate_geo_pairwise_distances`) are assumed to be in mete
 |geo_dist       |Spatial distance (in the units of the CRS, typically kilometres)|
 |time_dist      |Temporal distance (typically in years)|
 |obs_dist_total |Euclidean distance in the dependent variable space, so across all dimensions|
-|\*_dist        |Distance in along the axis of one dependent variable denoted by \*|
-|\*_dist_resid  |Distance for one dependent variable, but here only the distance in the space<br>defined by the residuals of a linear model|
+|\*_dist        |Distance along the axis of one dependent variable denoted by \*|
+|\*_dist_resid  |Distance along the axis of one dependent variable, but here only the<br>distance in the space defined by the residuals of a linear model|
 
-This table allows us to easily visualize and analyse the pairwise distance properties of our dataset, for example with scatter plots or 2D histograms.
+The `mobest_pairwisedistances` table allows us to easily visualize and analyse the pairwise distance properties of our dataset, for example with scatter plots or 2D histograms.
 
 <details>
 <summary>Code for this figure.</summary>
@@ -97,12 +105,13 @@ cowplot::plot_grid(p1, p2)
 </details>
 
 ```{figure} img/estimation/distance_correlation.png
-2D histograms of the sample distance pairs comparing spatial, temporal and genetic space.
+:name: figure_distance_correlation
+2D histograms of the sample distance pairs comparing spatial (`geo_dist`), temporal (`time_dist`) and genetic (`obs_dist`) space.
 ```
 
 ### Summarizing distances in an empirical variogram
 
-`mobest::bin_pairwise_distances` bins the pairwise distances in an `mobest_pairwisedistances` object and calculates an empirical variogram (class `mobest_empiricalvariogram`) for the Euclidean distances in dependent variable space. `geo_bin` and `time_bin` set the spatial and temporal bin size. The `per_bin_operation` to summarize the information is per-default set to `function(x) { 0.5 * mean(x^2, na.rm = T) }`, so half-mean-squared.
+`mobest::bin_pairwise_distances()` bins the pairwise distances in a `mobest_pairwisedistances` object according to spatial and temporal distance categories and calculates an empirical variogram of class `mobest_empiricalvariogram` for the Euclidean distances in the genetic dependent variable space. `geo_bin` and `time_bin` set the spatial and temporal bin size. The `per_bin_operation` to summarize the information is per-default set to `function(x) { 0.5 * mean(x^2, na.rm = T) }`, so half the mean squared value of all genetic distances in a given bin.
 
 ```r
 variogram <- mobest::bin_pairwise_distances(
@@ -120,16 +129,16 @@ variogram <- mobest::bin_pairwise_distances(
 |obs_dist_total |Euclidean distance in the dependent variable space,<br>summarized with the `per_bin_operation`|
 |C\*_dist       |Distance in along the axis of one dependent variable,<br>summarized with the `per_bin_operation`|
 |C\*_dist_resid |Distance in residual space for one dependent variable,<br>summarized with the `per_bin_operation`|
-|n              |Number of pairswise distances in a given space-time bin<br>(as shown in the 2D histograms in the previous section)|
+|n              |Number of pairwise distances in a given space-time bin (as already shown in<br>{ref}`figure_distance_correlation`)|
 
 
 ### Estimating the nugget parameter
 
-A form of the variogram can be used to estimate the nugget parameter of the GPR kernel settings, by filtering for pairwise "genetic" distances with very small spatial and temporal distances. Here is one workflow to do so.
+One form of the variogram can be used to estimate the nugget parameter of the GPR kernel settings, by filtering for pairwise "genetic" distances with very small spatial and temporal distances. Here is one workflow to do so.
 
 ```r
 distances_for_nugget <- distances_all %>%
-  # remove auto-distances
+  # remove self-distances
   dplyr::filter(id1 != id2) %>%
   # filter for small temporal and spatial pairwise distances
   dplyr::filter(time_dist < 50 & geo_dist < 50) %>%
