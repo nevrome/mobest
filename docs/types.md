@@ -69,11 +69,11 @@ mobest::create_kernel(
   dsy = 800 * 1000, # lengthscale parameter spatial y dimension
   dsx = 800,        # lengthscale parameter temporal dimension
   g = 0.1,          # nugget parameter
-  on_residuals = T, # Should a linear model take over the main trends
-                    # before the kriging interpolation? Default: TRUE
-  auto = F          # Should the lengthscale and nugget values be 
-                    # automatically determined by laGPs maximum likelihood
-                    # algorithm? Default: FALSE
+  on_residuals = T, # should a linear model take over the main trends
+                    # before the kriging interpolation? default: TRUE
+  auto = F          # should the lengthscale and nugget values be 
+                    # automatically determined by laGP's maximum likelihood
+                    # algorithm? default: FALSE
 )
 ```
 
