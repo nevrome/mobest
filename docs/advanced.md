@@ -1,18 +1,28 @@
 # Advanced features of the mobest package
 
-`mobest::locate()` uses spatiotemporal interpolation to calculate spatial similarity probability maps between a set of search samples and an interpolated ancestry field at specific time slices. This basic and arguably most important use case of the mobest package is documented in {doc}`A basic similarity search workflow <basic>`. `locate()` hides a lot of the complexity of mobest, though, and some of that is documented in the following sections.
+`mobest::locate()` uses spatiotemporal interpolation to calculate spatial similarity probability maps between a set of search samples and an interpolated ancestry field at specific time slices. This basic and arguably most important use case of the mobest package is documented in {doc}`A basic similarity search workflow <basic>`. `locate()` hides a lot of the complexity of mobest, though, and some of that is unveiled in the following sections.
 
 ## Gaussian process regression on top of a linear model
 
 An important detail of mobest is that it typically performs the spatiotemporal interpolation for an individual dependent variable in a two-step process. It starts with a simple linear model that predicts the dependent variable based on the three independent space and time variables, thus detrending the entire dataset. The more advanced, complex and computationally expensive Gaussian process regression model is then only applied to the residuals of the linear models.
 
-The detrending step can be turned off for individual variables in `mobest::create_kernel`, by setting `on_residuals = FALSE` (see {ref}`Kernel parameter settings <types:kernel parameter settings>`).
+Here is how this is implemented in `mobest:::interpolate()`:
+
+```r
+if (on_residuals) {
+    combined <- independent %>% dplyr::mutate(d = dependent)
+    model <- stats::lm(d ~ x + y + z, data = combined)
+    dependent <- model[["residuals"]]
+  }
+```
+
+The detrending step can be turned off for individual variables in `mobest::create_kernel()`, by setting `on_residuals = FALSE` (see {ref}`Kernel parameter settings <types:kernel parameter settings>`).
 
 ## Spatiotemporal interpolation permutations in a model grid
 
 Spatiotemporal interpolation is the first main operation mobest undertakes. The actual interpolation is performed in an internal function `mobest:::interpolate()`, which has a minimal interface and does not have to be called directly by the user. This is not least, because the main workflow in `mobest::locate()` (see {doc}`A basic similarity search workflow <basic>`) generally requires multiple interpolation runs. mobest therefore offers a slightly more complex, two step interpolation workflow, which consists of the creation of a list of models and then subsequently running each element in this list to construct different ancestry fields. 
 
-`mobest::create_model_grid` creates an object of class `mobest_modelgrid` which holds all permutations of the field-defining input objects. Each row equals one complete model definition with all parameters and input data fully defined. Here is this function is called with the necessary input data constructors. Note that unlike for `locate()` we here require the `*_multi` constructors to express iterations of all settings (for more about this see {ref}`Similarity search with permutations <advanced:similarity search with permutations>` below).
+`mobest::create_model_grid()` creates an object of class `mobest_modelgrid` which holds all permutations of the field-defining input objects. Each row equals one complete model definition with all parameters and input data fully defined. Here is how this function is called with the necessary input data constructors:
 
 ```r
 library(magrittr)
@@ -24,7 +34,11 @@ model_grid <- mobest::create_model_grid(
 )
 ```
 
-This model grid is only a specification of the models we want to run, so the interpolated fields we want to create. It features the following columns, some of which are list columns including the concrete data to run inform the desired interpolation.
+```{warning}
+Unlike for `locate()` we here require the `*_multi` constructors to express iterations of all settings (for more about this see {ref}`Similarity search with permutations <advanced:similarity search with permutations>` below).
+```
+
+This model grid is only a specification of the models we want to run, so the interpolated fields we want to create. It features the following columns, some of which are list columns including the concrete data to inform the desired interpolation.
 
 |Column               |Description |
 |:--------------------|:-----------|
@@ -33,19 +47,21 @@ This model grid is only a specification of the models we want to run, so the int
 |dependent_var_id     |Identifier of the dependent variable|
 |kernel_setting_id    |Identifier of the kernel setting permutation|
 |pred_grid_id         |Identifier of the spatiotemporal prediction grid|
-|independent_table    |List column: tibble with spatiotemporal positions<br>(`mobest_spatiotemporalpositions`)|
-|dependent_var        |List column: numerical vector with dependent variable values|
-|kernel_setting       |List column: list with kernel parameters (`mobest_kernel`)|
-|pred_grid            |List column: tibble with spatiotemporal positions<br>(`mobest_spatiotemporalpositions`)|
+|independent_table    |List column: `tibble` with spatiotemporal positions<br>(`mobest_spatiotemporalpositions`)|
+|dependent_var        |List column: `numerical vector` with dependent variable values|
+|kernel_setting       |List column: `list` with kernel parameters (`mobest_kernel`)|
+|pred_grid            |List column: `tibble` with spatiotemporal positions<br>(`mobest_spatiotemporalpositions`)|
 
 
-Another function, `mobest::run_model_grid`, then takes this `model_grid` object and runs each interpolation.
+Another function, `mobest::run_model_grid()`, then takes this `model_grid` object and runs each interpolation.
 
 ```r
 interpol_grid <- mobest::run_model_grid(model_grid, quiet = T)
 ```
 
-It returns an unnested table of type `mobest_interpolgrid`, where each row documents the result of the interpolation for one prediction grid point and each parameter setting. It includes the following columns/variables: `independent_table_id`, `dependent_setting_id`, `dependent_var_id`, `kernel_setting_id`, `pred_grid_id`, `dsx`, `dsy`, `dt`, `g`, `id`, `x`, `y`, `z`, `mean`, `sd`. These are identical to what we already know from the output of `mobest::locate()` (see {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`) or `mobest::crossvalidate()` (see {ref}`A basic crossvalidation setup <estimation:a basic crossvalidation setup>`). This is simply, because these functions call `create_model_grid()` and `run_model_grid()` and build their output on top of the `mobest_interpolgrid` structure.
+It returns an unnested table of type `mobest_interpolgrid`, where each row documents the result of the interpolation for one prediction grid point and each parameter setting. It includes the following columns/variables: `independent_table_id`, `dependent_setting_id`, `dependent_var_id`, `kernel_setting_id`, `pred_grid_id`, `dsx`, `dsy`, `dt`, `g`, `id`, `x`, `y`, `z`, `mean`, `sd`.
+
+These are identical to what we already know from the output of `mobest::locate()` (see {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`) or `mobest::crossvalidate()` (see {ref}`A basic crossvalidation setup <estimation:a basic crossvalidation setup>`). This is simply, because these functions internally call `create_model_grid()` and `run_model_grid()` and build their own output on top of the `mobest_interpolgrid` structure.
 
 ## Similarity search with permutations
 
@@ -68,15 +84,15 @@ search_result <- mobest::locate_multi(
 search_product <- mobest::multiply_dependent_probabilities(search_result)
 ```
 
-The result `locate_multi()` is also an object of type `mobest_locateoverview`, just as for `locate`. But `locate_multi()` actually makes use of its columns `independent_table_id`, `dependent_setting_id`, `dependent_var_id` and `kernel_setting_id`.
+The result of `locate_multi()` is also an object of type `mobest_locateoverview`, just as for `locate()`. But `locate_multi()` actually makes use of its columns `independent_table_id`, `dependent_setting_id`, `dependent_var_id` and `kernel_setting_id`.
 
-So `mobest::locate_multi` produces potentially many probability grids for each sample. Even after the per-dependent variable iterations are merged with `mobest::multiply_dependent_probabilities`, that could still leave many parameter permutations. `mobest::fold_probabilities_per_group` is a convenient function to combine these to a single, merged probability grid of class `mobest_locatefold`. The folding operation can be set in the argument `folding_operation`, where the default is a simple sum. Again, in the default setting, the output probabilities are normalized per permutation.
+So `locate_multi()` produces potentially many probability grids for each sample. Even after the per-dependent variable iterations are merged with `mobest::multiply_dependent_probabilities()`, that could still leave many parameter permutations. `mobest::fold_probabilities_per_group()` is a convenient function to combine these into a single, merged probability grid of class `mobest_locatefold`. The folding operation for the probability densities can be set in the argument `folding_operation`, where the default is a simple sum. Again, in the default setting, the output probabilities are normalized per permutation.
 
 ```r
 mobest::fold_probabilities_per_group(search_product)
 ```
 
-`fold_probabilities_per_group` also allows to maintain all or some permutation groups, in case a full summary is not desired:
+`fold_probabilities_per_group` also allows to maintain all or some permutation groups, in case a full summary is not desired, for example:
 
 ```r
 mobest::fold_probabilities_per_group(search_product, dependent_setting_id, kernel_setting_id)
@@ -84,11 +100,11 @@ mobest::fold_probabilities_per_group(search_product, dependent_setting_id, kerne
 
 ### Temporal resampling as a permutation application
 
-The introduction of `mobest::locate_multi()` above has been abstract and devoid of any hint to the great power that comes with its permutation machinery. Here we want to show one application that is very relevant for archeogenetic and macro-archaeological applications of mobest: Temporal resampling.
+The introduction of `mobest::locate_multi()` above has been abstract and devoid of any hint to the great power that comes with its permutation machinery. Here we want to show one application that is very relevant for archaeogenetic and macro-archaeological applications of mobest: Temporal resampling.
 
-Samples extracted from archaeological contexts usually have no precise age information that could be pin-pointed to exactly one year. Instead they can either be linked to a certain age range through relative chronology based on stratigraphy or typology, or they are dated with biological, physical or chemical methods of dating like for example [radiocarbon dating](https://en.wikipedia.org/wiki/Radiocarbon_dating). No matter how ingenious the method of dating might be, including sophisticated chronological modelling based on various lines of evidence, the outcome for the individual sample will always be a probability distribution over a set of potential years. And this set can be surprisingly large (up to several hundred years), with highly asymmetric probability distributions.
+Samples extracted from archaeological contexts usually have no precise age information that would allow them to be pin-pointed to exactly one year. Instead they can either be linked to a certain age range through relative chronology based on stratigraphy or typology, or they are dated with biological, physical or chemical methods of dating like, most prominently, [radiocarbon dating](https://en.wikipedia.org/wiki/Radiocarbon_dating). No matter how ingenious the method of dating might be, even including sophisticated chronological modelling based on various lines of evidence, the outcome for the individual sample will almost always be a probability distribution over a set of potential years. And this set can be surprisingly large - up to several hundred years - with highly asymmetric probability distributions.
 
-As a consequence, spatiotemporal interpolation only based on the median age, as demonstrated in {doc}`A basic similarity search workflow <basic>` is of questionable accuracy. The following section introduces a modified version of this simple workflow, now featuring temporal resampling based on archaeological age ranges and radiocarbon dates.
+As a consequence, spatiotemporal interpolation only based on the median age, as demonstrated in {doc}`A basic similarity search workflow <basic>`, is of questionable accuracy. The following section introduces a modified version of this simple workflow, now featuring temporal resampling based on archaeological age ranges and radiocarbon dates.
 
 We start again by downloading and sub-setting data from {cite:p}`Schmid2023`. Here we already perform some additional steps in advance to reduce the complexity a bit. This includes the transformation of the spatial coordinates and the parsing and restructuring of the uncalibrated radiocarbon dates.
 
@@ -155,7 +171,7 @@ readr::write_csv(samples_advanced, file = "docs/data/samples_advanced.csv")
 </details>
 <br>
 
-You do not have to run this and can instead download the example table [`samples_advanced.csv`](data/samples_advanced.csv). Additional to the simple `Date_BC_AD_Median` column this table has a different set of variables to express age.
+You do not have to run this and can instead download the example table `samples_advanced.csv` [here](data/samples_advanced.csv). Additional to the simple `Date_BC_AD_Median` column this table has a different set of variables to express age:
 
 | Variable | Type | Description |
 |----------|------|-------------|
@@ -165,11 +181,13 @@ You do not have to run this and can instead download the example table [`samples
 | C14_ages         | chr | A string list with only the BP ages of the C14 dates |
 | C14_sds          | chr | A string list with only the standard deviations of the C14 dates |
 
-With `samples_advanced.csv` we can write code to draw age samples and then use them for the similarity search. The script and the data can be downloaded here, including a snapshot of some objects we created in {doc}`A basic similarity search workflow <basic>`.
+With `samples_advanced.csv` we can write code to draw age samples and then use them for the similarity search. The script and the data can be downloaded here:
 
 - [temporal_resampling.R](data/temporal_resampling.R)
 - [samples_advanced.csv](data/samples_advanced.csv)
 - [simple_objects_snapshot.RData](data/simple_objects_snapshot.RData)
+
+The snapshot includes some R objects created in {doc}`A basic similarity search workflow <basic>`.
 
 #### Drawing ages for each sample
 
@@ -182,7 +200,7 @@ library(ggplot2)
 samples_advanced <- readr::read_csv("docs/data/samples_advanced.csv")
 ```
 
-The first step to draw age samples is then to determine per-year probability densities for each sample. For the ones without radiocarbon dates this density follows a simple, uniform distribution. We assign each year a fraction, depending on the total number of years between `Date_BC_AD_Start` and `Date_BC_AD_Stop`. We can encode this in a simple helper function `contextual_date_uniform()`, which returns a tibble with the years in a column `age` and the densities in a column `sum_dens`.
+The first step to draw age samples is then to determine per-year probability densities for each sample. For the ones without radiocarbon dates this density follows a simple, uniform distribution. We assign each year a fraction, depending on the total number of years between `Date_BC_AD_Start` and `Date_BC_AD_Stop`. We can encode this algorithm in a simple helper function `contextual_date_uniform()`, which returns a `tibble` with the years in a column `age` and the respective densities in a column `sum_dens`.
 
 ```r
 contextual_date_uniform <- function(startbcad, stopbcad) {
@@ -193,7 +211,9 @@ contextual_date_uniform <- function(startbcad, stopbcad) {
 }
 ```
 
-For the samples with radiocarbon ages this is more involved, because we have to calibrate the radiocarbon ages and determine the normalized sum of their densities. For the calibration we use the Bchron R package {cite}`Haslett2008`, which implements a simple, fast [calibration algorithm](https://en.wikipedia.org/wiki/Radiocarbon_calibration). We then sum the per-year densities in case there are multiple uncalibrated dates for a given sample, normalize them and fill age range gaps in the `Bchron::BchronCalibrate()` output (some years fall below its density threshold) with 0 to get a continous sequence of years and densities. The output of `radiocarbon_date_sumcal()` has the same structure as `contextual_date_uniform()`: a tibble with the years in a column `age` and the densities in a column `sum_dens`.
+For the samples with radiocarbon ages this is more involved, because we have to calibrate the radiocarbon ages and determine the normalized sum of their post-calibration probability density distributions.
+
+For the calibration we use the Bchron R package {cite}`Haslett2008`, which implements a simple, fast [calibration algorithm](https://en.wikipedia.org/wiki/Radiocarbon_calibration). We then sum the per-year densities in case there are multiple uncalibrated dates for a given sample, normalize them and fill age range gaps in the `Bchron::BchronCalibrate()` output (some years fall below its density threshold) with 0 to get a continuos sequence of years and densities. The output of `radiocarbon_date_sumcal()` has the same structure as produced by `contextual_date_uniform()`: a `tibble` with the years in a column `age` and densities in a column `sum_dens`.
 
 ```r
 radiocarbon_date_sumcal <- function(ages, sds, cal_curve) {
@@ -227,7 +247,11 @@ radiocarbon_date_sumcal <- function(ages, sds, cal_curve) {
 }
 ```
 
-With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, that features the density tibbles for each sample. Running this code takes some minutes, because it involves thousands of radiocarbon calibrations. Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world.
+With these helper functions we can modify `samples_advanced` to include a new list-column `Date_BC_AD_Prob`, which features the density `tibble`s for each sample.
+
+```{warning}
+Running this code can take several minutes, because it involves thousands of radiocarbon calibration operations.
+```
 
 ```r
 samples_with_age_densities <- samples_advanced %>%
@@ -252,14 +276,16 @@ samples_with_age_densities <- samples_advanced %>%
   )
 ```
 
+Note that we set the calibration curve for all samples to `cal_curve = "intcal20"`. This is a sensible default for Western Eurasia, but not necessarily for other parts of the world.
+
 ```{warning}
-The calibration-based age probabilities we generate in this script are an improvement over using just median ages. But they still equate to a massive simplification of the per-sample age information. Each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities much more accurate and precise. But such models are typically not available for large meta-datasets like the one required for spatiotemporal interpolation on a continental scale.
+The calibration-based age probabilities we generate in this script are an improvement over using just median ages. But they still equate to a massive simplification of the per-sample age information. Each individual sample could potentially be informed by a dedicated chronological model to make the derived pear-year probabilities much more accurate and precise. But such models are typically only available for individual sites and not for large meta-datasets like the ones required for spatiotemporal interpolation on a continental scale.
 ```
 
 In a last step we can define the number of age resampling runs we want to apply and draw this number of random samples from the age distributions for each sample. For the example here we chose two, but for a real world application a larger number (>50) is recommended.
 
 ```r
-age_resampling_runs <- 2
+age_resampling_runs <- 2 # only two in this minimal example
 
 set.seed(123)
 
@@ -277,7 +303,7 @@ samples_with_age_samples <- samples_with_age_densities %>%
   )
 ```
 
-`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of two individual ages. These are two possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples are often hundreds of years apart. This highlights the relevance of this age resampling exercise.
+`samples_with_age_samples` now includes another list column `Date_BC_AD_Samples` in which each cell features a vector of two individual ages. These are two possible ages for a given sample. Depending on the precision of the input age information and the shape of the radiocarbon calibration curve in the relevant age range, the individual age samples can be hundreds of years apart. This highlights the relevance of this age resampling exercise.
 
 #### Applying the similarity search
 
