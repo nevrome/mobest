@@ -20,3 +20,7 @@ mobest - Spatiotemporal Ancestry Interpolation and Search
    Input data types <types.md>
    Citation <citation.md>
    Bibliography <bibliography.md>
+
+.. sidebar-links::
+   :github:
+   :caption: Links:

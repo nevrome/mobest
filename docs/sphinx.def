@@ -5,6 +5,6 @@ From: python:alpine3.17
   # install git
   apk add git
   # install sphinx python tools
-  pip install sphinx myst-parser sphinx_rtd_theme sphinx-multiversion sphinxcontrib-bibtex
+  pip install sphinx myst-parser sphinx_rtd_theme sphinx-multiversion sphinxcontrib-bibtex sphinx-toolbox
 
 
