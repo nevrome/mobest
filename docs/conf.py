@@ -33,6 +33,7 @@ exclude_patterns = ['README.md']
 # https://sphinxcontrib-bibtex.readthedocs.io/en/latest/usage.html
 bibtex_bibfiles = ['references.bib']
 bibtex_reference_style = 'author_year'
+bibtex_default_style = 'plain'
 
 # make sure the autosectionlabel targets are unique
 autosectionlabel_prefix_document = True

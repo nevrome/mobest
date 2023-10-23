@@ -2,7 +2,7 @@
 version](https://img.shields.io/github/r-package/v/nevrome/mobest) (latest version)
 [![R-CMD-check](https://github.com/nevrome/mobest/actions/workflows/check-release.yaml/badge.svg)](https://github.com/nevrome/mobest/actions/workflows/check-release.yaml)
 
-This R package provides types and functions for spatiotemporal interpolation of human genetic ancestry components, probabilistic similarity search and the calculation of a derived measure for **mob**ility **est**imation. The workflow in mobest version 1.0.0 was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>, which in turn underpins this publication: {cite:p}`Schmid2023`.
+This R package provides types and functions for spatiotemporal interpolation of human genetic ancestry components, probabilistic similarity search and the calculation of a derived measure for **mob**ility **est**imation. The workflow in mobest version 1.0.0 was specifically developed to support this research compendium: <https://github.com/nevrome/mobest.analysis.2022>, which in turn underpins {cite:p}`Schmid2023`.
 
 ```{figure} img/example_movie.gif
 ---
