@@ -1,6 +1,6 @@
 # Parameter estimation for optimal ancestry interpolation
 
-One important question for the Gaussian process regression performed within multiple of the core functions of `mobest` is how to find correct and useful settings for the kernel hyperparameters (see {ref}`Kernel parameter settings <basic:kernel parameter settings>` in the basic workflow description). Supplementary Text 2 of {cite:p}`Schmid2023` discusses this in detail. Based on this `mobest` provides different helper functions to either estimate the parameters or prepare data products that can be used to estimate them. Here we explain a practical way to estimate the nugget and lengthscale values.
+One important question for the Gaussian process regression performed within multiple of the core functions of mobest is how to find correct and useful settings for the kernel hyperparameters (see {ref}`Kernel parameter settings <basic:kernel parameter settings>` in the basic workflow description). Supplementary Text 2 of {cite:p}`Schmid2023` discusses this in detail. Based on this mobest provides different helper functions to either estimate the parameters or prepare data products that can be used to estimate them. Here we explain a practical way to estimate the nugget and lengthscale values.
 
 For this tutorial we will use the data introduced and prepared in {doc}`A basic similarity search workflow <basic>`, specifically a `samples_projected.csv` table prepared in {ref}`Reading the input samples <basic:reading the input samples>`.
 

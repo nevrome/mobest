@@ -509,7 +509,7 @@ Merged similarity search result based on two temporal resampling runs.
 
 ## Summarising origin vectors
 
-In a very final step of the pipeline supported by `mobest`, we can combine origin vectors to meaningful summaries. Which summary statistics turn out to be useful strongly depends on the research questions guiding a particular project, so it is well likely that the following functions are not appropriate for a given use case.
+In a very final step of the pipeline supported by mobest, we can combine origin vectors to meaningful summaries. Which summary statistics turn out to be useful strongly depends on the research questions guiding a particular project, so it is well likely that the following functions are not appropriate for a given use case.
 
 `mobest::pack_origin_vectors` takes an object of class `mobest_originvectors` and merges iterations of origin vectors that might have emerged from permutations in `mobest::locate_multi` into a single, mean (!) origin vector for each search individual.
 

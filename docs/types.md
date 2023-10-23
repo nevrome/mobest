@@ -1,14 +1,14 @@
 # Input data types in the mobest R package
 
-The following section briefly lists the main `mobest` input data types with their constructors.
+The following section briefly lists the main mobest input data types with their constructors.
 
 ## Basic data types
 
-`mobest` employs a number of basic [S3 data types](http://adv-r.had.co.nz/S3.html) to formalize the input to almost all of its functions. Most of then are tabular and inherit from `tibble::tibble()`. The constructors check certain properties to insure input correctness.
+mobest employs a number of basic [S3 data types](http://adv-r.had.co.nz/S3.html) to formalize the input to almost all of its functions. Most of them are tabular and inherit from `tibble::tibble`. The constructors check certain properties to insure input correctness.
 
 ### Spatial coordinates
 
-`mobest::create_geopos` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in `mobest` are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `sf::st_transform`): `mobest` can not be used with longitude and latitude coordinates (also see See {ref}`Projecting the spatial data <basic:projecting the spatial data>`).
+`mobest::create_geopos()` creates an object of class `mobest_spatialpositions` which is a `tibble` that represents spatial positions. Spatial positions in mobest are always 2-dimensional coordinates in a Cartesian space. For real world coordinates that means, that they have to be transformed to a projected coordinate system (e.g. with `sf::st_transform`): mobest can not be used with longitude and latitude coordinates (also see See {ref}`Projecting the spatial data <basic:projecting the spatial data>`).
 
 ```r
 mobest::create_geopos(
@@ -90,7 +90,7 @@ If a function requires both input of type `mobest_observations` and `mobest_kern
 
 ## Permutation data types
 
-When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions (e.g. uncertain dating). To represent that, `mobest` provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that automatically consider all permutations of these input lists.
+When working with real data we often need to explore permutations of data or account for uncertainty by sampling from distributions (e.g. uncertain dating). To represent that, mobest provides wrapper classes and constructors with a `*_multi` suffix, to bundle multiple individual elements in a list class. Some of the core functions provide interfaces that automatically consider all permutations of these input lists.
 
 Available are:
 
