@@ -225,19 +225,19 @@ The diamond shaped dot is positioned at the mean point of the distribution
 
 ## Finding optimal lengthscale parameters with crossvalidation
 
-To find the empirically optimal lengthscale parameters mobest includes the function `mobest::crossvalidate`. It allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel parameters. This is a computationally expensive and mathematically inelegant method, but robust, reliable and readily understandable. `crossvalidate()` internally employs `mobest::create_model_grid` and `mobest::run_model_grid` (see {ref}`Spatiotemporal interpolation permutations in a model grid <advanced:spatiotemporal interpolation permutations in a model grid>`).
+To find the empirically optimal lengthscale parameters mobest includes the function `mobest::crossvalidate()`. It allows to tackle the parameter estimation challenge with simple crossvalidation across a grid of kernel parameters. This is a computationally expensive and mathematically inelegant method, but robust, reliable and readily understandable. `crossvalidate()` internally employs `mobest::create_model_grid()` and `mobest::run_model_grid()` (see {ref}`Spatiotemporal interpolation permutations in a model grid <advanced:spatiotemporal interpolation permutations in a model grid>`).
 
-For the example here we can speed up the expensive calculations by reducing the sample size.
+For the following example code we can speed up the expensive calculations by reducing the sample size.
 
 ```r
 set.seed(123)
 samples_reduced <- samples_projected %>% dplyr::slice_sample(n = 100)
-# typically one would run this with all samples
+# typically one would run this with all available samples
 ```
 
 ### A basic crossvalidation setup
 
-To run `mobest::crossvalidate` we require the spatiotemporal and dependent variable positions of the field-informing input samples, fixed nuggets for each dependent variable and a grid of kernel parameters to test.
+To run `mobest::crossvalidate()` we require the spatiotemporal and dependent, genetic variable coordinates of the field-informing input samples, fixed nuggets for each dependent variable and a grid of kernel parameters to explore.
 
 The input positions can be specified as objects of type `mobest_spatiotemporalpositions` and `mobest_observations` just as laid out for `mobest::locate()` (see {ref}`Independent and dependent positions <basic:independent and dependent positions>`).
 
@@ -254,15 +254,14 @@ dep <- mobest::create_obs(
 )
 ```
 
-The grid of kernel parameters grid is a bit more difficult to obtain. It has to be of type `mobest_kernelsetting_multi` (see {ref}`Permutation data types <types:permutation data types>`), which is a bit awkward to construct for a large set of value permutations. Here is one way of doing so.
+The grid of kernel parameters grid is a bit more difficult to obtain. It has to be of type `mobest_kernelsetting_multi` (see {ref}`Permutation data types <types:permutation data types>`), which is a bit awkward to construct for a large set of value permutations. Here is one way of doing so:
 
 ```r
 kernels_to_test <-
-  # create a permutation grid of spatial (ds) and temporal (dt) lengthscale parameters to test
+  # create a permutation grid of spatial (ds) and temporal (dt) lengthscale parameters
   expand.grid(
     ds = seq(100, 1900, 200)*1000, # *1000 to transform from kilometres to meters
     dt = seq(100, 1900, 200)
-    # typically one would use a finer grid
   ) %>%
   # create objects of type mobest_kernelsetting from them
   purrr::pmap(function(...) {
@@ -287,12 +286,14 @@ kernels_to_test <-
   do.call(mobest::create_kernset_multi, .)
 ```
 
-`kernels_to_test` includes $10 * 10 = 100$ different kernel settings.
+```{note}
+The kernel grid explored here is coarse-meshed: `kernels_to_test` includes $10 * 10 = 100$ different kernel settings. Finer grids are advisable for real-world applications. To reduce the computational workload a multi-step approach can be useful: First investigating a very large but coarse lengthscale parameter grid, and then submitting a second or even a third run with a "zoomed-in" grid in the area with the best interpolation model performance.
+```
 
-With this input ready we can call `mobest::crossvalidate()`. This function randomly splits the input data in `groups` number of groups, takes `groups - 1` of them as training data and uses it to estimate the dependent variable positions of the last group's samples. It then calculates the differences between the true and the predicted values for each test sample and documents it in a tabular data structure of type `mobest_interpolgrid`. This is repeated so that each group acts as the test group once, so each sample is predicted by others once. In another `iteration` this entire process is repeated after resampling the groups.
+With this input ready we can call `mobest::crossvalidate()`. This function randomly splits the input data in a number of groups as defined by the `groups` argument, takes `groups - 1` of them as training data and uses it to estimate the dependent variable positions of the last group's samples. It then calculates the differences between the true and the predicted values for each test sample and documents it in a tabular data structure of type `mobest_interpolgrid`. This is repeated so that each group acts as the test group once, so each sample is predicted by the others once. In another `iteration` this entire process is repeated after resampling the groups.
 
 ```{warning}
-Even this extremely reduced example runs for around 2-15 minutes depending on your system.
+Even this extremely reduced example may run for several minutes, depending on your system.
 ```
 
 ```r
@@ -306,7 +307,7 @@ interpol_comparison <- mobest::crossvalidate(
 )
 ```
 
-That means each row in `interpol_comparison` features the result for one test sample with one kernel parameter permutation and iteration. The following columns/variables are documented:
+That means each row in `interpol_comparison` features the result for one test sample with one kernel parameter permutation and iteration. The following variables are documented:
 
 |Column         |Description |
 |:--------------|:-----------|
@@ -336,7 +337,7 @@ That means each row in `interpol_comparison` features the result for one test sa
 - $100$ spatial prediction grid positions
 - $2$ group resampling iterations
 
-### Analyzing the crossvalidation results
+### Analysing the crossvalidation results
 
 To finally decide which kernel parameters yield the overall best prediction we have to summarize the per-sample results in the `mobest_interpolgrid` table. One way of doing this is by calculating the mean-squared difference for each lenghtscale setting.
 
@@ -394,7 +395,7 @@ cowplot::plot_grid(p1, p2)
 Crossvalidation results (mean squared differences between prediction and observation) for two dependent variables/ancestry components C1 and C2
 ```
 
-The very best parameter combination for each dependent variable be identified like this:
+The very best parameter combination for each dependent variable can be identified like this:
 
 ```r
 kernel_grid %>%
@@ -411,9 +412,9 @@ kernel_grid %>%
 
 Note that these values here are just for demonstration and a result of a crossvalidation run with a very small sample size. Extremely large kernel sizes are plausible for extremely small sample density.
 
-### An HPC crossvalidation setup for large lengthscale parameter spaces
+## An HPC crossvalidation setup for large lengthscale parameter spaces
 
-The setup explained above is complete, but impractical for applications with large datasets and a large relevant parameter space. If you have access to a desktop computer or a single, strong node on a HPC system with plenty of processor cores, then it might be feasible to call the R code introduced above there. You could step the analysis by investigating a very large but coarse lengthscale parameter grid in a first run, and then submit a second or even a third run with a "zoomed-in" grid in the area with the best interpolation model performance. This hardly scales to really large analyses, though. For that we require a distributed computing setup, which makes use of the multitude of individual nodes a typical HPC provides.
+The setup explained above is complete, but impractical for applications with large datasets and a large relevant parameter space. If you have access to a desktop computer or a single, strong node on a HPC system with plenty of processor cores, then it might be feasible to call the R code introduced above there. This hardly scales to really large analyses, though. For that we require a distributed computing setup, which makes use of the multitude of individual nodes a typical HPC provides.
 
 Here is an example for a HPC setup where the workload for a large crossvalidation analysis is distributed across many individual jobs. This setup has three components, which will be explained in detail below.
 
@@ -421,13 +422,15 @@ Here is an example for a HPC setup where the workload for a large crossvalidatio
 2. A bash script to call 1. through the scheduler with a sequence of parameters: [run.sh](data/hpc_crossvalidation/run.sh)
 3. An R script to compile the output of the many calls to 1. into a table like the `kernel_grid` object above: [compile.R](data/hpc_crossvalidation/compile.R)
 
+```{warning}
 To make sure this example actually works, we filled it with real paths. Make sure to change them for your application.
+```
 
-#### The crossvalidation R script
+### The crossvalidation R script
 
 The following script `cross.R` includes the code for a single run of the crossvalidation with one set of kernel parameters.
 
-Note how the command line arguments are read from `run.sh` with `commandArgs()` and then used in `mobest::create_kernset()` to run `mobest::crossvalidate()` with exactly the desired lengthscale parameters.
+Note how the command line arguments are read from `run.sh` with `base::commandArgs()` and then used in `mobest::create_kernset()` to run `mobest::crossvalidate()` with exactly the desired lengthscale parameters.
 
 ```r
 # load dependencies
@@ -510,7 +513,7 @@ readr::write_csv(
 )
 ```
 
-`cross.R` returns a very short table (in the script the object `kernel_grid` of type `mobest_interpolgrid`) with only two lines; one for each dependent variable. It writes it to the file system as a .csv file with a unique name: `kernel_grid_000XXX.csv`, where XXX is the run number.
+`cross.R` returns a very short table (in the script the object `kernel_grid` of type `mobest_interpolgrid`) with only two lines; one for each dependent variable. It writes it to the file system as a .csv file with a unique name: `kernel_grid_000XXX.csv`, where `XXX` is the run number.
 
 For testing purposes is possible to run this script with a specific set of lengthscale parameters, here 1000 kilometres and 1000 years.
 
@@ -539,7 +542,7 @@ qsub -b y -cwd -q archgen.q -pe smp 10 -l h_vmem=20G -now n -V -j y -o ~/log -N 
     /
 ```
 
-#### The submission bash script
+### The submission bash script
 
 Of course we usually do not want to run `cross.R` only once, but many times for a regular grid of lengthscale parameters. The following SGE submission script `run.sh` now describes how the R script can be submitted to a scheduler as an array of jobs. It can be submitted with `qsub docs/data/hpc_crossvalidation/run.sh`.
 
@@ -596,9 +599,9 @@ exit 0
 
 So this will start 225 jobs in batches of 25 jobs at a time. Each job will run `cross.R` with a different set of input parameters, which will, in turn, create 225 `kernel_grid_000XXX.csv` files.
 
-#### The result compilation script
+### The result compilation script
 
-To read these individual files, and subsequently create the plot described in {ref}`Analyzing the crossvalidation results <estimation:analyzing the crossvalidation results>` a third script `compile.R` is in order. It should probably start with some code like this, which reads and merges the individual files into a single data structure.
+To read these individual files, and subsequently create the plot described in {ref}`Analysing the crossvalidation results <estimation:analysing the crossvalidation results>` a third script `compile.R` is in order. It should probably start with some code like this, which reads and merges the individual files into a single data structure.
 
 ```r
 kernel_grid <- purrr::map_dfr(
