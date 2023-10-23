@@ -313,7 +313,7 @@ With the age samples ready we can move on to the preparation of the input for `m
 load("docs/data/simple_parameters.RData")
 ```
 
-These objects, `dep`, `kernset` and `search_dep`, have to be wrapped in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is technical necessity, but can be tedious in cases, where only a single iteration is considered anyway.
+These objects, `dep`, `kernset` and `search_dep`, have to be wrapped in an additional layer of `*_multi` constructors. All input for these `_multi` constructors must be named, which is tedious in cases like this where only a single iteration is considered anyway, but a technical necessity.
 
 ```r
 dep_multi <- mobest::create_obs_multi(d = dep)
@@ -321,7 +321,7 @@ kernset_multi <- mobest::create_kernset_multi(k = kernset)
 search_dep_multi <- mobest::create_obs_multi(d = search_dep)
 ```
 
-The only major change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we create an object of type `mobest_spatiotemporalpositions_multi` containing a list of two different temporal resampling iterations of `mobest_spatiotemporalpositions`. All of them feature a different set of ages for the field-informing samples. They are named `age_resampling_run_*`, where `*` is a number from one to two.
+Another change to the basic setup occurs in the preparation of the spatiotemporal positions of the interpolation-informing input samples. Here we now require an object of type `mobest_spatiotemporalpositions_multi`, containing a list of two different temporal resampling iterations of `mobest_spatiotemporalpositions`.
 
 ```r
 ind_multi <- do.call(
@@ -345,7 +345,9 @@ ind_multi <- do.call(
 )
 ```
 
-As `search_ind_multi` has to be congruent with `ind_multi` we have to apply the same operation there. For simplicity we will assume a static age for this sample. With `search_time_mode = "absolute"` the search sample's age does not factor into the result.
+The two iterations feature a different set of ages for the field-informing samples and are named `age_resampling_run_1` and `age_resampling_run_2`.
+
+As `search_ind_multi` has to be congruent with `ind_multi` we have to apply the same operation there. For simplicity we will assume a static age for this sample. With `search_time_mode = "absolute"` the search sample's age does not factor into the result and we can safely ignore its temporal uncertainty for the input.
 
 ```r
 search_samples <- samples_with_age_samples %>%
@@ -371,7 +373,7 @@ search_samples_multi <- do.call(
 )
 ```
 
-This concludes the preparation and we can call `locate_multi()`.
+This concludes the preparation and we can finally call `locate_multi()`.
 
 ```r
 search_result <- mobest::locate_multi(
@@ -390,7 +392,7 @@ search_result <- mobest::locate_multi(
 
 `search_result` is of type `mobest_locateoverview`, which is well described in {ref}`The mobest_locateoverview table <basic:the mobest_locateoverview table>`. In this case we have the following parameter iterations.
 
-- $2$ set of input point positions in independent variable space (`independent_table_id`)
+- $2$ sets of input point positions in independent variable space (`independent_table_id`)
 - $1$ set of input point positions in dependent variable space (`dependent_setting_id`)
 - $2$ dependent variables (`dependent_var_id`)
 - $1$ set of kernel parameter settings (`kernel_setting_id`)
@@ -400,7 +402,7 @@ search_result <- mobest::locate_multi(
 
 This means we expect exactly $2 * 2 * 29583 = 118332$ rows in `search_result`, which we can once more confirm with `nrow(search_result)`.
 
-To summarise the result for each temporal resampling run across the two dependent variables `C1` and `C2` we can apply `multiply_dependent_probabilities`.
+To summarise the result for each temporal resampling run across the two dependent variables `C1` and `C2` we can apply `multiply_dependent_probabilities()`.
 
 ```r
 search_product <- mobest::multiply_dependent_probabilities(search_result)
@@ -452,13 +454,13 @@ ggplot() +
 Search results for two different temporal resampling runs.
 ```
 
-To finally combine the two age resampling runs we can run `fold_probabilities_per_group`, which yields an object of type `mobest_locatefold` with $59166/2 = 59166$ rows.
+To finally combine the two age resampling runs we can run `fold_probabilities_per_group()`, which yields an object of type `mobest_locatefold` with $59166/2 = 29583$ rows.
 
 ```r
 search_sum <- mobest::fold_probabilities_per_group(search_product)
 ```
 
-We can plot this final, merged result as usual to get a potentially more accurate map.
+We can plot this final, merged result as usual.
 
 <details>
 <summary>Code for this figure.</summary>
