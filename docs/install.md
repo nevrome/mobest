@@ -11,7 +11,7 @@ remotes::install_github('nevrome/mobest')
 
 You can also install specific/older versions of mobest with the following syntax: `nevrome/mobest[@ref|#pull|@*release]`. For example to install the publication release version you can run `remotes::install_github('nevrome/mobest@1.0.0')`.
 
-For any of this too work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for one particular dependency of mobest: the **`sf` R package**. The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
+For any of this to work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for one particular dependency of mobest: the **`sf` R package**. The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
 
 | System library                                                        | deb package<br>(Ubuntu/Debian) | rpm package<br>(Fedora/CentOS) | pkgbuild package<br>(Arch) | brew package<br>(MacOS) |
 |-----------------------------------------------------------------------|----------------------------------|---------------------------------|-------------------------|----------------------|

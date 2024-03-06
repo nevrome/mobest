@@ -53,7 +53,7 @@ research_area_4326 <- sf::st_polygon(
 ) %>% sf::st_sfc(crs = 4326)
 ```
 
-Spatial coordinates require a coordinate references system (CRS). For lat-lon coordinates we typically use [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System#WGS84) with the [EPSG code](https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset) 4326. `st_polygon()` creates a simple polygon as a clockwise arrangement of individual coordinates and `st_sfc()` properly defines this polygon as a geographic area on Earth. A simple way to interactively inspect this polygon on a world map in R is provided by the mapview package: `mapview::mapview(research_area_4326)`.
+Spatial coordinates require a coordinate references system (CRS). For lat-lon coordinates we typically use [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System#WGS84) with the [EPSG code](https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset) 4326. `st_polygon()` creates a simple polygon as a clockwise arrangement of individual coordinates and `st_sfc()` properly defines this polygon as a geographic area on Earth. A simple way to interactively inspect this polygon on a world map in R is provided by the `mapview` package: `mapview::mapview(research_area_4326)`.
 
 ```{figure} img/basic/mapview_research_area.png
 The defined research area plotted on top of a map.
@@ -193,7 +193,7 @@ readr::write_csv(samples_basic, file = "docs/data/samples_basic.csv")
 
 You do not have to run this and can instead download the example dataset table `samples_basic.csv` from [here](data/samples_basic.csv). 
 
-When you have download the input data file you can load it into a `tibble` in R.
+When you have downloaded the input data file you can load it into a `tibble` in R.
 
 ```r
 samples_basic <- readr::read_csv("docs/data/samples_basic.csv")
