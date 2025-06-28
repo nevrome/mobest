@@ -11,7 +11,7 @@ remotes::install_github('nevrome/mobest')
 
 You can also install specific/older versions of mobest with the following syntax: `nevrome/mobest[@ref|#pull|@*release]`. For example to install the publication release version you can run `remotes::install_github('nevrome/mobest@1.0.0')`.
 
-For any of this to work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for one particular dependency of mobest: the **`sf` R package**. The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
+For this to work a number of **system libraries** (mostly for processing geospatial data) have to be installed on your system, primarily for one particular dependency of mobest: the [**`sf` R package**](https://r-spatial.github.io/sf). The following table includes the libraries and the names of the relevant packages in the package management systems of various Linux distributions and MacOS.
 
 | System library                                                        | deb package<br>(Ubuntu/Debian) | rpm package<br>(Fedora/CentOS) | pkgbuild package<br>(Arch) | brew package<br>(MacOS) |
 |-----------------------------------------------------------------------|----------------------------------|---------------------------------|-------------------------|----------------------|
@@ -21,6 +21,15 @@ For any of this to work a number of **system libraries** (mostly for processing 
 | [UDUNITS-2](https://www.unidata.ucar.edu/software/udunits/)           | libudunits2-dev                  | udunits                         | udunits                 | udunits              |
 
 The `sf` package maintainers provide a good explanation how to install these: <https://r-spatial.github.io/sf/#installing>
+
+Finally, mobest uses the [**`laGP` R package**](https://doi.org/10.32614/CRAN.package.laGP) for its core interpolation mechanism. `laGP` gets automatically installed together with mobest (with the code above). It uses the [BLAS](https://www.netlib.org/blas/) system library for fast matrix computations. If `mobest::locate()` runs only single-threaded, so not multi-threaded, and consequently very slowly, then your BLAS installation may be borked. You can use the following simple test to confirm the issue in R:
+
+```r
+A <- matrix(rnorm(6000^2), 6000, 6000)
+system.time(A %*% A)
+```
+
+If this does not run in parallel, then you should probably switch to another BLAS implementation. Run `extSoftVersion()` to see which BLAS library you're currently using in R.
 
 ## Create an apptainer image to run mobest
 
